@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme — used minimally; LegalEase defaults to dark */
+    --background: 40 40% 96%;
+    --foreground: 215 60% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 60% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 60% 12%;
+    --primary: 215 60% 14%;
+    --primary-foreground: 40 40% 96%;
+    --secondary: 215 20% 92%;
+    --secondary-foreground: 215 60% 14%;
+    --muted: 215 20% 92%;
+    --muted-foreground: 215 20% 40%;
+    --accent: 41 50% 58%;
+    --accent-foreground: 215 60% 14%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 20% 88%;
+    --input: 215 20% 88%;
+    --ring: 41 50% 58%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark theme — primary surface for LegalEase AI */
+    --background: 215 50% 6%;
+    --foreground: 40 30% 92%;
+    --card: 215 50% 9%;
+    --card-foreground: 40 30% 92%;
+    --popover: 215 50% 9%;
+    --popover-foreground: 40 30% 92%;
+    --primary: 41 50% 60%;
+    --primary-foreground: 215 60% 8%;
+    --secondary: 215 30% 14%;
+    --secondary-foreground: 40 30% 92%;
+    --muted: 215 30% 14%;
+    --muted-foreground: 215 15% 65%;
+    --accent: 41 55% 58%;
+    --accent-foreground: 215 60% 8%;
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 40 30% 96%;
+    --border: 215 30% 18%;
+    --input: 215 30% 18%;
+    --ring: 41 50% 58%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Smooth scroll on the whole app */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-glass backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl;
+  }
+
+  .gold-text {
+    @apply bg-gold-gradient bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+}

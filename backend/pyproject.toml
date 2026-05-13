@@ -1,0 +1,29 @@
+[project]
+name = "legalease-ai-backend"
+version = "0.1.0"
+description = "LegalEase AI — FastAPI backend with PostgreSQL + FAISS for AI-powered legal assistance"
+authors = [
+    { name = "Saadullah", email = "saadullahlakho@gmail.com" },
+    { name = "Ali Mehmood Khan" },
+    { name = "Muhammad Uzair Siddique" },
+]
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["app/tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q --cov=app --cov-report=term-missing"
