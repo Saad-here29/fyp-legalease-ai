@@ -143,7 +143,7 @@ local Llama) without touching business logic.
 
 ```
 ai-services/
-├── corpus-builder/             # Builds the FAISS index from legal documents
+├── corpus_builder/             # Builds the FAISS index from legal documents
 └── data/                       # Pakistani legal corpus (raw + processed)
 ```
 

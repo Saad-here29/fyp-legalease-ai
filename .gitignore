@@ -44,15 +44,12 @@ htmlcov/
 # ===== FastAPI / Database =====
 *.db
 *.sqlite3
-alembic/versions/*.py
-!alembic/versions/.gitkeep
 
 # ===== AI / ML =====
 *.faiss
 *.index
 *.pkl
 *.bin
-models/
 embeddings_cache/
 ai-services/data/raw/
 ai-services/data/processed/

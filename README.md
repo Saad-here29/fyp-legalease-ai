@@ -32,8 +32,7 @@ LegalEase-AI/
 ├── testing/           # Cross-cutting test resources (load, security, fixtures)
 ├── scripts/           # Setup, seed, and build scripts
 ├── assets/            # Brand assets and illustrations
-├── Documents and Reports/   # FYP report, diagrams, and proposals
-└── Claude.md          # Engineering instruction document
+└── Documents and Reports/   # FYP report, diagrams, proposals (incl. archived Claude.md)
 ```
 
 ---
