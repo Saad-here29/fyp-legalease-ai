@@ -8,6 +8,7 @@ from app.models import audit  # noqa: F401
 from app.models import case  # noqa: F401
 from app.models import chat  # noqa: F401
 from app.models import client  # noqa: F401
+from app.models import contract  # noqa: F401
 from app.models import document  # noqa: F401
 from app.models import enums  # noqa: F401
 from app.models import lawyer  # noqa: F401
@@ -20,6 +21,7 @@ __all__ = [
     "case",
     "chat",
     "client",
+    "contract",
     "document",
     "enums",
     "lawyer",

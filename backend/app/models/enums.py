@@ -60,3 +60,9 @@ class FileType(str, enum.Enum):
 class SenderType(str, enum.Enum):
     USER = "user"
     AI = "ai"
+
+
+class ContractType(str, enum.Enum):
+    NDA = "nda"
+    EMPLOYMENT = "employment"
+    SERVICE_AGREEMENT = "service_agreement"
