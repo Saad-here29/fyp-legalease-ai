@@ -6,7 +6,7 @@ from app.schemas.common import APIModel
 
 
 class ResearchSearchRequest(APIModel):
-    query: str = Field(min_length=2, max_length=500)
+    query: str = Field(min_length=2, max_length=2000)
     court: str | None = None
     year_from: int | None = Field(default=None, ge=1900, le=2100)
     year_to: int | None = Field(default=None, ge=1900, le=2100)

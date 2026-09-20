@@ -153,6 +153,36 @@ class AIClient:
             "gemini": self._gemini is not None,
         }.get(name, False)
 
+    def rewrite_search_query(self, query: str) -> str:
+        """Compress a long, conversational legal question into a short,
+        focused search query before embedding.
+
+        Real lawyer-written questions are long and multi-clause; statute
+        text uses crisp legal terminology. Embedding the raw question
+        directly dilutes the semantic match — rewriting it down to the core
+        legal issue first (e.g. "I've been separated for 9 years, my
+        husband never visits, now wants custody..." -> "grounds for
+        custody after long separation and parental absence") gets much
+        closer to how the corpus itself is phrased.
+
+        Never breaks retrieval: falls back to the original query untouched
+        if no provider is configured or the call fails for any reason."""
+        if not self.enabled:
+            return query
+        system = (
+            "You are a legal search query optimizer for a Pakistani law "
+            "database. Rewrite the user's question into a short, focused "
+            "search query (max ~20 words) that captures the core legal "
+            "issue, using precise legal terminology a Pakistani statute "
+            "would use. Output ONLY the rewritten query — no preamble, no "
+            "quotes, no explanation."
+        )
+        try:
+            rewritten = self.chat([{"role": "user", "content": query}], system=system).strip()
+            return rewritten or query
+        except AIServiceUnavailable:
+            return query
+
     def summarise(self, text: str, hint: str = "") -> str:
         if not self.enabled:
             raise AIServiceUnavailable(

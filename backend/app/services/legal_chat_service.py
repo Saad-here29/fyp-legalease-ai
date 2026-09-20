@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.ai import embeddings
 from app.ai.client import get_ai_client
+from app.ai.query_rewrite import rewrite_for_search
 from app.core.config import settings
 from app.core.exceptions import AIServiceUnavailable, NotAuthorized, NotFound
 from app.core.logging import logger
@@ -141,7 +142,8 @@ class LegalChatService:
                 "The legal knowledge base is still being built. Please try again in a few minutes.",
             )
 
-        retrieved = embeddings.search(message, top_k=settings.RAG_TOP_K)
+        search_query = rewrite_for_search(message)
+        retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
         passages = [
             r for r in retrieved
             if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD

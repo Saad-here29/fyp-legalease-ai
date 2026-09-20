@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.ai import embeddings
 from app.ai.client import get_ai_client
+from app.ai.query_rewrite import rewrite_for_search
 from app.schemas.research import ResearchResult, StructuredAnalysis
 
 
@@ -86,8 +87,9 @@ class ResearchService:
         case_type: str | None = None,
     ) -> list[ResearchResult]:
         embeddings.build_or_load(self.db)
+        search_query = rewrite_for_search(query)
         hits = embeddings.search(
-            query,
+            search_query,
             top_k=top_k,
             filters={
                 "court": court,
