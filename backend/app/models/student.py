@@ -23,6 +23,8 @@ class Student(Base, TimestampMixin):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUIDType, ForeignKey("users.id"), unique=True, nullable=False
     )
-    university_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    university_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    current_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Nullable — no university-ID verification system exists yet, so signup
+    # no longer collects these. Kept for a future verification flow.
+    university_id: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
+    university_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    current_year: Mapped[int | None] = mapped_column(Integer, nullable=True)

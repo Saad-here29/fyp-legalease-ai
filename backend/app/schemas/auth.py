@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import EmailStr, Field, model_validator
+from pydantic import EmailStr, Field
 
 from app.models.enums import UserRole
 from app.schemas.common import APIModel
@@ -18,13 +18,21 @@ class LoginRequest(APIModel):
 
 
 class SignupRequest(APIModel):
+    """Signup collects exactly: full name, email, phone, password, role.
+
+    Role-specific fields below (bar license, CNIC, university ID, ...) are
+    kept optional — no verification system exists for them yet, so the
+    frontend no longer collects them and no role requires them at signup.
+    They stay available for a future verification flow or direct API use.
+    """
+
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=2, max_length=150)
     phone: str | None = Field(default=None, max_length=20)
     role: UserRole
 
-    # Lawyer fields
+    # Lawyer fields (optional — unverified)
     bar_license_no: str | None = Field(default=None, max_length=50)
     specialization: str | None = Field(default=None, max_length=120)
     bar_year: int | None = Field(default=None, ge=1950, le=2100)
@@ -34,28 +42,10 @@ class SignupRequest(APIModel):
     address: str | None = Field(default=None, max_length=500)
     cnic: str | None = Field(default=None, max_length=20)
 
-    # Student fields
+    # Student fields (optional — unverified)
     university_id: str | None = Field(default=None, max_length=50)
     university_name: str | None = Field(default=None, max_length=150)
     current_year: int | None = Field(default=None, ge=1, le=7)
-
-    @model_validator(mode="after")
-    def validate_role_fields(self) -> "SignupRequest":
-        if self.role == UserRole.LAWYER:
-            missing = [
-                f for f in ("bar_license_no", "specialization", "bar_year")
-                if getattr(self, f) is None
-            ]
-            if missing:
-                raise ValueError(f"Lawyer signup requires: {', '.join(missing)}")
-        elif self.role == UserRole.STUDENT:
-            missing = [
-                f for f in ("university_id", "university_name", "current_year")
-                if getattr(self, f) is None
-            ]
-            if missing:
-                raise ValueError(f"Student signup requires: {', '.join(missing)}")
-        return self
 
 
 class RefreshRequest(APIModel):

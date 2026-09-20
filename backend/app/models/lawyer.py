@@ -23,7 +23,10 @@ class Lawyer(Base, TimestampMixin):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUIDType, ForeignKey("users.id"), unique=True, nullable=False
     )
-    bar_license_no: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    specialization: Mapped[str] = mapped_column(String(120), nullable=False)
-    bar_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Nullable — no bar-license verification system exists yet, so signup
+    # no longer collects these for any role. Kept for a future verification
+    # flow rather than dropped.
+    bar_license_no: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
+    specialization: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    bar_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     bar_council: Mapped[str | None] = mapped_column(String(120), nullable=True)
