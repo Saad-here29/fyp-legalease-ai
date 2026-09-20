@@ -54,6 +54,10 @@ RAW_DIR = ROOT / "ai-services" / "data" / "raw"
 JUDGMENTS_DIR = RAW_DIR / "judgments"
 ARCHIVE_PATH = RAW_DIR / "archive.zip"
 
+# Cleaned/merged statute corpus (see scripts/clean_statute_corpus.py) — one
+# JSON file of {title, source_type, text} records, built from data/raw/statutes/.
+PROCESSED_STATUTES_PATH = ROOT / "data" / "processed" / "statutes" / "legal_statutes_corpus.json"
+
 
 def _load_dotenv(path: Path) -> dict[str, str]:
     """Tiny .env reader — no external deps. Stops on first equals sign and
@@ -115,7 +119,15 @@ SOURCE_NAME_OVERRIDES: dict[str, str] = {
 
 
 def _display_source(filename: str) -> str:
-    return SOURCE_NAME_OVERRIDES.get(filename, Path(filename).stem)
+    if filename in SOURCE_NAME_OVERRIDES:
+        return SOURCE_NAME_OVERRIDES[filename]
+    # Only strip a real file extension. Documents from the processed-corpus
+    # JSON use their statute title as `filename` directly (e.g. "Qanun-e-
+    # Shahadat Order, 1984") — running that through Path.stem would silently
+    # truncate any title containing a "." that isn't a .pdf/.txt suffix.
+    if filename.lower().endswith((".pdf", ".txt")):
+        return Path(filename).stem
+    return filename
 
 
 # ----- Step 1: extract archive --------------------------------------------
@@ -203,9 +215,37 @@ def read_txt(path: Path) -> str:
         return ""
 
 
+def collect_processed_statute_docs() -> list[dict]:
+    """Load the cleaned/merged statute corpus built by
+    scripts/clean_statute_corpus.py, if present."""
+    if not PROCESSED_STATUTES_PATH.exists():
+        print(f"   ! Processed statute corpus not found at {PROCESSED_STATUTES_PATH} — skipping")
+        return []
+
+    with PROCESSED_STATUTES_PATH.open(encoding="utf-8") as f:
+        entries = json.load(f)
+
+    docs: list[dict] = []
+    for e in entries:
+        raw = e.get("text", "")
+        if not raw or len(raw.strip()) < 50:
+            continue
+        docs.append(
+            {
+                # The statute title *is* the source name here — no filename
+                # to derive it from. See the _display_source guard above.
+                "filename": e["title"],
+                "source_type": "statute",
+                "raw_text": raw,
+            }
+        )
+    return docs
+
+
 def collect_documents() -> list[dict]:
-    """Walk raw/ and raw/judgments/ and return one dict per source document
-    with keys: filename, source_type, raw_text."""
+    """Walk raw/, raw/judgments/, and the processed statute corpus, and
+    return one dict per source document with keys: filename, source_type,
+    raw_text."""
     docs: list[dict] = []
 
     # PDFs (statutes / reference)
@@ -242,6 +282,9 @@ def collect_documents() -> list[dict]:
                 }
             )
 
+    # Cleaned/merged statute corpus (901 documents as of this pass)
+    docs.extend(collect_processed_statute_docs())
+
     return docs
 
 
@@ -267,8 +310,22 @@ def build_chunks(docs: list[dict]) -> list[dict]:
     return records
 
 
+# Per-batch vectors are checkpointed to disk as they're computed, so a run
+# that gets killed partway through (slow/flaky machine, CI time limit, etc.)
+# can resume from the last completed batch on the next invocation instead of
+# re-embedding from scratch.
+CHECKPOINT_DIR = BACKEND_DIR / "storage" / "faiss" / "_checkpoint"
+BATCH_SIZE = 64
+
+
+def _checkpoint_batch_path(batch_idx: int) -> Path:
+    return CHECKPOINT_DIR / f"batch_{batch_idx:06d}.npy"
+
+
 def embed_and_index(records: list[dict]) -> None:
-    """Embed all chunks, build a FAISS index, persist index + metadata."""
+    """Embed all chunks, build a FAISS index, persist index + metadata.
+    Resumable: re-running after a partial failure picks up from the last
+    checkpointed batch rather than starting over."""
     if not records:
         print("[7/8] No records to embed — aborting.")
         return
@@ -278,30 +335,64 @@ def embed_and_index(records: list[dict]) -> None:
     import faiss
     from sentence_transformers import SentenceTransformer
 
-    print(f"[5/8] Loading embedding model: {EMBEDDING_MODEL}")
-    model = SentenceTransformer(EMBEDDING_MODEL)
+    CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+    n_batches = -(-len(records) // BATCH_SIZE)  # ceil div
 
-    print(f"[6/8] Embedding {len(records)} chunks (batch_size=64)...")
-    texts = [r["text"] for r in records]
+    # A checkpoint only means anything if it's for *this* corpus + model —
+    # batch index alone doesn't encode content, so a stale checkpoint from a
+    # previous corpus version would silently splice in wrong vectors.
+    manifest_path = CHECKPOINT_DIR / "manifest.json"
+    manifest = {"n_records": len(records), "model": EMBEDDING_MODEL, "dim": EMBEDDING_DIM}
+    if manifest_path.exists():
+        try:
+            existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            existing = None
+        if existing != manifest:
+            print("   ! Corpus/model changed since last checkpoint — clearing stale checkpoint batches")
+            for p in CHECKPOINT_DIR.glob("batch_*.npy"):
+                p.unlink()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
-    batch_size = 64
-    vectors_chunks: list = []
-    t0 = time.perf_counter()
-    for start in range(0, len(texts), batch_size):
-        batch = texts[start : start + batch_size]
-        batch_vectors = model.encode(
-            batch,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-            normalize_embeddings=True,  # L2-normalise so IndexFlatIP == cosine
+    done_batches = {
+        p.stem for p in CHECKPOINT_DIR.glob("batch_*.npy")
+    }
+    remaining = [i for i in range(n_batches) if f"batch_{i:06d}" not in done_batches]
+
+    if len(done_batches) < n_batches:
+        print(f"[5/8] Loading embedding model: {EMBEDDING_MODEL}")
+        model = SentenceTransformer(EMBEDDING_MODEL)
+
+        already = len(done_batches) * BATCH_SIZE
+        print(
+            f"[6/8] Embedding {len(records)} chunks in {n_batches} batches of {BATCH_SIZE} "
+            f"({len(done_batches)} batches already checkpointed, resuming)..."
         )
-        vectors_chunks.append(batch_vectors.astype(np.float32))
-        done = min(start + batch_size, len(texts))
-        if done % 100 < batch_size or done == len(texts):
+        texts = [r["text"] for r in records]
+        t0 = time.perf_counter()
+        n_done_this_run = 0
+        for batch_idx in remaining:
+            start = batch_idx * BATCH_SIZE
+            batch = texts[start : start + BATCH_SIZE]
+            batch_vectors = model.encode(
+                batch,
+                convert_to_numpy=True,
+                show_progress_bar=False,
+                normalize_embeddings=True,  # L2-normalise so IndexFlatIP == cosine
+            )
+            np.save(_checkpoint_batch_path(batch_idx), batch_vectors.astype(np.float32))
+            n_done_this_run += 1
+            done = min(start + BATCH_SIZE, len(texts))
             elapsed = time.perf_counter() - t0
-            rate = done / elapsed if elapsed > 0 else 0
+            rate = (n_done_this_run * BATCH_SIZE) / elapsed if elapsed > 0 else 0
             print(f"   ... embedded {done}/{len(texts)} ({rate:.1f} chunks/s)")
+    else:
+        print("[5-6/8] All batches already checkpointed — skipping embedding.")
 
+    print("[6/8] Assembling checkpointed batches...")
+    vectors_chunks = [
+        np.load(_checkpoint_batch_path(i)) for i in range(n_batches)
+    ]
     vectors = np.vstack(vectors_chunks)
     assert vectors.shape == (len(records), EMBEDDING_DIM), (
         f"Expected vectors shape ({len(records)}, {EMBEDDING_DIM}) "
@@ -321,6 +412,12 @@ def embed_and_index(records: list[dict]) -> None:
     with FAISS_METADATA_PATH.open("w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False)
     print(f"   ✓ Wrote {FAISS_METADATA_PATH}")
+
+    # Index is durably on disk now — the per-batch checkpoint served its
+    # purpose and would only be stale weight on the next run.
+    for p in CHECKPOINT_DIR.glob("batch_*.npy"):
+        p.unlink()
+    manifest_path.unlink(missing_ok=True)
 
 
 # ----- Main ----------------------------------------------------------------
