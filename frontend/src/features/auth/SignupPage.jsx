@@ -5,49 +5,32 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
-import AuthLayout from "@/layouts/AuthLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Spinner from "@/components/common/Spinner";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import AuthShell from "@/layouts/AuthShell";
+import AppButton from "@/components/ui/AppButton";
 import { authApi, extractAuthError } from "./api";
 import { ROLES, ROUTES } from "@/constants";
+import { cnInput } from "@/lib/formStyles";
 
-const baseSchema = {
-  email: z.string().email("Please enter a valid email address."),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters.")
-    .max(128, "Password is too long."),
-  full_name: z.string().min(2, "Please enter your full name.").max(150),
-  phone: z.string().max(20).optional().or(z.literal("")),
-  role: z.enum(["LAWYER", "CLIENT", "STUDENT"]),
-};
-
-const signupSchema = z.discriminatedUnion("role", [
-  z.object({
-    ...baseSchema,
-    role: z.literal("LAWYER"),
-    bar_license_no: z.string().min(1, "Bar license number is required."),
-    specialization: z.string().min(1, "Specialization is required."),
-    bar_year: z.coerce.number().int().min(1950).max(2100),
-    bar_council: z.string().optional().or(z.literal("")),
-  }),
-  z.object({
-    ...baseSchema,
-    role: z.literal("CLIENT"),
-    address: z.string().optional().or(z.literal("")),
-    cnic: z.string().optional().or(z.literal("")),
-  }),
-  z.object({
-    ...baseSchema,
-    role: z.literal("STUDENT"),
-    university_id: z.string().min(1, "University ID is required."),
-    university_name: z.string().min(1, "University name is required."),
-    current_year: z.coerce.number().int().min(1).max(7),
-  }),
-]);
+// Simplified to exactly 6 fields for every role — no bar license, CNIC,
+// university fields, etc., since no verification system exists for those
+// yet. NOTE: the backend's signup schema (backend/app/schemas/auth.py)
+// still requires role-specific fields for lawyer/student — see the
+// flagged note handed back with this pass. This form intentionally no
+// longer sends them.
+const signupSchema = z
+  .object({
+    full_name: z.string().min(2, "Please enter your full name.").max(150),
+    email: z.string().email("Please enter a valid email address."),
+    phone: z.string().min(1, "Phone number is required.").max(20),
+    password: z.string().min(8, "Password must be at least 8 characters.").max(128),
+    confirm_password: z.string(),
+    role: z.enum([ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT]),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Passwords don't match.",
+    path: ["confirm_password"],
+  });
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -67,7 +50,7 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(signupSchema),
-    defaultValues: { role: initialRole, email: "", password: "", full_name: "" },
+    defaultValues: { role: initialRole, email: "", password: "", confirm_password: "", full_name: "", phone: "" },
   });
 
   const role = watch("role");
@@ -96,171 +79,121 @@ export default function SignupPage() {
   });
 
   const onSubmit = (values) => {
-    // Strip empty optional fields
-    const payload = Object.fromEntries(
-      Object.entries(values).filter(([, v]) => v !== "" && v !== undefined)
-    );
+    const { confirm_password, ...payload } = values;
     signupMutation.mutate(payload);
   };
 
   return (
-    <AuthLayout
-      title="Create your account"
-      subtitle={`Setting up as a ${role.toLowerCase()}.`}
-      footer={
-        <>
-          Already have an account?{" "}
-          <Link to={ROUTES.LOGIN} className="text-legal-gold hover:underline font-medium">
-            Sign in
-          </Link>
-        </>
-      }
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Role selector */}
-        <div className="space-y-2">
-          <Label>I am a</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {[ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT].map((r) => (
+    <AuthShell heroTitle="Create your account." heroSubtitle={`Setting up as a ${role}.`}>
+      <h2 className="font-editorial text-2xl text-ink-text mb-1">Sign up</h2>
+      <p className="text-sm text-ink-muted mb-6">Tell us a bit about yourself.</p>
+
+      <div className="border-b border-hairline-subtle mb-8" />
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div>
+          <span className="block text-sm text-ink-muted mb-2">I am a</span>
+          <div className="flex border border-hairline rounded-md overflow-hidden">
+            {[ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT].map((r, i) => (
               <button
                 type="button"
                 key={r}
                 onClick={() => setValue("role", r)}
-                className={`text-xs font-medium py-2 rounded-lg border transition-all ${
+                className={`flex-1 text-sm py-2 transition-colors ${
+                  i > 0 ? "border-l border-hairline" : ""
+                } ${
                   role === r
-                    ? "bg-legal-gold/15 border-legal-gold/60 text-legal-gold"
-                    : "bg-secondary/30 border-border/50 text-muted-foreground hover:border-border"
+                    ? "bg-ink-panel text-paper"
+                    : "text-ink-muted hover:text-ink-text hover:bg-hairline-subtle/50"
                 }`}
               >
-                {r === "LAWYER" ? "Lawyer" : r === "CLIENT" ? "Client" : "Student"}
+                {r === ROLES.LAWYER ? "Lawyer" : r === ROLES.CLIENT ? "Client" : "Student"}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Common fields */}
         <Field label="Full name" error={errors.full_name?.message}>
-          <Input
+          <input
             placeholder="John Doe"
             autoComplete="name"
+            className={cnInput(errors.full_name)}
             {...register("full_name")}
           />
         </Field>
 
         <Field label="Email" error={errors.email?.message}>
-          <Input
+          <input
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
+            className={cnInput(errors.email)}
             {...register("email")}
+          />
+        </Field>
+
+        <Field label="Phone number" error={errors.phone?.message}>
+          <input
+            placeholder="+92 300 1234567"
+            autoComplete="tel"
+            className={cnInput(errors.phone)}
+            {...register("phone")}
           />
         </Field>
 
         <Field label="Password" error={errors.password?.message}>
           <div className="relative">
-            <Input
+            <input
               type={showPassword ? "text" : "password"}
               placeholder="At least 8 characters"
               autoComplete="new-password"
+              className={cnInput(errors.password, "pr-8")}
               {...register("password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-text"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </Field>
 
-        <Field label="Phone (optional)" error={errors.phone?.message}>
-          <Input
-            placeholder="+92 300 1234567"
-            autoComplete="tel"
-            {...register("phone")}
+        <Field label="Confirm password" error={errors.confirm_password?.message}>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Re-enter your password"
+            autoComplete="new-password"
+            className={cnInput(errors.confirm_password)}
+            {...register("confirm_password")}
           />
         </Field>
 
-        {/* Role-specific fields */}
-        {role === ROLES.LAWYER && (
-          <>
-            <Field label="Bar license no." error={errors.bar_license_no?.message}>
-              <Input placeholder="PB-12345" {...register("bar_license_no")} />
-            </Field>
-            <Field label="Specialization" error={errors.specialization?.message}>
-              <Input placeholder="Family Law" {...register("specialization")} />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Bar year" error={errors.bar_year?.message}>
-                <Input type="number" placeholder="2018" {...register("bar_year")} />
-              </Field>
-              <Field label="Bar council" error={errors.bar_council?.message}>
-                <Input placeholder="Punjab" {...register("bar_council")} />
-              </Field>
-            </div>
-          </>
-        )}
-
-        {role === ROLES.CLIENT && (
-          <>
-            <Field label="Address (optional)" error={errors.address?.message}>
-              <Input placeholder="House #1, Street 2, Lahore" {...register("address")} />
-            </Field>
-            <Field label="CNIC (optional)" error={errors.cnic?.message}>
-              <Input placeholder="35202-1234567-1" {...register("cnic")} />
-            </Field>
-          </>
-        )}
-
-        {role === ROLES.STUDENT && (
-          <>
-            <Field label="University name" error={errors.university_name?.message}>
-              <Input placeholder="Punjab University" {...register("university_name")} />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="University ID" error={errors.university_id?.message}>
-                <Input placeholder="LLB-2022-001" {...register("university_id")} />
-              </Field>
-              <Field label="Current year" error={errors.current_year?.message}>
-                <Input type="number" min="1" max="7" placeholder="3" {...register("current_year")} />
-              </Field>
-            </div>
-          </>
-        )}
-
-        <Button
-          type="submit"
-          variant="gold"
-          size="lg"
-          className="w-full"
-          disabled={signupMutation.isPending}
-        >
-          {signupMutation.isPending ? (
-            <Spinner size={18} />
-          ) : (
-            <>
-              <UserPlus className="h-4 w-4" />
-              Create account
-            </>
-          )}
-        </Button>
+        <AppButton type="submit" disabled={signupMutation.isPending} className="w-full mt-2">
+          {signupMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
+        </AppButton>
       </form>
-    </AuthLayout>
+
+      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
+        <p className="text-sm text-ink-muted">
+          Already have an account?{" "}
+          <Link to={ROUTES.LOGIN} className="text-brick hover:underline underline-offset-2">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </AuthShell>
   );
 }
 
 function Field({ label, error, children }) {
   return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
+    <div>
+      <label className="block text-sm text-ink-muted mb-1.5">{label}</label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-brick">{error}</p>}
     </div>
   );
 }

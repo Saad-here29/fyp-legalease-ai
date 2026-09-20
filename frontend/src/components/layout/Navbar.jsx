@@ -1,17 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Logo from "@/components/common/Logo";
-import { Button } from "@/components/ui/button";
+import AppButton from "@/components/ui/AppButton";
 import { ROUTES } from "@/constants";
-import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
+  { label: "How it works", href: "#how-it-works" },
   { label: "Features", href: "#features" },
-  { label: "AI Capabilities", href: "#ai-capabilities" },
-  { label: "Workflow", href: "#workflow" },
-  { label: "Modules", href: "#modules" },
 ];
 
 export default function Navbar() {
@@ -27,12 +23,9 @@ export default function Navbar() {
 
   return (
     <header
-      className={cn(
-        "fixed top-0 inset-x-0 z-50 transition-all duration-300",
-        scrolled
-          ? "bg-background/70 backdrop-blur-xl border-b border-border/50 shadow-lg shadow-legal-navy/30"
-          : "bg-transparent"
-      )}
+      className={`fixed top-0 inset-x-0 z-50 bg-paper transition-shadow ${
+        scrolled ? "border-b border-hairline" : "border-b border-transparent"
+      }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <Link to={ROUTES.LANDING} className="shrink-0">
@@ -44,24 +37,22 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm text-ink-muted hover:text-ink-text transition-colors"
             >
               {link.label}
             </a>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
-          <Button asChild variant="ghost" size="sm">
-            <NavLink to={ROUTES.LOGIN}>Sign in</NavLink>
-          </Button>
-          <Button asChild variant="gold" size="sm">
-            <NavLink to={ROUTES.WELCOME}>Get Started</NavLink>
-          </Button>
+        <div className="hidden md:flex items-center gap-6">
+          <NavLink to={ROUTES.LOGIN} className="text-sm text-brick hover:underline underline-offset-2">
+            Sign in
+          </NavLink>
+          <AppButton to={ROUTES.WELCOME}>Get started</AppButton>
         </div>
 
         <button
-          className="md:hidden p-2 text-foreground"
+          className="md:hidden p-2 text-ink-text"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -69,42 +60,34 @@ export default function Navbar() {
         </button>
       </nav>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="md:hidden overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl"
-          >
-            <div className="flex flex-col gap-4 p-6">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  {link.label}
-                </a>
-              ))}
-              <div className="flex flex-col gap-2 pt-2 border-t border-border/30">
-                <Button asChild variant="ghost" size="sm">
-                  <NavLink to={ROUTES.LOGIN} onClick={() => setOpen(false)}>
-                    Sign in
-                  </NavLink>
-                </Button>
-                <Button asChild variant="gold" size="sm">
-                  <NavLink to={ROUTES.WELCOME} onClick={() => setOpen(false)}>
-                    Get Started
-                  </NavLink>
-                </Button>
-              </div>
+      {open && (
+        <div className="md:hidden border-t border-hairline bg-paper">
+          <div className="flex flex-col gap-4 p-6">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                className="text-sm text-ink-muted hover:text-ink-text"
+              >
+                {link.label}
+              </a>
+            ))}
+            <div className="flex flex-col gap-3 pt-4 border-t border-hairline-subtle">
+              <NavLink
+                to={ROUTES.LOGIN}
+                onClick={() => setOpen(false)}
+                className="text-sm text-brick"
+              >
+                Sign in
+              </NavLink>
+              <AppButton to={ROUTES.WELCOME} onClick={() => setOpen(false)} className="justify-center">
+                Get started
+              </AppButton>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -16,14 +15,14 @@ import {
   Lightbulb,
   ListChecks,
 } from "lucide-react";
-import DashboardLayout from "@/layouts/DashboardLayout";
+import AppShell from "@/components/layout/AppShell";
+import AppButton from "@/components/ui/AppButton";
 import PanelCard from "@/features/dashboard/components/PanelCard";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES, ROUTES } from "@/constants";
 import { casesApi } from "@/features/case-management/api";
 import { researchApi } from "./api";
+import { cnInput } from "@/lib/formStyles";
 
 export default function ResearchDetailPage() {
   const navigate = useNavigate();
@@ -31,38 +30,34 @@ export default function ResearchDetailPage() {
   const { user } = useAuthStore();
   const isLawyer = user?.role === ROLES.LAWYER;
 
-  // The ResearchPage passes the full result via router state. If the user
-  // refreshed or arrived via a deep link, we show a graceful empty state and
-  // a button back to /research.
   const result = location.state?.result;
 
   if (!result) {
     return (
-      <DashboardLayout title="Research result">
-        <PanelCard>
-          <div className="flex items-start gap-3 py-4">
-            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-semibold">This result was opened directly.</p>
-              <p className="text-muted-foreground mt-1">
-                Detail snapshots are loaded from the search list. Run a search
-                and click "Read more" again.
-              </p>
-              <Button asChild size="sm" variant="outline" className="mt-3">
-                <Link to={ROUTES.RESEARCH}>
-                  <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-                  Back to research
-                </Link>
-              </Button>
-            </div>
+      <AppShell title="Research result">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-brick shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-ink-text">This result was opened directly.</p>
+            <p className="text-ink-muted mt-1">
+              Detail snapshots are loaded from the search list. Run a search
+              and click "Read more" again.
+            </p>
+            <Link
+              to={ROUTES.RESEARCH}
+              className="inline-flex items-center gap-1.5 text-sm text-brick hover:underline underline-offset-2 mt-3"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to research
+            </Link>
           </div>
-        </PanelCard>
-      </DashboardLayout>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <DashboardLayout
+    <AppShell
       title={result.title}
       subtitle={`${result.case_type === "judgment" ? "Judgment" : "Statute"}${
         result.year ? ` · ${result.year}` : ""
@@ -70,43 +65,33 @@ export default function ResearchDetailPage() {
     >
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-text mb-8"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to results
       </button>
 
-      <StructuredAnalysisPanel result={result} />
+      <div className="mb-10">
+        <StructuredAnalysisPanel result={result} />
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 mt-6">
+      <div className="grid gap-10 lg:grid-cols-3">
         <PanelCard className="lg:col-span-2" title="Original passage">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen className="h-4 w-4 text-accent" />
-            <Badge variant="gold" className="text-[10px] uppercase tracking-wider">
-              {result.case_type === "judgment" ? "Judgment" : "Statute"}
-            </Badge>
-            {result.citation && (
-              <span className="text-xs font-mono text-muted-foreground">
-                {result.citation}
-              </span>
-            )}
+          <div className="flex items-center gap-2 mb-3 text-xs text-ink-muted">
+            <BookOpen className="h-4 w-4" />
+            <span>{result.case_type === "judgment" ? "Judgment" : "Statute"}</span>
+            {result.citation && <span>{result.citation}</span>}
             {result.relevance != null && (
-              <span className="ml-auto text-xs text-muted-foreground">
-                {Math.round(result.relevance * 100)}% relevance
-              </span>
+              <span className="ml-auto">{Math.round(result.relevance * 100)}% relevance</span>
             )}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-sm leading-relaxed text-foreground whitespace-pre-wrap max-h-[60vh] overflow-y-auto scrollbar-thin pr-2"
-          >
+          <div className="text-sm leading-relaxed text-ink-text whitespace-pre-wrap max-h-[60vh] overflow-y-auto pr-2">
             {result.text || result.excerpt}
-          </motion.div>
+          </div>
 
-          <div className="mt-6 pt-4 border-t border-border/40 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">
+          <div className="mt-6 pt-4 border-t border-hairline-subtle text-xs text-ink-muted">
+            <span className="font-medium text-ink-text">
               {(result.text || result.excerpt || "").length.toLocaleString()} characters
             </span>{" "}
             — This passage is one chunk from the LegalEase corpus
@@ -115,32 +100,28 @@ export default function ResearchDetailPage() {
           </div>
         </PanelCard>
 
-        <div className="space-y-4">
+        <div className="space-y-10">
           {isLawyer && <SaveToCase result={result} />}
 
           <PanelCard title="Source">
             <div className="text-sm">
-              <div className="font-semibold">{result.title}</div>
-              {result.citation && (
-                <div className="text-xs text-muted-foreground font-mono mt-1">
-                  {result.citation}
-                </div>
-              )}
+              <div className="font-medium text-ink-text">{result.title}</div>
+              {result.citation && <div className="text-xs text-ink-muted mt-1">{result.citation}</div>}
               {result.court && (
-                <div className="text-xs text-muted-foreground mt-2">
-                  Court: <span className="text-foreground">{result.court}</span>
+                <div className="text-xs text-ink-muted mt-2">
+                  Court: <span className="text-ink-text">{result.court}</span>
                 </div>
               )}
               {result.year && (
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Year: <span className="text-foreground">{result.year}</span>
+                <div className="text-xs text-ink-muted mt-0.5">
+                  Year: <span className="text-ink-text">{result.year}</span>
                 </div>
               )}
             </div>
           </PanelCard>
         </div>
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }
 
@@ -153,16 +134,12 @@ function StructuredAnalysisPanel({ result }) {
         user_query: result.user_query || null,
       }),
     onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Could not generate analysis.",
-        { description: e?.response?.data?.error?.hint }
-      );
+      toast.error(e?.response?.data?.error?.message || "Could not generate analysis.", {
+        description: e?.response?.data?.error?.hint,
+      });
     },
   });
 
-  // Auto-fire the analysis the moment this page mounts — the user
-  // shouldn't have to click a button to see the structured breakdown.
-  // We guard with a ref so a re-render doesn't re-trigger.
   useEffect(() => {
     if (!analyzeMutation.isPending && !analyzeMutation.data && !analyzeMutation.isError) {
       analyzeMutation.mutate();
@@ -177,38 +154,30 @@ function StructuredAnalysisPanel({ result }) {
       title="Structured legal analysis"
       description="AI-generated breakdown grounded in the passage below."
       action={
-        <Button
-          size="sm"
-          variant="gold"
+        <button
           onClick={() => analyzeMutation.mutate()}
           disabled={analyzeMutation.isPending}
+          className="text-xs text-brick hover:underline underline-offset-2 disabled:text-ink-muted disabled:no-underline flex items-center gap-1"
         >
           {analyzeMutation.isPending ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Analysing...
-            </>
+            "Analysing…"
           ) : a ? (
             <>
-              <Sparkles className="h-3.5 w-3.5" />
-              Regenerate
+              <Sparkles className="h-3 w-3" /> Regenerate
             </>
           ) : (
             <>
-              <Sparkles className="h-3.5 w-3.5" />
-              Generate analysis
+              <Sparkles className="h-3 w-3" /> Generate analysis
             </>
           )}
-        </Button>
+        </button>
       }
     >
       {analyzeMutation.isPending && (
-        <div className="flex flex-col items-center gap-3 py-8 text-sm text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        <div className="flex flex-col items-center gap-3 py-8 text-sm text-ink-muted">
+          <Loader2 className="h-5 w-5 animate-spin" />
           <div className="text-center">
-            <p className="font-medium text-foreground">
-              Analysing this passage…
-            </p>
+            <p className="font-medium text-ink-text">Analysing this passage…</p>
             <p className="text-xs mt-1">
               Llama-3.3 is structuring the Issue, Findings, Judgment,
               Legal Basis and Relevance. Usually 2–4 seconds.
@@ -218,29 +187,24 @@ function StructuredAnalysisPanel({ result }) {
       )}
 
       {!a && !analyzeMutation.isPending && analyzeMutation.isError && (
-        <p className="text-sm text-destructive">
-          Could not generate the analysis. Click <strong>Regenerate</strong> to
-          retry.
+        <p className="text-sm text-brick">
+          Could not generate the analysis. Click <strong>Regenerate</strong> to retry.
         </p>
       )}
 
       {a && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 sm:grid-cols-2"
-        >
+        <div className="grid gap-5 sm:grid-cols-2">
           <AnalysisField icon={Target} label="Issue" value={a.issue} />
           <AnalysisField icon={ListChecks} label="Findings" value={a.findings} />
           <AnalysisField icon={Gavel} label="Judgment" value={a.judgment} />
-          <AnalysisField icon={Scale} label="Legal Basis" value={a.legal_basis} />
+          <AnalysisField icon={Scale} label="Legal basis" value={a.legal_basis} />
           <AnalysisField
             icon={Lightbulb}
             label="Relevance"
             value={a.relevance}
             className="sm:col-span-2"
           />
-        </motion.div>
+        </div>
       )}
     </PanelCard>
   );
@@ -248,20 +212,12 @@ function StructuredAnalysisPanel({ result }) {
 
 function AnalysisField({ icon: Icon, label, value, className = "" }) {
   return (
-    <div
-      className={`rounded-lg border border-border/40 bg-background/30 p-4 ${className}`}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="h-7 w-7 rounded-md bg-accent/15 flex items-center justify-center">
-          <Icon className="h-3.5 w-3.5 text-accent" />
-        </div>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
+    <div className={`pb-4 border-b border-hairline-subtle ${className}`}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <Icon className="h-3.5 w-3.5 text-ink-muted" />
+        <span className="text-xs text-ink-muted">{label}</span>
       </div>
-      <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-        {value || "—"}
-      </p>
+      <p className="text-sm leading-relaxed text-ink-text whitespace-pre-wrap">{value || "—"}</p>
     </div>
   );
 }
@@ -288,14 +244,13 @@ function SaveToCase({ result }) {
       });
     },
     onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Could not save to case.",
-        { description: e?.response?.data?.error?.hint }
-      );
+      toast.error(e?.response?.data?.error?.message || "Could not save to case.", {
+        description: e?.response?.data?.error?.hint,
+      });
     },
   });
 
-  const activeCases = (cases || []).filter((c) => c.status !== "CLOSED");
+  const activeCases = (cases || []).filter((c) => c.status !== "closed");
 
   return (
     <PanelCard
@@ -303,7 +258,7 @@ function SaveToCase({ result }) {
       description="Attach this authority to one of your open cases — appears on the case timeline."
     >
       {activeCases.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-ink-muted">
           You don't have any open cases. Create one first.
         </p>
       ) : (
@@ -311,7 +266,7 @@ function SaveToCase({ result }) {
           <select
             value={selectedCaseId}
             onChange={(e) => setSelectedCaseId(e.target.value)}
-            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className={cnInput(false)}
           >
             <option value="">Select a case...</option>
             {activeCases.map((c) => (
@@ -320,11 +275,10 @@ function SaveToCase({ result }) {
               </option>
             ))}
           </select>
-          <Button
-            variant="gold"
-            className="w-full mt-2"
+          <AppButton
             disabled={!selectedCaseId || saveMutation.isPending}
             onClick={() => saveMutation.mutate(selectedCaseId)}
+            className="w-full mt-3"
           >
             {saveMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -334,7 +288,7 @@ function SaveToCase({ result }) {
                 Save to case
               </>
             )}
-          </Button>
+          </AppButton>
         </>
       )}
     </PanelCard>

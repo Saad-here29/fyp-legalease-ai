@@ -23,11 +23,11 @@ export const authApi = {
 
 export function dashboardRouteFor(role) {
   switch (role) {
-    case "LAWYER":
+    case "lawyer":
       return "/lawyer/dashboard";
-    case "CLIENT":
+    case "client":
       return "/client/dashboard";
-    case "STUDENT":
+    case "student":
       return "/student/dashboard";
     default:
       return "/";

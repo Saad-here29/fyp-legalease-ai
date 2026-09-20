@@ -2,11 +2,12 @@ import { Bell, Search } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ROLES } from "@/constants";
 
 const ROLE_BADGE_VARIANT = {
-  LAWYER: "default",
-  CLIENT: "secondary",
-  STUDENT: "outline",
+  [ROLES.LAWYER]: "default",
+  [ROLES.CLIENT]: "secondary",
+  [ROLES.STUDENT]: "outline",
 };
 
 export default function DashboardHeader({ title, subtitle }) {

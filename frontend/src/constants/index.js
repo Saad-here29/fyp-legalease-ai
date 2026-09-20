@@ -8,25 +8,28 @@ export const API_TIMEOUT_MS = Number(
   import.meta.env.VITE_API_TIMEOUT_MS || 30_000
 );
 
+// Values are lowercase to match the backend's actual enum values
+// (backend/app/models/enums.py). Keys stay uppercase since those are just
+// the JS identifiers callers use (ROLES.LAWYER, CASE_STATUS.CREATED, ...).
 export const ROLES = Object.freeze({
-  LAWYER: "LAWYER",
-  CLIENT: "CLIENT",
-  STUDENT: "STUDENT",
+  LAWYER: "lawyer",
+  CLIENT: "client",
+  STUDENT: "student",
 });
 
 export const CASE_STATUS = Object.freeze({
-  CREATED: "CREATED",
-  ASSIGNED: "ASSIGNED",
-  IN_PROGRESS: "IN_PROGRESS",
-  HEARING_SCHEDULED: "HEARING_SCHEDULED",
-  CLOSED: "CLOSED",
+  CREATED: "created",
+  ASSIGNED: "assigned",
+  IN_PROGRESS: "in_progress",
+  HEARING_SCHEDULED: "hearing_scheduled",
+  CLOSED: "closed",
 });
 
 export const CASE_TYPES = Object.freeze({
-  DIVORCE: "DIVORCE",
-  CUSTODY: "CUSTODY",
-  INHERITANCE: "INHERITANCE",
-  MAINTENANCE: "MAINTENANCE",
+  DIVORCE: "divorce",
+  CUSTODY: "custody",
+  INHERITANCE: "inheritance",
+  MAINTENANCE: "maintenance",
 });
 
 export const STORAGE_KEYS = Object.freeze({

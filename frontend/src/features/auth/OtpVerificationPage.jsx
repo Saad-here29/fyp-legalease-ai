@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ShieldCheck, RotateCcw } from "lucide-react";
-import AuthLayout from "@/layouts/AuthLayout";
-import { Button } from "@/components/ui/button";
-import Spinner from "@/components/common/Spinner";
+import { Loader2, RotateCcw } from "lucide-react";
+import AuthShell from "@/layouts/AuthShell";
+import AppButton from "@/components/ui/AppButton";
 import { authApi, extractAuthError } from "./api";
 import { ROUTES } from "@/constants";
 
@@ -27,7 +26,6 @@ export default function OtpVerificationPage() {
   const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(""));
   const inputsRef = useRef([]);
 
-  // Countdowns — both tick once per second
   const [secondsLeft, setSecondsLeft] = useState(OTP_TTL_SECONDS);
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS);
 
@@ -105,38 +103,19 @@ export default function OtpVerificationPage() {
   });
 
   return (
-    <AuthLayout
-      title="Verify your email"
-      subtitle={
-        email
-          ? `We sent a 6-digit code to ${email}.`
-          : "Enter the 6-digit code we sent."
-      }
-      footer={
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Didn't receive a code? Double-check the email is spelled correctly,
-            check your spam folder, or use Resend.
-          </p>
-          <p className="text-sm">
-            Wrong email?{" "}
-            <Link
-              to={ROUTES.SIGNUP}
-              className="text-legal-gold hover:underline font-medium"
-            >
-              Start over
-            </Link>
-            {" · "}
-            <Link
-              to={ROUTES.LOGIN}
-              className="text-legal-gold hover:underline font-medium"
-            >
-              Back to sign in
-            </Link>
-          </p>
-        </div>
+    <AuthShell
+      heroTitle="Verify your email."
+      heroSubtitle={
+        email ? `We sent a 6-digit code to ${email}.` : "Enter the 6-digit code we sent."
       }
     >
+      <h2 className="font-editorial text-2xl text-ink-text mb-1">Enter code</h2>
+      <p className="text-sm text-ink-muted mb-6">
+        Check your inbox for the verification code.
+      </p>
+
+      <div className="border-b border-hairline-subtle mb-8" />
+
       <div className="space-y-6">
         <div className="flex justify-between gap-2" onPaste={handlePaste}>
           {digits.map((d, i) => (
@@ -150,48 +129,55 @@ export default function OtpVerificationPage() {
               inputMode="numeric"
               autoComplete="one-time-code"
               disabled={expired}
-              className="h-14 w-12 text-center text-xl font-bold rounded-lg border border-input bg-background/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-legal-gold/50 focus-visible:border-legal-gold transition-colors disabled:opacity-50"
+              className="h-12 w-10 text-center text-lg text-ink-text bg-transparent border-0 border-b border-hairline focus:border-ink-text focus:bg-ink-text/[0.03] outline-none transition-colors disabled:opacity-40"
             />
           ))}
         </div>
 
         <div className="flex items-center justify-between text-xs">
-          <span className={expired ? "text-destructive font-medium" : "text-muted-foreground"}>
+          <span className={expired ? "text-brick" : "text-ink-muted"}>
             {expired ? "Code expired" : `Expires in ${formatMMSS(secondsLeft)}`}
           </span>
           <button
             type="button"
             onClick={() => resendMutation.mutate()}
             disabled={resendMutation.isPending || resendCooldown > 0}
-            className="inline-flex items-center gap-1 text-legal-gold hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 font-medium text-brick hover:underline underline-offset-2 disabled:text-ink-muted disabled:font-normal disabled:no-underline disabled:cursor-not-allowed"
           >
             <RotateCcw className="h-3 w-3" />
             {resendMutation.isPending
-              ? "Sending..."
+              ? "Sending…"
               : resendCooldown > 0
               ? `Resend in ${resendCooldown}s`
               : "Resend code"}
           </button>
         </div>
 
-        <Button
+        <AppButton
           type="button"
-          variant="gold"
-          size="lg"
-          className="w-full"
           disabled={otp.length !== OTP_LENGTH || verifyMutation.isPending || expired}
           onClick={() => verifyMutation.mutate()}
+          className="w-full"
         >
-          {verifyMutation.isPending ? (
-            <Spinner size={18} />
-          ) : (
-            <>
-              <ShieldCheck className="h-4 w-4" />
-              Verify email
-            </>
-          )}
-        </Button>
+          {verifyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify email"}
+        </AppButton>
       </div>
-    </AuthLayout>
+
+      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center space-y-4">
+        <p className="text-xs text-ink-muted leading-relaxed">
+          Didn't receive a code? Check your spam folder, or use Resend above.
+        </p>
+        <p className="text-sm text-ink-muted">
+          Wrong email?{" "}
+          <Link to={ROUTES.SIGNUP} className="font-medium text-brick hover:underline underline-offset-2">
+            Start over
+          </Link>{" "}
+          ·{" "}
+          <Link to={ROUTES.LOGIN} className="font-medium text-brick hover:underline underline-offset-2">
+            Back to sign in
+          </Link>
+        </p>
+      </div>
+    </AuthShell>
   );
 }

@@ -4,14 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MailCheck } from "lucide-react";
-import AuthLayout from "@/layouts/AuthLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Spinner from "@/components/common/Spinner";
+import { Loader2 } from "lucide-react";
+import AuthShell from "@/layouts/AuthShell";
+import AppButton from "@/components/ui/AppButton";
 import { authApi, extractAuthError } from "./api";
 import { ROUTES } from "@/constants";
+import { cnInput } from "@/lib/formStyles";
 
 const schema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -43,50 +41,48 @@ export default function ForgotPasswordPage() {
   });
 
   return (
-    <AuthLayout
-      title="Reset your password"
-      subtitle="Enter your email and we'll send you a verification code."
-      footer={
-        <>
-          Remembered it?{" "}
-          <Link to={ROUTES.LOGIN} className="text-legal-gold hover:underline font-medium">
-            Sign in
-          </Link>
-        </>
-      }
+    <AuthShell
+      heroTitle="Reset your password."
+      heroSubtitle="Enter your email and we'll send you a verification code."
     >
-      <form onSubmit={handleSubmit(mutation.mutate)} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
+      <h2 className="font-editorial text-2xl text-ink-text mb-1">Forgot password</h2>
+      <p className="text-sm text-ink-muted mb-6">
+        We'll email you a 6-digit code to reset it.
+      </p>
+
+      <div className="border-b border-hairline-subtle mb-8" />
+
+      <form onSubmit={handleSubmit(mutation.mutate)} className="space-y-6">
+        <div>
+          <label htmlFor="email" className="block text-sm text-ink-muted mb-1.5">
+            Email
+          </label>
+          <input
             id="email"
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
+            className={cnInput(errors.email)}
             {...register("email")}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p className="mt-1.5 text-xs text-brick">{errors.email.message}</p>
           )}
         </div>
 
-        <Button
-          type="submit"
-          variant="gold"
-          size="lg"
-          className="w-full"
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? (
-            <Spinner size={18} />
-          ) : (
-            <>
-              <MailCheck className="h-4 w-4" />
-              Send reset code
-            </>
-          )}
-        </Button>
+        <AppButton type="submit" disabled={mutation.isPending} className="w-full">
+          {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset code"}
+        </AppButton>
       </form>
-    </AuthLayout>
+
+      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
+        <p className="text-sm text-ink-muted">
+          Remembered it?{" "}
+          <Link to={ROUTES.LOGIN} className="text-brick hover:underline underline-offset-2">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </AuthShell>
   );
 }

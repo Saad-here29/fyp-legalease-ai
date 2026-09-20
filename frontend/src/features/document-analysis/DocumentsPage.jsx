@@ -1,23 +1,15 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Upload,
-  FileText,
-  Loader2,
-  ScanLine,
-  AlertCircle,
-  Bookmark,
-  CheckCircle2,
-} from "lucide-react";
-import DashboardLayout from "@/layouts/DashboardLayout";
+import { Upload, FileText, Loader2, ScanLine, AlertCircle, Bookmark, CheckCircle2 } from "lucide-react";
+import AppShell from "@/components/layout/AppShell";
+import AppButton from "@/components/ui/AppButton";
 import PanelCard from "@/features/dashboard/components/PanelCard";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES } from "@/constants";
 import { documentsApi } from "./api";
 import { casesApi } from "@/features/case-management/api";
+import { cnInput } from "@/lib/formStyles";
 
 export default function DocumentsPage() {
   const { user } = useAuthStore();
@@ -35,10 +27,9 @@ export default function DocumentsPage() {
       });
     },
     onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Upload failed.",
-        { description: e?.response?.data?.error?.hint }
-      );
+      toast.error(e?.response?.data?.error?.message || "Upload failed.", {
+        description: e?.response?.data?.error?.hint,
+      });
     },
   });
 
@@ -50,7 +41,7 @@ export default function DocumentsPage() {
   };
 
   return (
-    <DashboardLayout
+    <AppShell
       title="Documents & OCR"
       subtitle={
         isLawyer
@@ -58,14 +49,11 @@ export default function DocumentsPage() {
           : "Upload your case-related documents — your counsel will see them"
       }
     >
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PanelCard
-          title="Upload"
-          description="Supports PDF, DOCX, TXT, PNG, JPG. Up to 20 MB."
-        >
+      <div className="grid gap-10 lg:grid-cols-2">
+        <PanelCard title="Upload" description="Supports PDF, DOCX, TXT, PNG, JPG. Up to 20 MB.">
           <label
             htmlFor="doc-upload"
-            className="block cursor-pointer rounded-xl border-2 border-dashed border-border/60 bg-background/30 p-10 text-center hover:border-accent/50 hover:bg-accent/5 transition-colors"
+            className="block cursor-pointer border border-hairline hover:border-ink-text hover:bg-ink-text/[0.02] p-10 text-center transition-colors"
           >
             <input
               id="doc-upload"
@@ -77,30 +65,22 @@ export default function DocumentsPage() {
             />
             {uploadMutation.isPending ? (
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                <p className="text-sm text-muted-foreground">
-                  Uploading and running OCR...
-                </p>
+                <Loader2 className="h-6 w-6 animate-spin text-ink-muted" />
+                <p className="text-sm text-ink-muted">Uploading and running OCR…</p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-14 w-14 rounded-2xl bg-gold-gradient flex items-center justify-center">
-                  <Upload className="h-6 w-6 text-legal-navy" />
-                </div>
-                <div>
-                  <p className="font-semibold">Click to upload</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    or drag and drop your legal document
-                  </p>
-                </div>
+              <div className="flex flex-col items-center gap-2">
+                <Upload className="h-6 w-6 text-ink-muted" />
+                <p className="text-sm text-ink-text">Click to upload</p>
+                <p className="text-xs text-ink-muted">or drag and drop your legal document</p>
               </div>
             )}
           </label>
 
           {uploadMutation.isError && (
-            <div className="mt-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
-              <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-              <p className="text-destructive">
+            <div className="mt-4 flex items-start gap-2 text-sm">
+              <AlertCircle className="h-4 w-4 text-brick shrink-0 mt-0.5" />
+              <p className="text-brick">
                 {uploadMutation.error?.response?.data?.error?.message ||
                   "Upload failed. Check file size and type."}
               </p>
@@ -109,31 +89,24 @@ export default function DocumentsPage() {
         </PanelCard>
 
         {doc && (
-          <PanelCard
-            title="Extracted document"
-            description={doc.filename}
-            action={
-              <Badge variant="gold" className="text-[10px] uppercase tracking-wider">
-                {doc.file_type}
-              </Badge>
-            }
-          >
-            <div className="grid grid-cols-3 gap-3 mb-4">
+          <PanelCard title="Extracted document" description={doc.filename}>
+            <div className="grid grid-cols-3 mb-4">
               <Stat label="Type" value={doc.document_type} />
               <Stat label="Size" value={formatBytes(doc.size_bytes)} />
               <Stat
                 label="Text"
                 value={`${(doc.extracted_text?.length || 0).toLocaleString()} chars`}
+                last
               />
             </div>
 
-            <div className="rounded-lg border border-border/40 bg-background/30 p-4 max-h-96 overflow-y-auto scrollbar-thin">
+            <div className="border border-hairline-subtle p-4 max-h-96 overflow-y-auto">
               {doc.extracted_text ? (
-                <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+                <pre className="text-xs whitespace-pre-wrap text-ink-muted">
                   {doc.extracted_text}
                 </pre>
               ) : (
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <div className="flex items-start gap-2 text-sm text-ink-muted">
                   <ScanLine className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
                     <p>No text extracted from this file.</p>
@@ -149,18 +122,15 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      {/* Lawyer-only: attach the just-uploaded document to one of their cases */}
       {doc && isLawyer && <SaveToCasePanel doc={doc} onAttached={setDoc} />}
 
       {!doc && (
-        <PanelCard className="mt-6">
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            <FileText className="h-8 w-8 mx-auto mb-3 text-muted-foreground/40" />
-            Upload a document to extract its text via OCR
-          </div>
-        </PanelCard>
+        <div className="mt-10 text-center py-8 text-sm text-ink-muted">
+          <FileText className="h-7 w-7 mx-auto mb-3 text-ink-muted/50" />
+          Upload a document to extract its text via OCR
+        </div>
       )}
-    </DashboardLayout>
+    </AppShell>
   );
 }
 
@@ -181,80 +151,76 @@ function SaveToCasePanel({ doc, onAttached }) {
       });
     },
     onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Could not attach to case.",
-        { description: e?.response?.data?.error?.hint }
-      );
+      toast.error(e?.response?.data?.error?.message || "Could not attach to case.", {
+        description: e?.response?.data?.error?.hint,
+      });
     },
   });
 
-  const openCases = (cases || []).filter((c) => c.status !== "CLOSED");
+  const openCases = (cases || []).filter((c) => c.status !== "closed");
   const alreadyAttached = !!doc.case_id;
 
   return (
-    <PanelCard
-      className="mt-6"
-      title="Save to a case"
-      description={
-        alreadyAttached
-          ? "This document is already attached to a case."
-          : "Attach this OCR extraction to one of your open cases — it appears on the case timeline."
-      }
-    >
-      {alreadyAttached ? (
-        <div className="flex items-center gap-2 text-sm">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          <span className="text-foreground">Linked to case</span>
-          <span className="text-xs font-mono text-muted-foreground">
-            {doc.case_id?.slice(0, 8)}
-          </span>
-        </div>
-      ) : openCases.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          You don't have any open cases. Create one first from the Cases tab,
-          then come back to attach this document.
-        </p>
-      ) : (
-        <div className="flex flex-col sm:flex-row gap-2 max-w-2xl">
-          <select
-            value={selectedCaseId}
-            onChange={(e) => setSelectedCaseId(e.target.value)}
-            className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Select a case...</option>
-            {openCases.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title} · {c.status.replace("_", " ")}
-              </option>
-            ))}
-          </select>
-          <Button
-            variant="gold"
-            disabled={!selectedCaseId || attachMutation.isPending}
-            onClick={() => attachMutation.mutate(selectedCaseId)}
-          >
-            {attachMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Bookmark className="h-4 w-4" />
-                Save to case
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-    </PanelCard>
+    <div className="mt-10">
+      <PanelCard
+        title="Save to a case"
+        description={
+          alreadyAttached
+            ? "This document is already attached to a case."
+            : "Attach this OCR extraction to one of your open cases — it appears on the case timeline."
+        }
+      >
+        {alreadyAttached ? (
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-status-active" />
+            <span className="text-ink-text">Linked to case</span>
+            <span className="text-xs text-ink-muted">{doc.case_id?.slice(0, 8)}</span>
+          </div>
+        ) : openCases.length === 0 ? (
+          <p className="text-sm text-ink-muted">
+            You don't have any open cases. Create one first from the Cases tab,
+            then come back to attach this document.
+          </p>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 max-w-2xl">
+            <select
+              value={selectedCaseId}
+              onChange={(e) => setSelectedCaseId(e.target.value)}
+              className={cnInput(false, "flex-1")}
+            >
+              <option value="">Select a case...</option>
+              {openCases.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title} · {c.status.replace("_", " ")}
+                </option>
+              ))}
+            </select>
+            <AppButton
+              disabled={!selectedCaseId || attachMutation.isPending}
+              onClick={() => attachMutation.mutate(selectedCaseId)}
+              className="shrink-0"
+            >
+              {attachMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Bookmark className="h-4 w-4" />
+                  Save to case
+                </>
+              )}
+            </AppButton>
+          </div>
+        )}
+      </PanelCard>
+    </div>
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, last = false }) {
   return (
-    <div className="rounded-lg border border-border/40 bg-background/30 p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </div>
-      <div className="text-sm font-semibold mt-1 truncate">{value}</div>
+    <div className={`px-4 first:pl-0 py-1 ${last ? "" : "border-r border-hairline"}`}>
+      <div className="text-xs text-ink-muted">{label}</div>
+      <div className="text-sm font-medium text-ink-text mt-1 truncate">{value}</div>
     </div>
   );
 }

@@ -1,21 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import {
-  Search,
-  Loader2,
-  BookOpen,
-  ArrowRight,
-  AlertCircle,
-} from "lucide-react";
-import DashboardLayout from "@/layouts/DashboardLayout";
-import PanelCard from "@/features/dashboard/components/PanelCard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Search, Loader2, BookOpen, ArrowRight, AlertCircle } from "lucide-react";
+import AppShell from "@/components/layout/AppShell";
+import AppButton from "@/components/ui/AppButton";
 import { ROUTES } from "@/constants";
 import { researchApi } from "./api";
+import { cnInput } from "@/lib/formStyles";
 
 const TYPE_FILTERS = [
   { key: "all", label: "All" },
@@ -49,233 +40,160 @@ export default function ResearchPage() {
   };
 
   return (
-    <DashboardLayout
-      title="AI Legal Research"
+    <AppShell
+      title="AI legal research"
       subtitle="Semantic search over Pakistani statutes, Cr.P.C., PPC, and Supreme Court judgments"
     >
-      <PanelCard className="mb-6">
-        <form onSubmit={submit} className="space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1 flex items-center gap-2 rounded-lg border border-input bg-background px-3">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g. khula procedure, FIR registration, child custody, Section 302 PPC..."
-                className="flex-1 bg-transparent outline-none py-2 text-sm"
-              />
-            </div>
-            <Button
-              type="submit"
-              variant="gold"
-              size="lg"
-              disabled={isPending || !query.trim()}
+      <form onSubmit={submit} className="pb-8 mb-8 border-b border-hairline space-y-5">
+        <div className="flex items-end gap-3">
+          <div className="flex-1 flex items-center gap-2 border-b border-hairline focus-within:border-ink-text focus-within:bg-ink-text/[0.03] px-1 -mx-1 pb-1.5 transition-colors">
+            <Search className="h-4 w-4 text-ink-muted" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g. khula procedure, FIR registration, child custody, Section 302 PPC..."
+              className="flex-1 bg-transparent outline-none text-sm text-ink-text placeholder:text-ink-muted/60"
+            />
+          </div>
+          <AppButton type="submit" disabled={isPending || !query.trim()} className="shrink-0">
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+          </AppButton>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="text-sm text-ink-muted">Type:</span>
+          {TYPE_FILTERS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTypeFilter(t.key)}
+              className={`text-sm transition-colors ${
+                typeFilter === t.key ? "text-ink-text font-medium" : "text-ink-muted hover:text-ink-text"
+              }`}
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
-            </Button>
-          </div>
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
-              Type:
-            </span>
-            {TYPE_FILTERS.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setTypeFilter(t.key)}
-                className={`text-xs font-medium px-3 py-1 rounded-full border transition-colors ${
-                  typeFilter === t.key
-                    ? "bg-legal-gold/15 border-legal-gold/60 text-legal-gold"
-                    : "bg-secondary/30 border-border/50 text-muted-foreground hover:border-border"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-xs text-ink-muted mb-1.5">Court (judgments only)</label>
+            <input
+              value={court}
+              onChange={(e) => setCourt(e.target.value)}
+              placeholder="e.g. Supreme Court"
+              className={cnInput(false)}
+            />
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Court (judgments only)
-              </label>
-              <Input
-                value={court}
-                onChange={(e) => setCourt(e.target.value)}
-                placeholder="e.g. Supreme Court"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Year from
-              </label>
-              <Input
-                type="number"
-                value={yearFrom}
-                onChange={(e) => setYearFrom(e.target.value)}
-                placeholder="1947"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Year to
-              </label>
-              <Input
-                type="number"
-                value={yearTo}
-                onChange={(e) => setYearTo(e.target.value)}
-                placeholder="2026"
-                className="mt-1"
-              />
-            </div>
+          <div>
+            <label className="block text-xs text-ink-muted mb-1.5">Year from</label>
+            <input
+              type="number"
+              value={yearFrom}
+              onChange={(e) => setYearFrom(e.target.value)}
+              placeholder="1947"
+              className={cnInput(false)}
+            />
           </div>
-        </form>
-      </PanelCard>
+          <div>
+            <label className="block text-xs text-ink-muted mb-1.5">Year to</label>
+            <input
+              type="number"
+              value={yearTo}
+              onChange={(e) => setYearTo(e.target.value)}
+              placeholder="2026"
+              className={cnInput(false)}
+            />
+          </div>
+        </div>
+      </form>
 
       {isPending && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Searching 88,036 chunks of Pakistani law...
-            </span>
-            <span>FAISS · cosine similarity</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-ink-muted mb-4">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Searching 88,036 chunks of Pakistani law…
           </div>
           {[0, 1, 2].map((i) => (
-            <SkeletonResult key={i} delay={i * 80} />
+            <div key={i} className="py-4 border-b border-hairline-subtle animate-pulse">
+              <div className="h-3 w-24 bg-hairline-subtle mb-2" />
+              <div className="h-4 w-3/4 bg-hairline-subtle" />
+            </div>
           ))}
         </div>
       )}
 
       {isError && (
-        <PanelCard>
-          <div className="flex items-start gap-3 py-2">
-            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-semibold">Search failed.</p>
-              <p className="text-muted-foreground mt-1">
-                {error?.response?.data?.error?.message ||
-                  "Could not reach the research service. Is the backend running?"}
-              </p>
-            </div>
+        <div className="flex items-start gap-3 py-2">
+          <AlertCircle className="h-5 w-5 text-brick shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-ink-text">Search failed.</p>
+            <p className="text-ink-muted mt-1">
+              {error?.response?.data?.error?.message ||
+                "Could not reach the research service. Is the backend running?"}
+            </p>
           </div>
-        </PanelCard>
+        </div>
       )}
 
       {data && data.results.length === 0 && !isPending && (
-        <PanelCard>
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No matching authorities found. Try different keywords or remove the
-            court / year filters.
-          </p>
-        </PanelCard>
+        <p className="text-sm text-ink-muted text-center py-8">
+          No matching authorities found. Try different keywords or remove the
+          court / year filters.
+        </p>
       )}
 
       {data && data.results.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+        <div>
+          <p className="text-sm text-ink-muted mb-2">
             {data.total} result{data.total === 1 ? "" : "s"} for{" "}
-            <span className="text-foreground font-medium">"{data.query}"</span>
+            <span className="text-ink-text font-medium">"{data.query}"</span>
           </p>
-          {data.results.map((r, i) => (
-            <ResultCard key={r.id} result={r} index={i} />
-          ))}
+          <ul>
+            {data.results.map((r) => (
+              <ResultRow key={r.id} result={r} />
+            ))}
+          </ul>
         </div>
       )}
-    </DashboardLayout>
+    </AppShell>
   );
 }
 
-function ResultCard({ result, index }) {
+function ResultRow({ result }) {
   const score = Math.round((result.relevance || 0) * 100);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      className="rounded-xl border border-border/40 bg-card/50 p-5 backdrop-blur-sm hover:border-accent/40 transition-colors"
-    >
+    <li className="py-5 border-b border-hairline-subtle last:border-0">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="h-3.5 w-3.5 text-accent" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">
-              {result.case_type === "judgment" ? "Judgment" : "Statute"}
-            </span>
-            {result.year && (
-              <span className="text-[11px] text-muted-foreground">
-                · {result.year}
-              </span>
-            )}
-            {result.court && (
-              <span className="text-[11px] text-muted-foreground">
-                · {result.court}
-              </span>
-            )}
+          <div className="flex items-center gap-2 mb-1 text-xs text-ink-muted">
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>{result.case_type === "judgment" ? "Judgment" : "Statute"}</span>
+            {result.year && <span>· {result.year}</span>}
+            {result.court && <span>· {result.court}</span>}
           </div>
-          <h3 className="font-serif text-lg font-semibold leading-tight">
-            {result.title}
-          </h3>
+          <h3 className="font-editorial text-lg text-ink-text leading-tight">{result.title}</h3>
           {result.citation && (
-            <p className="text-xs font-mono text-muted-foreground mt-0.5">
-              {result.citation}
-            </p>
+            <p className="text-xs text-ink-muted mt-0.5">{result.citation}</p>
           )}
         </div>
-        <Badge variant="gold" className="shrink-0">
-          {score}% match
-        </Badge>
+        <span className="text-xs text-ink-muted shrink-0">{score}% match</span>
       </div>
 
-      <p className="mt-3 text-sm text-muted-foreground leading-relaxed line-clamp-3">
+      <p className="mt-2 text-sm text-ink-muted leading-relaxed line-clamp-3">
         {result.excerpt}
       </p>
 
-      <div className="mt-4 flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="text-accent hover:text-accent hover:bg-accent/10"
+      <div className="mt-2">
+        <Link
+          to={ROUTES.RESEARCH_DETAIL.replace(":id", encodeURIComponent(result.id))}
+          state={{ result }}
+          className="inline-flex items-center gap-1 text-sm text-brick hover:underline underline-offset-2"
         >
-          <Link
-            to={ROUTES.RESEARCH_DETAIL.replace(
-              ":id",
-              encodeURIComponent(result.id)
-            )}
-            state={{ result }}
-          >
-            Read more <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Link>
-        </Button>
+          Read more <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
-    </motion.div>
-  );
-}
-
-function SkeletonResult({ delay = 0 }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: delay / 1000 }}
-      className="rounded-xl border border-border/40 bg-card/50 p-5 backdrop-blur-sm animate-pulse"
-    >
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="space-y-2 flex-1">
-          <div className="h-3 w-24 rounded-full bg-muted/50" />
-          <div className="h-5 w-3/4 rounded-md bg-muted/40" />
-        </div>
-        <div className="h-6 w-20 rounded-full bg-muted/30" />
-      </div>
-      <div className="space-y-2">
-        <div className="h-3 w-full rounded-md bg-muted/30" />
-        <div className="h-3 w-11/12 rounded-md bg-muted/30" />
-        <div className="h-3 w-3/5 rounded-md bg-muted/30" />
-      </div>
-    </motion.div>
+    </li>
   );
 }

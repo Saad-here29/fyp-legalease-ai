@@ -1,47 +1,18 @@
-import { motion } from "framer-motion";
-import { fadeInUp } from "@/animations/variants";
-import { cn } from "@/lib/utils";
-
-/**
- * Glass panel used for tables, lists, and grouped content on dashboards.
- */
-export default function PanelCard({
-  title,
-  description,
-  action,
-  children,
-  className,
-  delay = 0,
-}) {
+// Flat panel: serif title, muted description, hairline divider, content.
+// Replaces the old rounded/shadowed/backdrop-blur PanelCard — same import
+// path is kept so every page that already imports PanelCard picks up the
+// new look with no import changes needed.
+export default function PanelCard({ title, description, action, children, className = "" }) {
   return (
-    <motion.section
-      variants={fadeInUp}
-      initial="hidden"
-      animate="visible"
-      transition={{ delay }}
-      className={cn(
-        "rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm",
-        className
-      )}
-    >
+    <section className={className}>
       {(title || action) && (
-        <header className="flex items-start justify-between gap-4 px-5 pt-5">
-          <div className="min-w-0">
-            {title && (
-              <h2 className="font-serif text-lg font-semibold tracking-tight">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {description}
-              </p>
-            )}
-          </div>
-          {action && <div className="shrink-0">{action}</div>}
-        </header>
+        <div className="flex items-start justify-between gap-4 mb-1">
+          {title && <h2 className="font-editorial text-xl text-ink-text">{title}</h2>}
+          {action}
+        </div>
       )}
-      <div className="p-5">{children}</div>
-    </motion.section>
+      {description && <p className="text-sm text-ink-muted mb-2">{description}</p>}
+      <div className="border-t border-hairline pt-1 mt-3">{children}</div>
+    </section>
   );
 }

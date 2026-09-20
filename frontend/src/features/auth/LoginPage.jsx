@@ -5,15 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, LogIn } from "lucide-react";
-import AuthLayout from "@/layouts/AuthLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Spinner from "@/components/common/Spinner";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import AuthShell from "@/layouts/AuthShell";
+import AppButton from "@/components/ui/AppButton";
 import { authApi, dashboardRouteFor, extractAuthError } from "./api";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTES } from "@/constants";
+import { cnInput } from "@/lib/formStyles";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -66,86 +64,90 @@ export default function LoginPage() {
   const onSubmit = (values) => loginMutation.mutate(values);
 
   return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to continue to your dashboard."
-      footer={
-        <>
-          Don't have an account?{" "}
-          <Link to={ROUTES.WELCOME} className="text-legal-gold hover:underline font-medium">
-            Get started
-          </Link>
-        </>
-      }
+    <AuthShell
+      heroTitle="Welcome back."
+      heroSubtitle="Sign in to continue to your cases, research, and the AI legal assistant."
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
+      <h2 className="font-editorial text-2xl text-ink-text mb-1">Sign in</h2>
+      <p className="text-sm text-ink-muted mb-6">
+        Enter your details to access your account.
+      </p>
+
+      <div className="border-b border-hairline-subtle mb-8" />
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div>
+          <label htmlFor="email" className="block text-sm text-ink-muted mb-1.5">
+            Email
+          </label>
+          <input
             id="email"
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
+            className={cnInput(errors.email)}
             {...register("email")}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p className="mt-1.5 text-xs text-brick">{errors.email.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+        <div>
+          <div className="flex items-baseline justify-between mb-1.5">
+            <label htmlFor="password" className="block text-sm text-ink-muted">
+              Password
+            </label>
             <Link
               to={ROUTES.FORGOT_PASSWORD}
-              className="text-xs text-legal-gold hover:underline"
+              className="text-xs text-brick hover:underline underline-offset-2"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Input
+            <input
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               autoComplete="current-password"
+              className={cnInput(errors.password, "pr-8")}
               {...register("password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-text"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
+            <p className="mt-1.5 text-xs text-brick">{errors.password.message}</p>
           )}
         </div>
 
-        <Button
+        <AppButton
           type="submit"
-          variant="gold"
-          size="lg"
-          className="w-full"
           disabled={loginMutation.isPending}
+          className="w-full mt-2"
         >
-          {loginMutation.isPending ? (
-            <Spinner size={18} />
-          ) : (
-            <>
-              <LogIn className="h-4 w-4" />
-              Sign in
-            </>
-          )}
-        </Button>
+          {loginMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+        </AppButton>
       </form>
-    </AuthLayout>
+
+      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
+        <p className="text-sm text-ink-muted">
+          Don't have an account?{" "}
+          <Link
+            to={ROUTES.WELCOME}
+            className="text-brick hover:underline underline-offset-2"
+          >
+            Get started
+          </Link>
+        </p>
+      </div>
+    </AuthShell>
   );
 }

@@ -7,26 +7,20 @@ import {
   MessageSquare,
   ArrowUpRight,
   Loader2,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
+  Search,
 } from "lucide-react";
-import DashboardLayout from "@/layouts/DashboardLayout";
-import DashboardStat from "./components/DashboardStat";
-import PanelCard from "./components/PanelCard";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import AppShell from "@/components/layout/AppShell";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTES } from "@/constants";
 import { casesApi } from "@/features/case-management/api";
 import { chatApi } from "@/features/chatbot/api";
 
-const STATUS_STYLE = {
-  CREATED: { variant: "outline", icon: AlertCircle },
-  ASSIGNED: { variant: "secondary", icon: Clock },
-  IN_PROGRESS: { variant: "default", icon: Clock },
-  HEARING_SCHEDULED: { variant: "gold", icon: Gavel },
-  CLOSED: { variant: "success", icon: CheckCircle2 },
+const STATUS_META = {
+  created: { dot: "bg-status-pending", label: "Created" },
+  assigned: { dot: "bg-status-pending", label: "Assigned" },
+  in_progress: { dot: "bg-status-active", label: "In progress" },
+  hearing_scheduled: { dot: "bg-status-active", label: "Hearing scheduled" },
+  closed: { dot: "bg-ink-muted", label: "Closed" },
 };
 
 export default function LawyerDashboard() {
@@ -49,66 +43,69 @@ export default function LawyerDashboard() {
   });
 
   const activeCases = (cases || [])
-    .filter((c) => c.status !== "CLOSED")
+    .filter((c) => c.status !== "closed")
     .slice(0, 5);
 
-  const inHearing = (cases || []).filter(
-    (c) => c.status === "HEARING_SCHEDULED"
+  const inHearing = (cases || []).filter((c) => c.status === "hearing_scheduled");
+
+  const headerActions = (
+    <div className="hidden md:flex items-center gap-2 w-64 border-b border-hairline pb-1.5">
+      <Search className="h-4 w-4 text-ink-muted" />
+      <input
+        placeholder="Search cases, documents, statutes..."
+        className="bg-transparent outline-none flex-1 text-sm text-ink-text placeholder:text-ink-muted/60"
+      />
+    </div>
   );
 
   return (
-    <DashboardLayout
+    <AppShell
       title={`Assalam-o-alaikum, ${firstName}`}
       subtitle="Live caseload from your account"
+      headerActions={headerActions}
     >
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <DashboardStat
-          label="Active Cases"
+      <div className="flex flex-wrap">
+        <Stat
+          label="Active cases"
           value={loadingStats ? "—" : stats?.active ?? 0}
           helper={`${stats?.total ?? 0} total`}
-          icon={Briefcase}
         />
-        <DashboardStat
-          label="In Hearing"
+        <Stat
+          label="In hearing"
           value={loadingStats ? "—" : stats?.in_hearing ?? 0}
           helper="scheduled"
-          icon={Gavel}
-          delay={0.05}
         />
-        <DashboardStat
+        <Stat
           label="Closed"
           value={loadingStats ? "—" : stats?.closed ?? 0}
           helper="all-time"
-          icon={CheckCircle2}
-          delay={0.1}
         />
-        <DashboardStat
-          label="AI Sessions"
+        <Stat
+          label="AI sessions"
           value={sessions?.length ?? 0}
           helper="conversations"
-          icon={MessageSquare}
-          delay={0.15}
+          last
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <PanelCard
+      <div className="mt-10 grid gap-10 lg:grid-cols-3">
+        <Panel
           className="lg:col-span-2"
-          title="Active Cases"
+          title="Active cases"
           description="Sorted by most recently updated"
           action={
-            <Button asChild size="sm" variant="outline">
-              <Link to={ROUTES.CASES}>
-                View all <ArrowUpRight className="ml-1 h-3 w-3" />
-              </Link>
-            </Button>
+            <Link
+              to={ROUTES.CASES}
+              className="inline-flex items-center gap-1 text-xs text-brick hover:underline underline-offset-2"
+            >
+              View all <ArrowUpRight className="h-3 w-3" />
+            </Link>
           }
-          delay={0.1}
         >
           {loadingCases ? (
-            <Skeleton />
+            <LoadingRow />
           ) : activeCases.length === 0 ? (
-            <Empty
+            <EmptyRow
               icon={Briefcase}
               title="No active cases yet"
               hint="Create your first case to get started."
@@ -116,26 +113,27 @@ export default function LawyerDashboard() {
               ctaTo={ROUTES.CASES}
             />
           ) : (
-            <ul className="divide-y divide-border/40">
+            <ul>
               {activeCases.map((c) => {
-                const meta = STATUS_STYLE[c.status] || {};
-                const Icon = meta.icon || Clock;
+                const meta = STATUS_META[c.status] || {};
                 return (
-                  <li key={c.id} className="py-3 flex items-start gap-4">
-                    <div className="h-9 w-9 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {c.id.slice(0, 8)}
+                  <li
+                    key={c.id}
+                    className="py-3.5 border-b border-hairline-subtle last:border-0 flex items-start gap-3"
+                  >
+                    <span
+                      className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${meta.dot || "bg-ink-muted"}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-medium text-ink-text truncate">
+                          {c.title}
                         </span>
-                        <Badge variant={meta.variant} className="text-[10px] uppercase tracking-wider">
-                          {c.status.replace("_", " ")}
-                        </Badge>
+                        <span className="text-xs text-ink-muted shrink-0">
+                          {meta.label || c.status}
+                        </span>
                       </div>
-                      <div className="mt-1 font-semibold truncate">{c.title}</div>
-                      <div className="mt-0.5 text-sm text-muted-foreground truncate">
+                      <div className="text-sm text-ink-muted truncate">
                         {c.case_type}
                         {c.court_code && ` · ${c.court_code}`}
                       </div>
@@ -145,28 +143,27 @@ export default function LawyerDashboard() {
               })}
             </ul>
           )}
-        </PanelCard>
+        </Panel>
 
-        <PanelCard
-          title="Hearings Scheduled"
-          description="Cases awaiting court date"
-          delay={0.15}
-        >
+        <Panel title="Hearings scheduled" description="Cases awaiting court date">
           {loadingCases ? (
-            <Skeleton />
+            <LoadingRow />
           ) : inHearing.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
+            <p className="text-sm text-ink-muted py-6 text-center">
               No hearings scheduled.
             </p>
           ) : (
-            <ul className="space-y-3">
+            <ul>
               {inHearing.map((c) => (
                 <li
                   key={c.id}
-                  className="rounded-lg border border-accent/30 bg-accent/5 p-3"
+                  className="py-3 border-b border-hairline-subtle last:border-0"
                 >
-                  <div className="font-semibold text-sm truncate">{c.title}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-ink-text">
+                    <Gavel className="h-3.5 w-3.5 text-ink-muted shrink-0" />
+                    <span className="truncate">{c.title}</span>
+                  </div>
+                  <div className="text-xs text-ink-muted mt-0.5 pl-5">
                     {c.case_type}
                     {c.court_code && ` · ${c.court_code}`}
                   </div>
@@ -174,58 +171,36 @@ export default function LawyerDashboard() {
               ))}
             </ul>
           )}
-        </PanelCard>
+        </Panel>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <PanelCard
-          className="lg:col-span-2"
-          title="Quick Actions"
-          delay={0.2}
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button asChild variant="default" className="h-auto py-4 flex-col gap-1.5">
-              <Link to={ROUTES.CHATBOT}>
-                <MessageSquare className="h-5 w-5" />
-                Ask AI Assistant
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-1.5">
-              <Link to={ROUTES.RESEARCH}>
-                <FileText className="h-5 w-5" />
-                Search Pakistani Law
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-1.5">
-              <Link to={ROUTES.DOCUMENTS}>
-                <FileText className="h-5 w-5" />
-                Upload Document
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-1.5">
-              <Link to={ROUTES.CASES}>
-                <Briefcase className="h-5 w-5" />
-                Open Caseload
-              </Link>
-            </Button>
-          </div>
-        </PanelCard>
+      <div className="mt-10 grid gap-10 lg:grid-cols-3">
+        <Panel className="lg:col-span-2" title="Quick actions">
+          <ul>
+            <QuickAction to={ROUTES.CHATBOT} icon={MessageSquare} label="Ask AI assistant" />
+            <QuickAction to={ROUTES.RESEARCH} icon={FileText} label="Search Pakistani law" />
+            <QuickAction to={ROUTES.DOCUMENTS} icon={FileText} label="Upload document" />
+            <QuickAction to={ROUTES.CASES} icon={Briefcase} label="Open caseload" last />
+          </ul>
+        </Panel>
 
-        <PanelCard title="Recent AI Sessions" delay={0.25}>
+        <Panel title="Recent AI sessions">
           {!sessions || sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-sm text-ink-muted text-center py-4">
               No AI conversations yet.
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul>
               {sessions.slice(0, 5).map((s) => (
-                <li key={s.id} className="text-sm">
+                <li key={s.id} className="border-b border-hairline-subtle last:border-0">
                   <Link
                     to={ROUTES.CHATBOT}
-                    className="block rounded-md p-2 hover:bg-secondary/40 transition-colors"
+                    className="block py-3 px-2 -mx-2 hover:bg-hairline-subtle/40 transition-colors"
                   >
-                    <div className="font-medium truncate">{s.title || "Untitled"}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-sm font-medium text-ink-text truncate">
+                      {s.title || "Untitled"}
+                    </div>
+                    <div className="text-xs text-ink-muted">
                       {s.total_messages} messages
                     </div>
                   </Link>
@@ -233,31 +208,74 @@ export default function LawyerDashboard() {
               ))}
             </ul>
           )}
-        </PanelCard>
+        </Panel>
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }
 
-function Skeleton() {
+function Stat({ label, value, helper, last = false }) {
   return (
-    <div className="flex items-center justify-center py-8 text-muted-foreground gap-2">
+    <div
+      className={`flex-1 min-w-[140px] px-6 first:pl-0 py-1 ${
+        last ? "" : "border-r border-hairline"
+      }`}
+    >
+      <div className="text-sm text-ink-muted">{label}</div>
+      <div className="mt-2 text-3xl font-semibold text-ink-text leading-none">{value}</div>
+      <div className="mt-2 text-xs text-ink-muted">{helper}</div>
+    </div>
+  );
+}
+
+function Panel({ title, description, action, children, className = "" }) {
+  return (
+    <section className={className}>
+      {(title || action) && (
+        <div className="flex items-start justify-between gap-4 mb-1">
+          {title && <h2 className="font-editorial text-xl text-ink-text">{title}</h2>}
+          {action}
+        </div>
+      )}
+      {description && <p className="text-sm text-ink-muted mb-2">{description}</p>}
+      <div className="border-t border-hairline pt-1 mt-3">{children}</div>
+    </section>
+  );
+}
+
+function QuickAction({ to, icon: Icon, label, last = false }) {
+  return (
+    <li className={last ? "" : "border-b border-hairline-subtle"}>
+      <Link
+        to={to}
+        className="flex items-center gap-3 py-3.5 px-2 -mx-2 text-sm text-ink-text hover:bg-hairline-subtle/40 transition-colors"
+      >
+        <Icon className="h-4 w-4 text-ink-muted" />
+        {label}
+      </Link>
+    </li>
+  );
+}
+
+function LoadingRow() {
+  return (
+    <div className="flex items-center justify-center py-8 text-ink-muted gap-2">
       <Loader2 className="h-4 w-4 animate-spin" />
       <span className="text-sm">Loading...</span>
     </div>
   );
 }
 
-function Empty({ icon: Icon, title, hint, ctaLabel, ctaTo }) {
+function EmptyRow({ icon: Icon, title, hint, ctaLabel, ctaTo }) {
   return (
     <div className="text-center py-8">
-      <Icon className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-      <p className="font-semibold text-sm">{title}</p>
-      <p className="text-xs text-muted-foreground mt-1 mb-4">{hint}</p>
+      <Icon className="h-8 w-8 text-ink-muted/50 mx-auto mb-3" />
+      <p className="text-sm font-medium text-ink-text">{title}</p>
+      <p className="text-xs text-ink-muted mt-1 mb-4">{hint}</p>
       {ctaLabel && (
-        <Button asChild size="sm" variant="outline">
-          <Link to={ctaTo}>{ctaLabel}</Link>
-        </Button>
+        <Link to={ctaTo} className="text-xs text-brick hover:underline underline-offset-2">
+          {ctaLabel}
+        </Link>
       )}
     </div>
   );

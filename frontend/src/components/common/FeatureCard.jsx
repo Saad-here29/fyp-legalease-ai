@@ -1,21 +1,13 @@
-import AnimatedCard from "./AnimatedCard";
-
 /**
- * Feature highlight card — icon tile + title + description.
- * Used by Features and AI Capabilities sections.
+ * Feature/module highlight for landing sections — flat, top hairline rule
+ * instead of a rounded shadowed card.
  */
-export default function FeatureCard({ icon: Icon, title, description, delay = 0 }) {
+export default function FeatureCard({ icon: Icon, title, description }) {
   return (
-    <AnimatedCard delay={delay}>
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-gradient shadow-lg shadow-legal-gold/20">
-        <Icon className="h-6 w-6 text-legal-navy" strokeWidth={2.2} />
-      </div>
-      <h3 className="font-serif text-xl font-semibold text-foreground mb-2">
-        {title}
-      </h3>
-      <p className="text-sm text-muted-foreground leading-relaxed">
-        {description}
-      </p>
-    </AnimatedCard>
+    <div className="pt-6 border-t border-hairline">
+      <Icon className="h-5 w-5 text-ink-muted mb-4" strokeWidth={2} />
+      <h3 className="font-editorial text-lg text-ink-text mb-2">{title}</h3>
+      <p className="text-sm text-ink-muted leading-relaxed">{description}</p>
+    </div>
   );
 }
