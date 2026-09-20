@@ -73,6 +73,21 @@
   .gold-text {
     @apply bg-gold-gradient bg-clip-text text-transparent;
   }
+
+  /* New editorial system — numbered citation footnote markers in AI chat
+     answers. One of the two allowed uses of the accent color. */
+  .citation-marker {
+    @apply text-brick font-medium;
+    margin-left: 1px;
+  }
+
+  /* Every serif heading/greeting/identity-moment uses font-editorial.
+     Bold at the CSS level (not per-usage) so every existing and future
+     `font-editorial` element gets real weight contrast against body text
+     with zero risk of someone forgetting `font-bold` on a new page. */
+  .font-editorial {
+    font-weight: 700;
+  }
 }
 
 @layer utilities {

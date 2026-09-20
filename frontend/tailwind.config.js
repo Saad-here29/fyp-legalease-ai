@@ -49,11 +49,30 @@ export default {
           ink: "#0E1726",
           mist: "#F4F1EA",
         },
+        // ===== New editorial design system (2026 redesign) =====
+        // Rolled out one page at a time — see docs/STYLE_GUIDE.md.
+        // Additive only: none of the tokens above are touched, so pages not
+        // yet converted keep looking exactly as they did before.
+        paper: "#F6F1E7",
+        "ink-panel": "#1E2E28",
+        "ink-text": "#241F1A",
+        "ink-muted": "#6B6255",
+        hairline: "#C9BFA8",
+        "hairline-subtle": "#E4DCC9",
+        // Accent and "urgent" status intentionally share this hex — see
+        // docs/STYLE_GUIDE.md for why. Use `brick` for both.
+        brick: "#7A3226",
+        "status-active": "#3E6E52",
+        "status-pending": "#B08B3C",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         serif: ["'Playfair Display'", "Georgia", "serif"],
         mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
+        // New design system's heading/identity-moment serif — deliberately
+        // separate from `serif` above (Playfair Display) so existing pages
+        // using `font-serif` are unaffected until they're redesigned too.
+        editorial: ["Georgia", "'Times New Roman'", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
