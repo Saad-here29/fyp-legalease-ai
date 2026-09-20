@@ -54,6 +54,15 @@ embeddings_cache/
 ai-services/data/raw/
 ai-services/data/processed/
 
+# Legal corpus data — raw sources and the cleaned/merged + FAISS-indexed
+# output are all regenerable, see data/README.md for the two commands.
+# (backend/storage/faiss/*.faiss + *.json — the built index itself — is
+# already covered by the bare `backend/storage/` rule below.) Do NOT ignore
+# the scripts that generate these: scripts/clean_statute_corpus.py,
+# ai-services/corpus_builder/build_corpus.py.
+data/raw/
+data/processed/
+
 # ===== Uploads / Storage =====
 backend/uploads/
 backend/storage/
