@@ -24,7 +24,7 @@ from app.core.exceptions import (
     NotFound,
     UnsupportedMediaType,
 )
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.middlewares.auth import CurrentUser
 from app.models.document import Document, DocumentAnalysis
 from app.models.enums import DocumentType, FileType
@@ -203,39 +203,53 @@ def get_document(
 def analyze_document(
     document_id: uuid.UUID,
     user: CurrentUser,
-    db: Session = Depends(get_db),
 ):
-    doc = db.get(Document, document_id)
-    if doc is None:
-        raise NotFound("Document not found.")
-    if doc.uploaded_by_id != user.id and not (
-        doc.case and doc.case.assigned_lawyer_id == user.id
-    ):
-        raise NotAuthorized("You do not have access to this document.")
+    """Split into three phases so no DB session is held open across the
+    slow, synchronous call to the LLM. Supabase's connection pooler will
+    kill an idle-in-transaction connection that sits open too long, which
+    is exactly what a single long-lived session wrapping the LLM call risks
+    turning into an intermittent 500 on this endpoint."""
 
-    text = doc.extracted_text or ""
-    if not text.strip():
-        # Re-attempt extraction in case it was uploaded before OCR was configured
-        text = get_ocr_service().extract(Path(doc.storage_path)) or ""
-        doc.extracted_text = text
+    # Phase 1 — short read: fetch the document, check access, get the text
+    # to summarise. Session closes before we ever touch the network.
+    with SessionLocal() as db:
+        doc = db.get(Document, document_id)
+        if doc is None:
+            raise NotFound("Document not found.")
+        if doc.uploaded_by_id != user.id and not (
+            doc.case and doc.case.assigned_lawyer_id == user.id
+        ):
+            raise NotAuthorized("You do not have access to this document.")
 
+        text = doc.extracted_text or ""
+        if not text.strip():
+            # Re-attempt extraction in case it was uploaded before OCR was
+            # configured — local/fast, fine to do inside this session.
+            text = get_ocr_service().extract(Path(doc.storage_path)) or ""
+            doc.extracted_text = text
+            db.commit()
+        document_type = doc.document_type
+
+    # Phase 2 — the slow part. No DB session held while this runs.
     ai = get_ai_client()
-    summary_text = ai.summarise(text, hint=f"Document type: {doc.document_type.value}")
+    summary_text = ai.summarise(text, hint=f"Document type: {document_type.value}")
 
-    # Persist analysis
-    analysis = doc.analysis or DocumentAnalysis(document_id=doc.id)
-    analysis.summary = summary_text
-    analysis.identified_clauses = {"raw": summary_text[:2000]}
-    analysis.risk_flags = {}
-    analysis.document_classification = doc.document_type.value
-    if doc.analysis is None:
-        db.add(analysis)
-    doc.summary_text = summary_text
-    doc.updated_at = datetime.now(timezone.utc)
-    db.commit()
+    # Phase 3 — short write: persist the result in a fresh session.
+    with SessionLocal() as db:
+        doc = db.get(Document, document_id)
+        analysis = doc.analysis or DocumentAnalysis(document_id=doc.id)
+        analysis.summary = summary_text
+        analysis.identified_clauses = {"raw": summary_text[:2000]}
+        analysis.risk_flags = {}
+        analysis.document_classification = doc.document_type.value
+        if doc.analysis is None:
+            db.add(analysis)
+        doc.summary_text = summary_text
+        doc.updated_at = datetime.now(timezone.utc)
+        db.commit()
 
     return DocumentAnalysisResult(
-        document_id=doc.id,
+        document_id=document_id,
         summary=summary_text,
         key_clauses=[],
         parties=[],
