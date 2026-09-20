@@ -83,7 +83,11 @@ class Settings(BaseSettings):
 
     # ===== RAG =====
     RAG_TOP_K: int = 5
-    RAG_SIMILARITY_THRESHOLD: float = 0.7
+    # Tuned down from 0.7 based on a 78-question real-world eval: at 0.7,
+    # only ~1-25% of genuine questions passed (see
+    # data/processed/qa_eval/retrieval_eval_results.json); 0.65 lets most
+    # real questions through while still refusing the weakest matches.
+    RAG_SIMILARITY_THRESHOLD: float = 0.65
     RAG_CHUNK_SIZE: int = 800
     RAG_CHUNK_OVERLAP: int = 100
 
