@@ -148,9 +148,13 @@ def send_otp_email(email: str, otp: str, *, recipient_name: str | None = None) -
         html=html,
         text=text,
     )
-    # Belt-and-braces: always log the OTP in development so demos work even
-    # if SMTP isn't configured. Filtered out in prod via log level.
-    logger.info(f"[dev] OTP for {email}: {otp}")
+    # SMTP_USERNAME/PASSWORD are unset in this environment, so the SMTP send
+    # above is a no-op (see _smtp_configured). Always log the OTP server-side
+    # so signup/verification is still testable — server log only, never the
+    # API response or frontend, since that would leak it to anyone who can
+    # see the response.
+    if not _smtp_configured():
+        logger.info(f"[DEV OTP] {email} -> {otp}  (SMTP not configured — enter this code manually)")
 
 
 def send_password_reset_email(email: str, otp: str) -> None:
@@ -171,4 +175,5 @@ def send_password_reset_email(email: str, otp: str) -> None:
         html=html,
         text=text,
     )
-    logger.info(f"[dev] Password-reset OTP for {email}: {otp}")
+    if not _smtp_configured():
+        logger.info(f"[DEV OTP] {email} -> {otp}  (password reset, SMTP not configured — enter this code manually)")
