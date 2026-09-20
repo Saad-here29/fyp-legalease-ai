@@ -154,16 +154,20 @@ class AIClient:
         }.get(name, False)
 
     def rewrite_search_query(self, query: str) -> str:
-        """Compress a long, conversational legal question into a short,
-        focused search query before embedding.
+        """Rewrite a user's question into a short search query before
+        embedding, with two jobs in one pass:
+          1. Compress long, multi-clause questions down to the core issue.
+          2. Translate everyday/layperson phrasing into the actual legal
+             terminology Pakistani statutes use — e.g. a husband
+             "pronouncing divorce" is "talaq" (Muslim Family Laws
+             Ordinance), not the generic English word "divorce", which
+             instead pulls the embedding toward irrelevant statutes like
+             the Divorce Act 1869 (a Christian-marriage civil-divorce law).
 
-        Real lawyer-written questions are long and multi-clause; statute
-        text uses crisp legal terminology. Embedding the raw question
-        directly dilutes the semantic match — rewriting it down to the core
-        legal issue first (e.g. "I've been separated for 9 years, my
-        husband never visits, now wants custody..." -> "grounds for
-        custody after long separation and parental absence") gets much
-        closer to how the corpus itself is phrased.
+        This runs on every query, not just long ones — job 2 matters just
+        as much for a short, clean sentence as for a long rambling one; a
+        71-character question in plain English can still rank the right
+        statute passage below an irrelevant title-word match.
 
         Never breaks retrieval: falls back to the original query untouched
         if no provider is configured or the call fails for any reason."""
@@ -172,10 +176,24 @@ class AIClient:
         system = (
             "You are a legal search query optimizer for a Pakistani law "
             "database. Rewrite the user's question into a short, focused "
-            "search query (max ~20 words) that captures the core legal "
-            "issue, using precise legal terminology a Pakistani statute "
-            "would use. Output ONLY the rewritten query — no preamble, no "
-            "quotes, no explanation."
+            "search query (max ~20 words) using the precise terminology "
+            "Pakistani statutes actually use — not just a paraphrase. "
+            "Translate everyday/layperson phrasing into the legal terms of "
+            "art a statute would use, for example: a husband pronouncing "
+            "divorce -> \"talaq\" (Muslim Family Laws Ordinance); a wife "
+            "seeking to end her marriage -> \"khula\"; \"property after "
+            "someone dies\" -> \"inheritance\" / \"succession\"; \"getting "
+            "custody of my kids\" -> \"guardianship\" / \"hizanat\".\n\n"
+            "If the question has NOTHING to do with law at all (weather, "
+            "recipes, general trivia, etc.), do NOT apologise or say you "
+            "can't help — that refusal text gets embedded and searched too, "
+            "and phrases like 'legal' or 'Pakistani law' inside an apology "
+            "can accidentally look relevant. Instead output the question's "
+            "literal subject with no legal framing added, e.g. 'weather "
+            "today' or 'chocolate cake recipe' — let it score low on its "
+            "own merits rather than gaming the relevance check.\n\n"
+            "Output ONLY the rewritten query — no preamble, no quotes, no "
+            "explanation, and never an apology or refusal sentence."
         )
         try:
             rewritten = self.chat([{"role": "user", "content": query}], system=system).strip()
