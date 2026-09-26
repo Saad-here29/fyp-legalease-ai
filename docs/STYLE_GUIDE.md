@@ -1,75 +1,177 @@
-# Style Guide — Editorial redesign (2026)
+# Style Guide — Design system v1 (2026)
 
-> Referenced by `Project_Context.md`: "Follow the style rules in
+> Referenced by `PROJECT_CONTEXT.md`: "Follow the style rules in
 > STYLE_GUIDE.md exactly — do not improvise colors, fonts, or spacing."
-> This file is that reference. The whole app has now been converted — see
-> "Conversion status" at the bottom.
+>
+> **Source of truth:** `docs/design_reference/LegalEase AI Design System.pdf`
+> (13 pages; rendered as `page-01.jpg` … `page-13.jpg` in the same folder).
+> Page 1 defines the rules below; pages 2–13 are screen mockups.
+>
+> **Replaces** the previous editorial system (Georgia + Inter, "brick"
+> accent restricted to links and citation markers). Those rules no longer
+> apply. See "Migration status" at the bottom for which pages have moved.
 
-## Palette
+*"A docket, not a dashboard." Two typefaces, one accent, ruled sections
+instead of floating cards — and AI output that always shows where it came
+from.*
+
+## §01 Colour
+
+Ink and paper carry the page. **Seal** — the red of wax seals and red tape —
+is the one accent, and it only ever means *act here*.
 
 | Token (Tailwind) | Hex | Use |
 |---|---|---|
-| `paper` | `#F6F1E7` | Page background — every page, no exceptions |
-| `ink-panel` | `#1E2E28` | The `AppShell`/`AuthShell` sidebar/hero panel, and solid primary-action buttons. Not used as a decorative section background anywhere else (e.g. the landing page's final CTA stays on `paper`, not a dark band). |
-| `ink-text` | `#241F1A` | Primary text |
-| `ink-muted` | `#6B6255` | Secondary / muted text |
-| `hairline` | `#C9BFA8` | Strong dividers — structural separations |
-| `hairline-subtle` | `#E4DCC9` | Subtle dividers — between repeating list rows |
-| `brick` | `#7A3226` | Accent — **sparing use only**: small text links, citation markers. **Never** a solid button fill or background. Also the "urgent" status color (same hex, deliberately). |
-| `status-active` | `#3E6E52` | Status dot — active/green |
-| `status-pending` | `#B08B3C` | Status dot — pending/amber |
-| `status-urgent` | *(use `brick`)* | Status dot — urgent/red. Same hex as the accent — error text and urgent dots both just use `brick`. |
+| `ds-ink` | `#0F2A22` | Identity panels, sidebar, section rules |
+| `ds-ink-2` | `#173A2F` | Raised areas on ink, active pill |
+| `ds-paper` | `#F4EFE4` | Page background |
+| `ds-sheet` | `#FBF8F2` | Documents, ledgers, inputs |
+| `ds-rule` | `#D9D0BD` | Hairlines, borders |
+| `ds-text` | `#14201A` | Headings and body |
+| `ds-text-2` | `#45504A` | Secondary, labels |
+| `ds-seal` | `#9E2B1D` | The accent: act here |
+| `ds-pass` | `#17553A` | Checks that pass, verified |
+| `ds-review` | `#8A5300` | Needs a human look |
 
-Defined in `frontend/tailwind.config.js` under `theme.extend.colors`, additive to the old `legal.*` tokens (now unused — see "Orphaned old files" below).
+Supporting values sampled from the page-1 component row: `ds-pass-tint`
+`#DEEBE1`, `ds-seal-tint` `#F4E1DA`, `ds-review-tint` `#F6E8CD`, `ds-disabled`
+`#E6DFCF`, `ds-underline` `#C7BBA5` (text-link underline).
 
-**The one-accent rule:** `brick` is for small text links (e.g. "Forgot password?", "Get started", "View all", citation markers), never a solid button/fill/badge/background. Primary actions are solid `ink-panel` background with `paper` text.
+**Seal is used for:** primary buttons, the active tab or nav item, numbers
+that need action (hearings this week, due dates), failing checks.
 
-## Typography
+**Seal is never used for:** headings, decoration, backgrounds larger than a
+button, or more than one primary button per view.
 
-- **Serif** (`font-editorial` → Georgia, Times New Roman, serif) — headings, greetings, identity moments only. Page titles, section/panel titles, the auth-page hero heading. Never body text, labels, buttons, or nav.
-- `font-editorial` is **bold (weight 700) at the CSS level** — set once in `index.css` (`.font-editorial { font-weight: 700; }`) so every serif heading, present and future, gets real weight contrast against body text with no risk of a page forgetting `font-bold`.
-- **Sans** (`font-sans` → Inter) — everything else: body text, labels, inputs, nav, buttons, stat values.
-- **Sentence case everywhere.** No `uppercase` labels anywhere in the app, no exceptions.
-- `font-editorial` is deliberately a separate Tailwind key from the old `font-serif` (Playfair Display) — the old key is now unused.
+**Contrast.** Page 1 states body text 14.8:1 on Paper, secondary 7.6:1, Seal
+7.1:1 on Paper and 7.6:1 under white text. Measured from the hex values (WCAG
+2.x formula): text **14.6:1**, text-2 **7.3:1**, seal **6.5:1** on Paper and
+**7.5:1** under white, pass 7.6:1, review 5.5:1. All meet WCAG AA for body
+text (4.5:1); text, text-2 and pass also meet AAA (7:1).
 
-## Components
+## §02 Type
 
-- **No rounded-card-with-shadow grids.** Flat sections + hairline dividers only. No `shadow-*`, no `rounded-xl`/`rounded-2xl` content containers (small `rounded-full` status dots and avatar circles are fine — that's a dot/avatar convention, not a "card").
-- **Buttons have real presence.** Shared component: `AppButton` (`frontend/src/components/ui/AppButton.jsx`) — always use it instead of a raw `<button>`/styled `<Link>`. Fixed padding `py-3 px-7` (12px vertical / 28px horizontal), `rounded-md` (6px radius). `variant="primary"` (default): solid `bg-ink-panel` fill, `text-paper`, `hover:bg-ink-panel/85`. `variant="secondary"`: `border border-hairline`, transparent fill, `hover:bg-hairline-subtle/50`. `brick` is never a button fill — see the one-accent rule above. Pass `to` for a router link or omit it for a native `<button>`.
-- **Inputs are underline-style**: `border-0 border-b border-hairline`, transparent background. Shared helper: `cnInput()` in `frontend/src/lib/formStyles.js` — always use it instead of restyling inputs by hand. Focus deepens the underline to `ink-text` **and** adds a subtle background tint (`focus:bg-ink-text/[0.03]`); error state switches the underline to `brick` with its own tint (`bg-brick/[0.04]`).
-- **Sidebar nav**: `bg-ink-panel`, icon + label rows, `text-paper/60` default → `text-paper` + `bg-paper/10` active/hover. Never `brick` for the active state — nav selection is not a "text link."
-- **List rows / stat strips**: `border-b border-hairline-subtle` between rows, `border-r border-hairline` between stat-strip columns — never boxed cards. **Rows that are clickable (case rows, session rows, quick actions, etc.) get a subtle hover tint** — `hover:bg-hairline-subtle/40` on the row's own link/button (with small negative-margin padding, e.g. `px-2 -mx-2`, so the tint doesn't shift layout) — never `hover:text-brick`. Accent is for standalone text links only, never for anything that behaves like a button or a row.
-- **Status**: a small colored dot + sentence-case text, never a colored pill/badge/chip. Don't force a state into "urgent" (`brick`) just because it needs *a* color — a neutral/terminal state (e.g. "Closed") can just use `ink-muted`.
-- **Equally-weighted option lists** (quick actions, etc.): a single-column hairline-`subtle`-divided list (icon + label), not a grid of filled/bordered buttons.
-- **AI Chat citations**: numbered superscript footnote markers inline in the answer text (`.citation-marker` class in `index.css`, colored `brick`), linking down to a small numbered list below the message. Never badges/chips.
-- **Divider hierarchy**: `hairline` for structural separations (header bottom edge, panel title→body, stat-strip columns, section boundaries on the landing page). `hairline-subtle` for repeating rows within one list.
-- **Arch-silhouette background motif** — Login and the landing-page hero **only**. Shared component: `frontend/src/components/common/ArchPattern.jsx`, a tileable SVG `<pattern>` of a pointed-arch silhouette (courthouse/Mughal-arch evocation), colored via `currentColor` so the caller controls color/opacity with Tailwind classes (`text-paper opacity-[0.08]` on the dark auth panel, `text-ink-panel opacity-[0.07]` behind the landing hero). Always low-opacity (6–15%) and always behind real content (`relative z-10` on the foreground) so legibility is never affected. `AuthShell` exposes this as an opt-in `showArch` prop (default `false`) rather than a redesign — only `LoginPage` passes it.
+**Newsreader** for identity and page titles — the voice of the bench. **IBM
+Plex Sans** for everything you work in. Body never drops below 16px; each
+step up is at least ×1.25.
+
+| Role | Class | Spec (weight · size/line-height) |
+|---|---|---|
+| Display | `.ds-display` | Newsreader 500 · 72/76 |
+| H1 · page title | `.ds-h1` | Newsreader 500 · 48/56 |
+| H2 · section | `.ds-h2` | Newsreader 500 · 32/40 |
+| H3 · block | `.ds-h3` | Plex Sans 600 · 24/32 |
+| H4 · group | `.ds-h4` | Plex Sans 600 · 19/28 |
+| Body | `.ds-body` | Plex Sans 400 · 16/26 · minimum |
+| Label · meta | `.ds-meta` | Plex Sans 500 · 14/20 — metadata, table headers and captions only, never reading text |
+| Figure | `.ds-figure` | Plex Sans 500 · 44/48 · tabular — Seal only when the number asks for action |
+
+Font families: `font-ds-serif` (Newsreader) and `font-ds-sans` (IBM Plex
+Sans), loaded from Google Fonts in `frontend/index.html`.
+
+*Implementation note:* below the `lg` breakpoint Display renders at 44/48
+and H1 at 36/44 so they fit a phone; each step stays at least ×1.25 apart.
+
+## §03 Space & structure
+
+An 8px base. Sections are *ruled*: a **2px ink line opens a section**, **1px
+hairlines divide rows**. Corners are 2–4px (`rounded-ds-sm` / `rounded-ds`).
+**No drop shadows.**
+
+| Rule | Value | Tailwind |
+|---|---|---|
+| Spacing scale | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 · 96 | `1 · 2 · 3 · 4 · 6 · 8 · 12 · 16 · 24` (Tailwind's default scale already matches) |
+| Page gutter | 56px in the app, 96px on marketing | `px-14`, `px-24` |
+| Content column | max 1064px | `max-w-ds-content` |
+| Rhythm | 48px between sections, 24px inside, 16px between label and control | `gap-12` / `gap-6` / `mb-4` |
+| Rows | 64–72px tall; never less than 44px touch height for anything clickable | `.ds-row`, `min-h-[44px]` |
+
+Structure classes: `.ds-section` (2px ink top rule + 24px padding) and
+`.ds-row` (1px rule bottom, 64px minimum height).
+
+## §04 Components
+
+"The same five parts on every screen. One primary button per view."
+
+Page 1 shows two of the five parts before the PDF page ends (the page is cut
+off; its title is clipped too). The other three are derived from how the
+mockups on pages 2–13 draw them, and are marked *(derived)* below.
+
+- **Buttons**
+  - `.ds-btn-primary` — Seal fill, white text. **One per view.**
+  - `.ds-btn-secondary` — 1px ink outline, transparent fill.
+  - `.ds-link` — text link: semibold text, tan underline (`ds-underline`).
+  - `.ds-btn-disabled` / `disabled` — `ds-disabled` fill, text-2.
+  - All buttons are at least 44px tall with a visible focus outline.
+- **Status tags** — `.ds-tag-pass` (✓ Passes), `.ds-tag-fail` (✗ Fails),
+  `.ds-tag-review` (! Review), `.ds-tag-neutral` (Adjourned — outline),
+  `.ds-tag-active` (Active — ink-2 fill). Always pair colour with an icon or
+  word; never colour alone.
+- **Inputs** *(derived — Login, Search)* — `.ds-input`: Sheet fill, Rule
+  border, 48px tall, ink border on focus. `.ds-label` above, 16px gap.
+- **Ruled lists / tables** *(derived — Cases, Deadlines, Compliance)* — a 2px
+  ink rule over the header, 1px rules between rows, `.ds-row` heights.
+- **Panels** *(derived — Extracted data, Next hearing)* — Sheet fill with a
+  1px Rule border for document-like content; Ink fill with paper text for a
+  single highlighted fact (e.g. next hearing). 2–4px corners, no shadow.
+
+Recurring patterns in the mockups: the ink sidebar with a Seal marker on the
+active item and the arch motif at its foot (page 7); ink hero bands with the
+arch motif (Login, Landing, Research header); AI output always labelled
+("AI summary · AI-generated · read with the original") and ending in its
+sources.
+
+## What the mockups show that we don't build
+
+The mockups include features the app doesn't have. **Do not build fake UI
+for them** — adapt each page to what exists (decided 2026-09-27):
+
+| Mockup | Adaptation |
+|---|---|
+| Dashboards, Cases list/detail (pp. 4–6, 8–9) | Remove Calendar, cause list, deadlines, client messages, and the student reading/practice sections. Keep only real data. |
+| Research (p. 11) | Remove the jurisdiction and court filters and the "Judgments" source type — the index is statute text only, and these filters were removed for that reason. |
+| AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. |
+| Document Analysis (p. 12) | No page references on extracted values — the API has none. |
+| Contracts (p. 13) | Only the 3 real templates (NDA, Employment, Service Agreement); no "Export .docx" — no export exists. |
+| Landing (p. 3) | No Pricing, free trial or "Start your free trial" copy. |
+
+**Copy must stay statute-only.** The mockups say "tied to the statute or
+judgment", "searches statutes and reported judgments" etc. Every such line is
+rewritten to match the app's existing wording: *"LegalEase's library of
+Pakistani statute text (Acts, Ordinances, Codes and Orders) … no court
+judgments or case law."*
 
 ## Shared components — use these, don't rebuild per page
 
-- **`frontend/src/components/layout/AppShell.jsx`** — every internal (authenticated) page. Sidebar + header + main content. Role-aware nav (`ROLES.LAWYER`/`CLIENT`/`STUDENT`) and workspace label baked in. Props: `title`, `subtitle`, `headerActions` (optional, e.g. a search box), `children`.
-- **`frontend/src/layouts/AuthShell.jsx`** — every public auth page (Login, Welcome, Signup, Forgot Password, OTP, Reset Password). The two-pane ink-panel hero / paper form split. Props: `heroTitle`, `heroSubtitle`, `tagline`, `children`.
-- **`frontend/src/features/dashboard/components/PanelCard.jsx`** — flat titled panel (serif title, muted description, hairline divider, content). Same import path as the old version, so nothing needed re-importing.
-- **`frontend/src/lib/formStyles.js`** (`cnInput`) — underline input styling, shared by every form.
-- **`frontend/src/components/common/{Logo,StatCard,FeatureCard}.jsx`** — fixed in place to the new flat look (no gradient tiles, no rounded shadowed cards). Same import paths.
-- **`frontend/src/components/ui/AppButton.jsx`** — every button/button-styled-link app-wide. See "Buttons have real presence" above.
-- **`frontend/src/components/common/ArchPattern.jsx`** — the arch-silhouette background motif. Login + landing hero only.
+Being migrated to the tokens above page by page:
 
-Do not create a second sidebar/header/panel/input/button style — extend these instead.
+- **`frontend/src/components/layout/AppShell.jsx`** — every internal page (sidebar + header + content). Role-aware nav.
+- **`frontend/src/layouts/AuthShell.jsx`** — every public auth page (two-pane ink / paper).
+- **`frontend/src/components/ui/AppButton.jsx`** — every button and button-styled link.
+- **`frontend/src/features/dashboard/components/PanelCard.jsx`** — titled panel.
+- **`frontend/src/lib/formStyles.js`** (`cnInput`) — input styling.
+- **`frontend/src/lib/Markdown.jsx`** — the single renderer for AI-generated text (`prose prose-ink`).
+- **`frontend/src/components/common/ArchPattern.jsx`** — the arch motif (sidebar foot, ink hero bands).
 
-## Conversion status
+Do not create a second sidebar / header / panel / input / button style —
+extend these.
 
-**Every page is now converted**, including a second stricter pass that added: bold serif headings, the shared `AppButton` component (fixed 12px/28px padding, 6px radius, real hover states) replacing every raw button/link across the app, input focus/error background tints, subtle hover tints on every clickable list/table row (replacing an earlier `hover:text-brick` pattern that violated the "accent is never a button" rule), and the arch-silhouette motif behind Login and the landing hero.
+## Migration status
 
-Auth pages (`AuthShell`): Login (reference page — only additive changes: `AppButton` on submit, `showArch`), Welcome, Signup (rebuilt — see below), Forgot Password, OTP Verification, Reset Password.
-Internal pages (`AppShell`): Lawyer Dashboard, Client Dashboard, Student Dashboard, Case List, Case Detail, Documents, Legal Research (+ detail), AI Assistant, and the `ComingSoonPage` placeholder (covers Clients, Contracts, Schedule, Profile, Notifications).
-Public: Landing page — restructured to exactly 6 sections: nav, hero (exact one-line subheadline + arch motif), stats strip (3 numbers), "How answers are grounded" 4-step pipeline, 3-column feature grid (Case management / Document analysis / Practice simulator), final CTA. `AICapabilities.jsx`, `LegalServices.jsx`, and `Testimonials.jsx` were deleted (not just unlinked) as superseded by this structure — safe given they were git-tracked and the repo has history to recover them from if needed.
+- **Done:** tokens (`ds-` colours, `font-ds-serif` / `font-ds-sans`,
+  `rounded-ds`, `max-w-ds-content`), type classes and component classes in
+  `frontend/tailwind.config.js` and `frontend/src/index.css`; token test page
+  at `/design-system` (not linked from the app).
+- **Not yet migrated:** every real page still uses the previous tokens
+  (`paper`, `ink-panel`, `ink-text`, `ink-muted`, `hairline`, `brick`,
+  `font-editorial`, `.type-*`). Those tokens are **deprecated** — don't use
+  them in new work; they are removed once the last page has moved.
+- The `ds-` prefix exists only because the old `paper` (`#F6F1E7`) differs
+  from the new Paper (`#F4EFE4`); it can be dropped after migration.
 
-### Signup form — simplified, with a known backend gap
-
-`SignupPage.jsx` now collects exactly 6 fields for every role (Lawyer/Client/Student): full name, email, phone number, password, confirm password, role. Bar license number, CNIC, university ID, and other role-specific fields were removed — no verification system exists for them yet.
-
-**This does not yet match the backend.** `backend/app/schemas/auth.py`'s `SignupRequest` discriminated union still requires `bar_license_no`/`specialization`/`bar_year` for Lawyer and `university_id`/`university_name`/`current_year` for Student. Since this pass was frontend-only, **Lawyer and Student signup will 422 against the current backend** until the backend schema is relaxed to match (Client signup is unaffected — it never required extra fields). This is a real functional gap, not just a style note — flagging until the backend is updated.
-
-### Orphaned old files (not deleted, just unused — flagging, not fixing without being asked)
-`frontend/src/layouts/DashboardLayout.jsx`, `frontend/src/layouts/AuthLayout.jsx`, `frontend/src/components/layout/Sidebar.jsx` (old), `frontend/src/components/layout/DashboardHeader.jsx`, `frontend/src/features/dashboard/components/DashboardStat.jsx`, `frontend/src/components/common/GradientBackground.jsx`, `frontend/src/components/common/AnimatedCard.jsx`, and the shadcn `frontend/src/components/ui/{button,input,label,badge}.jsx` primitives are no longer imported by any page. Left in place rather than deleted since deletion wasn't asked for in this pass — worth a cleanup pass later.
+### Orphaned old files (unused; not deleted)
+`frontend/src/layouts/DashboardLayout.jsx`, `frontend/src/layouts/AuthLayout.jsx`,
+`frontend/src/components/layout/Sidebar.jsx`, `frontend/src/components/layout/DashboardHeader.jsx`,
+`frontend/src/features/dashboard/components/DashboardStat.jsx`,
+`frontend/src/components/common/GradientBackground.jsx`, `frontend/src/components/common/AnimatedCard.jsx`,
+and the shadcn `frontend/src/components/ui/{button,input,label,badge}.jsx` primitives are not imported by any page.

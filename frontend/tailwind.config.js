@@ -65,6 +65,30 @@ export default {
         // docs/STYLE_GUIDE.md for why. Use `brick` for both.
         brick: "#8A3324",
         "status-active": "#3E6E52",
+        // ===== Design system v1 (docs/design_reference, page 1) =====
+        // Prefixed `ds-` so pages migrate one at a time: `paper` above is
+        // #F6F1E7 and the spec's Paper is #F4EFE4, so redefining shared names
+        // would shift every unmigrated page at once. Measured contrast on
+        // Paper: text 14.6:1, text-2 7.3:1, seal 6.5:1, pass 7.6:1,
+        // review 5.5:1; white on seal 7.5:1.
+        ds: {
+          ink: "#0F2A22",       // identity panels, sidebar, section rules
+          "ink-2": "#173A2F",   // raised areas on ink, active pill
+          paper: "#F4EFE4",     // page background
+          sheet: "#FBF8F2",     // documents, ledgers, inputs
+          rule: "#D9D0BD",      // hairlines, borders
+          text: "#14201A",      // headings and body
+          "text-2": "#45504A",  // secondary, labels
+          seal: "#9E2B1D",      // the one accent: "act here"
+          pass: "#17553A",      // checks that pass, verified
+          review: "#8A5300",    // needs a human look
+          // Tints and states sampled from the page-1 component row
+          "pass-tint": "#DEEBE1",
+          "seal-tint": "#F4E1DA",
+          "review-tint": "#F6E8CD",
+          disabled: "#E6DFCF",
+          underline: "#C7BBA5",
+        },
         "status-pending": "#B08B3C",
       },
       fontFamily: {
@@ -75,6 +99,10 @@ export default {
         // separate from `serif` above (Playfair Display) so existing pages
         // using `font-serif` are unaffected until they're redesigned too.
         editorial: ["Georgia", "'Times New Roman'", "serif"],
+        // Design system v1: Newsreader for identity + page/section titles,
+        // IBM Plex Sans for everything you work in.
+        "ds-serif": ["Newsreader", "Georgia", "'Times New Roman'", "serif"],
+        "ds-sans": ["'IBM Plex Sans'", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       // `prose prose-ink`: the single style for ALL AI-generated content
       // (chat answers, document summaries, contract text).
@@ -108,7 +136,12 @@ export default {
           },
         },
       }),
+      maxWidth: {
+        "ds-content": "1064px",   // content column max
+      },
       borderRadius: {
+        ds: "4px",                 // corners are 2-4px
+        "ds-sm": "2px",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

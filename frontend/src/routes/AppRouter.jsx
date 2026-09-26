@@ -19,6 +19,7 @@ import CaseDetailPage from "@/features/case-management/CaseDetailPage";
 import ContractsPage from "@/features/contract-drafting/ContractsPage";
 import ContractDetailPage from "@/features/contract-drafting/ContractDetailPage";
 import ComingSoonPage from "@/components/common/ComingSoonPage";
+import DesignSystemPage from "@/features/design-system/DesignSystemPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 const ALL_ROLES = [ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT];
@@ -34,6 +35,8 @@ export default function AppRouter() {
       <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
       <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
       <Route path={ROUTES.OTP} element={<OtpVerificationPage />} />
+      {/* Design system v1 token test page — not linked from the app */}
+      <Route path="/design-system" element={<DesignSystemPage />} />
 
       {/* Role dashboards */}
       <Route

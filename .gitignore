@@ -108,3 +108,10 @@ pnpm-debug.log*
 .temp/
 tmp/
 *.tmp
+
+# ===== Design reference renders =====
+# page-01.jpg … page-13.jpg are rendered from the tracked
+# "docs/design_reference/LegalEase AI Design System.pdf". Regenerate with
+# PyMuPDF (backend venv):
+#   python -c "import fitz; d=fitz.open('docs/design_reference/LegalEase AI Design System.pdf'); [p.get_pixmap(dpi=150).save(f'docs/design_reference/page-{i+1:02d}.jpg') for i,p in enumerate(d)]"
+docs/design_reference/*.jpg

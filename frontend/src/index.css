@@ -81,6 +81,58 @@
     margin-left: 1px;
   }
 
+  /* ===== Design system v1 (docs/design_reference, page 1; docs/STYLE_GUIDE.md) =====
+     All `ds-` prefixed while pages migrate one at a time. */
+
+  /* Type — Newsreader for identity and titles, IBM Plex Sans for the rest.
+     Sizes are the spec's (size/line-height); below lg the two largest steps
+     shrink so they fit a phone, still >= x1.25 apart. Body never below 16px. */
+  .ds-display { @apply font-ds-serif font-medium text-[44px] leading-[48px] lg:text-[72px] lg:leading-[76px] tracking-tight text-ds-text; }
+  .ds-h1      { @apply font-ds-serif font-medium text-[36px] leading-[44px] lg:text-[48px] lg:leading-[56px] tracking-tight text-ds-text; }
+  .ds-h2      { @apply font-ds-serif font-medium text-[32px] leading-[40px] text-ds-text; }
+  .ds-h3      { @apply font-ds-sans font-semibold text-[24px] leading-[32px] text-ds-text; }
+  .ds-h4      { @apply font-ds-sans font-semibold text-[19px] leading-[28px] text-ds-text; }
+  .ds-body    { @apply font-ds-sans font-normal text-[16px] leading-[26px] text-ds-text; }
+  /* Metadata, table headers and captions only — never reading text. */
+  .ds-meta    { @apply font-ds-sans font-medium text-[14px] leading-[20px] text-ds-text-2; }
+  .ds-eyebrow { @apply font-ds-sans font-semibold text-[13px] leading-[20px] uppercase tracking-[0.14em] text-ds-text-2; }
+  /* Figures: tabular; Seal only when the number asks for action (add text-ds-seal). */
+  .ds-figure  { @apply font-ds-sans font-medium text-[44px] leading-[48px] tabular-nums text-ds-text; }
+
+  /* Structure — a 2px ink line opens a section; 1px hairlines divide rows. */
+  .ds-section { @apply border-t-2 border-ds-ink pt-6; }
+  .ds-row     { @apply border-b border-ds-rule min-h-[64px] py-4; }
+
+  /* Buttons — one primary per view. Min 44px touch height. */
+  .ds-btn {
+    @apply inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 rounded-ds
+      font-ds-sans font-semibold text-[16px] leading-[20px] transition-colors
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-ink
+      disabled:cursor-not-allowed;
+  }
+  .ds-btn-primary   { @apply ds-btn bg-ds-seal text-white hover:bg-[#86241A] disabled:bg-ds-disabled disabled:text-ds-text-2; }
+  .ds-btn-secondary { @apply ds-btn border border-ds-ink text-ds-text bg-transparent hover:bg-ds-sheet disabled:border-ds-rule disabled:text-ds-text-2; }
+  .ds-btn-disabled  { @apply ds-btn bg-ds-disabled text-ds-text-2 cursor-not-allowed; }
+  .ds-link {
+    @apply font-ds-sans font-semibold text-ds-text underline decoration-ds-underline decoration-2 underline-offset-[5px]
+      hover:decoration-ds-text transition-colors;
+  }
+
+  /* Status tags — pass / fail / review / neutral / active. */
+  .ds-tag        { @apply inline-flex items-center gap-1.5 h-8 px-3 rounded-ds font-ds-sans font-semibold text-[14px] leading-[20px]; }
+  .ds-tag-pass   { @apply ds-tag bg-ds-pass-tint text-ds-pass; }
+  .ds-tag-fail   { @apply ds-tag bg-ds-seal-tint text-ds-seal; }
+  .ds-tag-review { @apply ds-tag bg-ds-review-tint text-ds-review; }
+  .ds-tag-neutral{ @apply ds-tag border border-ds-rule text-ds-text-2; }
+  .ds-tag-active { @apply ds-tag bg-ds-ink-2 text-white; }
+
+  /* Inputs — Sheet on Paper, Rule border (derived from the Login/Search mockups). */
+  .ds-input {
+    @apply w-full min-h-[48px] px-4 rounded-ds bg-ds-sheet border border-ds-rule font-ds-sans text-[16px] text-ds-text
+      placeholder:text-ds-text-2/70 focus:outline-none focus:border-ds-ink focus:ring-2 focus:ring-ds-ink/10;
+  }
+  .ds-label { @apply block font-ds-sans font-semibold text-[15px] leading-[20px] text-ds-text mb-2; }
+
   /* ===== Type scale (2026-09 overhaul) =====
      Serif (font-editorial) for identity moments, sans for everything else.
      Steps are deliberately far apart; body text is never below 16px. */
