@@ -26,6 +26,11 @@ class ResearchResult(APIModel):
     relevance: float
 
 
+class ResearchIndexStats(APIModel):
+    chunks: int       # passages in the FAISS index
+    documents: int    # distinct source statutes
+
+
 class ResearchSearchResponse(APIModel):
     query: str
     total: int

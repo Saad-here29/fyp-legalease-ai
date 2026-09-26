@@ -9,12 +9,14 @@ import uuid
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.ai import embeddings
 from app.core.exceptions import NotFound
 from app.db.session import get_db
 from app.middlewares.auth import CurrentUser
 from app.models.legal_corpus import LegalCorpusEntry
 from app.schemas.research import (
     ResearchEntryDetail,
+    ResearchIndexStats,
     ResearchSearchRequest,
     ResearchSearchResponse,
     StructuredAnalysis,
@@ -23,6 +25,16 @@ from app.schemas.research import (
 from app.services.research_service import ResearchService
 
 router = APIRouter()
+
+
+@router.get(
+    "/stats",
+    response_model=ResearchIndexStats,
+    summary="Size of the searchable library (passages and source statutes)",
+)
+def index_stats(user: CurrentUser):
+    # Declared before GET /{entry_id} so "stats" isn't parsed as an id.
+    return embeddings.index_stats()
 
 
 @router.post(

@@ -167,9 +167,28 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     return [{**m, "relevance": s} for m, s in raw[:top_k]]
 
 
+_STATS: dict | None = None
+
+
+def index_stats() -> dict:
+    """{"chunks", "documents"} for the loaded index, so the UI shows the
+    real corpus size instead of a hard-coded number that goes stale after
+    every rebuild. Counting distinct sources walks all metadata once, so the
+    result is cached until `reset()`."""
+    global _STATS
+    chunks = build_or_load()
+    if _STATS is None or _STATS["chunks"] != chunks:
+        _STATS = {
+            "chunks": chunks,
+            "documents": len({record_source(m) for m in _META}) if chunks else 0,
+        }
+    return _STATS
+
+
 def reset() -> None:
     """Forget the loaded index — call after rebuilding the corpus."""
-    global _INDEX, _META
+    global _INDEX, _META, _STATS
     with _LOCK:
         _INDEX = None
         _META = []
+        _STATS = None
