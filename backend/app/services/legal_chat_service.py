@@ -68,6 +68,10 @@ OUT_OF_SCOPE_REFUSAL = (
 )
 
 
+def _ms_since(t0: float) -> int:
+    return int((time.perf_counter() - t0) * 1000)
+
+
 def _detect_language(text: str) -> str:
     try:
         from langdetect import detect
@@ -153,7 +157,9 @@ class LegalChatService:
         # From here until phase 3, touch no ORM object: commit expired them,
         # and a lazy reload would open a new transaction.
 
-        # Phase 2 — retrieval + LLM, no DB transaction held.
+        # Phase 2 — retrieval + LLM, no DB transaction held. Timed from
+        # here: rewrite + retrieval + answer is what the user waits for.
+        t0 = time.perf_counter()
         index_size = embeddings.build_or_load()
         if index_size == 0:
             logger.warning("Chat called but FAISS index is empty.")
@@ -188,7 +194,8 @@ class LegalChatService:
             logger.info(
                 f"Chat refusal — no chunks above {settings.RAG_SIMILARITY_THRESHOLD} threshold"
             )
-            return self._reply(sid, lang, OUT_OF_SCOPE_REFUSAL)
+            return self._reply(sid, lang, OUT_OF_SCOPE_REFUSAL,
+                               response_time_ms=_ms_since(t0))
 
         context_block = "\n\n".join(
             f"[{i + 1}] Source: {embeddings.record_source(p)}\n"
@@ -203,11 +210,9 @@ class LegalChatService:
             "--- End authorities ---"
         )
 
-        t0 = time.perf_counter()
         # AIServiceUnavailable propagates -> router returns 503; the user
         # message stays saved without a reply.
         raw_text = self.ai.chat(history, system=system)
-        elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
         # Every section cited must appear in the retrieved passages; case
         # law (which the statute-only corpus never contains) is removed.
@@ -232,7 +237,7 @@ class LegalChatService:
         return self._reply(
             sid, lang, checked.text,
             citations=citations_payload,
-            response_time_ms=elapsed_ms,
+            response_time_ms=_ms_since(t0),
             sources=self._unique_sources(passages),
         )
 
@@ -264,6 +269,12 @@ class LegalChatService:
             "response": content,
             "sources": sources or [],
             "session_id": str(session_id),
+            # Numbered exactly as the answer's [n] markers: passage n = item n.
+            "citations": [
+                {"n": i + 1, "source": c["source"], "excerpt": c.get("excerpt")}
+                for i, c in enumerate(citations or [])
+            ],
+            "response_time_ms": response_time_ms,
         }
 
     def _recent_history(self, session_id: uuid.UUID, *, limit: int) -> list[dict]:

@@ -29,6 +29,7 @@ class ChatMessageRead(APIModel):
     sender_type: SenderType
     content: str
     citations: list[dict] | None
+    response_time_ms: int | None = None
     created_at: datetime
 
 

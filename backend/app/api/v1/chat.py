@@ -26,10 +26,18 @@ class ChatMessageRequest(BaseModel):
     case_id: uuid.UUID | None = None
 
 
+class CitationRef(BaseModel):
+    n: int                      # matches the [n] marker in the answer
+    source: str
+    excerpt: str | None = None
+
+
 class ChatMessageResponse(BaseModel):
     response: str
-    sources: list[str]
+    sources: list[str]          # distinct statute names, in citation order
     session_id: str
+    citations: list[CitationRef] = []
+    response_time_ms: int | None = None
 
 
 @router.get(
