@@ -24,7 +24,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ai import embeddings
+from app.ai import embeddings, section_lookup
 from app.ai.citation_check import check_citations
 from app.ai.client import get_ai_client
 from app.ai.query_rewrite import rewrite_for_search
@@ -168,6 +168,20 @@ class LegalChatService:
             r for r in retrieved
             if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
         ]
+
+        # A table-of-contents chunk often outranks the section text it lists
+        # (fixed-size chunks split sections). Follow it to the sections the
+        # question points at; their text replaces the contents list.
+        extra = section_lookup.section_passages(message, passages, search_query)
+        if extra:
+            logger.info(
+                f"Section lookup: +{len(extra)} passages via contents list "
+                f"({', '.join(sorted({e['via_toc'] for e in extra}))})"
+            )
+            passages = [
+                p for p in passages
+                if not section_lookup.is_toc(embeddings.record_text(p))
+            ] + extra
 
         # Out-of-scope refusal — no LLM call, no hallucination risk
         if not passages:
