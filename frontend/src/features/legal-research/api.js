@@ -5,6 +5,7 @@ export const researchApi = {
   search: (payload) =>
     client.post(ENDPOINTS.research.search, payload).then((r) => r.data),
   get: (id) => client.get(ENDPOINTS.research.byId(id)).then((r) => r.data),
+  stats: () => client.get(ENDPOINTS.research.stats).then((r) => r.data),
   analyze: ({ text, source, user_query }) =>
     client
       .post("/research/analyze", { text, source, user_query })

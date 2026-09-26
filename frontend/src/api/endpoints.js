@@ -46,6 +46,7 @@ export const ENDPOINTS = {
   },
   research: {
     search: "/research/search",
+    stats: "/research/stats",
     byId: (id) => `/research/${id}`,
     similarCases: (id) => `/research/${id}/similar`,
   },

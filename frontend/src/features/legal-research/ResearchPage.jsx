@@ -1,17 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Search, Loader2, BookOpen, ArrowRight, AlertCircle } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import AppButton from "@/components/ui/AppButton";
 import { ROUTES } from "@/constants";
 import { researchApi } from "./api";
-import { cnInput } from "@/lib/formStyles";
 
 export default function ResearchPage() {
   const [query, setQuery] = useState("");
-  const [yearFrom, setYearFrom] = useState("");
-  const [yearTo, setYearTo] = useState("");
+  // Real corpus size from the index, so this text can't go stale after a
+  // rebuild (it once said 88,036 long after the index had changed).
+  const { data: stats } = useQuery({
+    queryKey: ["research-stats"],
+    queryFn: researchApi.stats,
+    staleTime: Infinity,
+  });
 
   const { mutate, data, isPending, isError, error, reset } = useMutation({
     mutationFn: (payload) => researchApi.search(payload),
@@ -23,8 +27,6 @@ export default function ResearchPage() {
     reset();
     mutate({
       query: query.trim(),
-      year_from: yearFrom ? Number(yearFrom) : null,
-      year_to: yearTo ? Number(yearTo) : null,
       top_k: 10,
     });
   };
@@ -49,36 +51,15 @@ export default function ResearchPage() {
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
           </AppButton>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
-          <div>
-            <label className="block text-xs text-ink-muted mb-1.5">Year from</label>
-            <input
-              type="number"
-              value={yearFrom}
-              onChange={(e) => setYearFrom(e.target.value)}
-              placeholder="1947"
-              className={cnInput(false)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-ink-muted mb-1.5">Year to</label>
-            <input
-              type="number"
-              value={yearTo}
-              onChange={(e) => setYearTo(e.target.value)}
-              placeholder="2026"
-              className={cnInput(false)}
-            />
-          </div>
-        </div>
       </form>
 
       {isPending && (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs text-ink-muted mb-4">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Searching 88,036 chunks of Pakistani law…
+            {stats?.chunks
+              ? `Searching ${stats.chunks.toLocaleString()} passages from ${stats.documents.toLocaleString()} statute documents…`
+              : "Searching the statute library…"}
           </div>
           {[0, 1, 2].map((i) => (
             <div key={i} className="py-4 border-b border-hairline-subtle animate-pulse">
@@ -104,8 +85,8 @@ export default function ResearchPage() {
 
       {data && data.results.length === 0 && !isPending && (
         <p className="text-sm text-ink-muted text-center py-8">
-          No matching authorities found. Try different keywords or remove the
-          year filters.
+          No matching authorities found. Try different or more specific
+          keywords.
         </p>
       )}
 

@@ -96,7 +96,7 @@ export default function ResearchDetailPage() {
             </span>{" "}
             — This passage is one chunk from the LegalEase corpus
             (800-char chunks with 100-char overlap). Open the original PDF
-            for the full statutory text or judgment.
+            for the full statutory text.
           </div>
         </PanelCard>
 
