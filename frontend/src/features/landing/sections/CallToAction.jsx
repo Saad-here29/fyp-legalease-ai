@@ -21,12 +21,12 @@ export default function CallToAction() {
           <ArchPattern className="text-paper opacity-[0.08]" />
 
           <div className="relative z-10">
-            <p className="text-sm text-paper/50 mb-4">FYP-1 · Demo-ready</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-paper/60 mb-5">FYP-1 · Demo-ready</p>
 
-            <h2 className="font-editorial text-4xl mb-5">
+            <h2 className="font-editorial text-4xl lg:text-5xl tracking-tight mb-5">
               See LegalEase AI in action.
             </h2>
-            <p className="text-lg text-paper/70 leading-relaxed mb-10">
+            <p className="text-lg lg:text-xl text-paper/75 leading-relaxed mb-10">
               Sign in as a lawyer, client, or student to explore the workflow.
             </p>
 

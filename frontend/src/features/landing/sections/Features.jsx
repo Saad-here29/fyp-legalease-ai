@@ -26,8 +26,8 @@ export default function Features() {
     <Section id="features" className="border-t border-hairline">
       <Container>
         <div className="max-w-2xl mb-16">
-          <p className="text-sm text-ink-muted mb-3">Modules</p>
-          <h2 className="font-editorial text-4xl text-ink-text">
+          <p className="eyebrow mb-4">Modules</p>
+          <h2 className="type-section">
             Built for how Pakistani legal work actually happens.
           </h2>
         </div>

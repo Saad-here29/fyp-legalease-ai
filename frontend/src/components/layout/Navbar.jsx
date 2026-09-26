@@ -37,7 +37,7 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm text-ink-muted hover:text-ink-text transition-colors"
+              className="text-[15px] text-ink-muted hover:text-ink-text transition-colors"
             >
               {link.label}
             </a>
@@ -45,7 +45,7 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-6">
-          <NavLink to={ROUTES.LOGIN} className="text-sm text-brick hover:underline underline-offset-2">
+          <NavLink to={ROUTES.LOGIN} className="text-[15px] font-medium text-brick hover:underline underline-offset-2">
             Sign in
           </NavLink>
           <AppButton to={ROUTES.WELCOME}>Get started</AppButton>
