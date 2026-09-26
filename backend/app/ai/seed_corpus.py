@@ -1,6 +1,11 @@
-"""Seeds the legal_corpus table with a small sample of Pakistani statutes and
-landmark judgments so the AI Legal Research module is demonstrable without
-running the full corpus pipeline.
+"""Seeds the legal_corpus table with a small sample of Pakistani statutes so
+the AI Legal Research module is demonstrable without running the full corpus
+pipeline.
+
+These rows are NOT what chat / research search: both query the FAISS index
+built by ai-services/corpus_builder, which is statute text only. Judgments
+were removed from this sample (2026-09) so nothing here suggests the searchable
+corpus contains case law.
 
 Idempotent: skips rows that already exist (matched by title + section_number).
 Run automatically on backend startup when the table is empty.
@@ -109,21 +114,6 @@ SAMPLE_CORPUS: list[dict] = [
         ),
     },
     {
-        "title": "Khula — Khurshid Bibi v. Muhammad Amin",
-        "section_number": "PLD 1967 SC 97",
-        "jurisdiction": "Pakistan",
-        "document_type": "judgment",
-        "court": "Supreme Court of Pakistan",
-        "year": 1967,
-        "content": (
-            "Landmark Supreme Court judgment establishing the wife's right to khula "
-            "(divorce on her initiative) under Islamic law. The Court held that a "
-            "Family Court can grant khula even without the husband's consent if it "
-            "finds that the spouses cannot live together within the limits of Allah. "
-            "This judgment forms the basis of modern khula jurisprudence in Pakistan."
-        ),
-    },
-    {
         "title": "Muslim Family Laws Ordinance 1961",
         "section_number": "7",
         "jurisdiction": "Pakistan",
@@ -181,20 +171,6 @@ SAMPLE_CORPUS: list[dict] = [
             "of the minor. In considering this welfare, the Court shall have regard "
             "to the age, sex and religion of the minor, the character and capacity "
             "of the proposed guardian, and any wishes of a deceased parent."
-        ),
-    },
-    {
-        "title": "Khula entitlement — Mst. Balqis Fatima v. Najm-ul-Ikram",
-        "section_number": "PLD 1959 Lah 566",
-        "jurisdiction": "Pakistan",
-        "document_type": "judgment",
-        "court": "Lahore High Court",
-        "year": 1959,
-        "content": (
-            "Lahore High Court ruling that a wife is entitled to dissolution of "
-            "marriage by way of khula if the Court is satisfied that the spouses "
-            "cannot live together within the limits prescribed by Allah. Set the "
-            "doctrinal foundation later affirmed by the Supreme Court in Khurshid Bibi."
         ),
     },
 ]

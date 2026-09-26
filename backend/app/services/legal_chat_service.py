@@ -4,13 +4,15 @@ Pipeline (Final Report Algorithm 5):
     1. Embed the user query with the same multilingual model used to
        build the FAISS index.
     2. Retrieve top RAG_TOP_K=5 chunks.
-    3. Filter by similarity >= RAG_SIMILARITY_THRESHOLD=0.7.
+    3. Filter by similarity >= RAG_SIMILARITY_THRESHOLD (0.65).
     4. If NO chunks pass the threshold, return the out-of-scope refusal
        — we do NOT let the LLM answer un-grounded questions, that's the
        whole point of a RAG system.
     5. Otherwise build a system + context + history + user prompt and
-       call OpenAI chat completions.
-    6. Persist user + AI messages to chat_sessions / chat_messages with
+       call the LLM.
+    6. Ground the answer's citations in the retrieved passages
+       (app/ai/citation_check.py).
+    7. Persist user + AI messages to chat_sessions / chat_messages with
        the list of source names cited.
 """
 
@@ -23,10 +25,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ai import embeddings
+from app.ai.citation_check import check_citations
 from app.ai.client import get_ai_client
 from app.ai.query_rewrite import rewrite_for_search
 from app.core.config import settings
-from app.core.exceptions import AIServiceUnavailable, NotAuthorized, NotFound
+from app.core.exceptions import NotAuthorized, NotFound
 from app.core.logging import logger
 from app.models.chat import ChatMessage, ChatSession
 from app.models.enums import SenderType
@@ -35,17 +38,27 @@ from app.models.user import User
 
 # Per Task 3 spec — strict scope filter. Outside of Pakistani law the bot
 # must refuse, not hallucinate.
+# The retrieval index is statute-only; this prompt must never claim judgments exist.
 SYSTEM_PROMPT = (
     "You are LegalEase AI, a specialized legal assistant for Pakistani law. "
     "You ONLY answer questions about Pakistani statutes, court procedures, "
-    "legal rights, and matters under Pakistani jurisdiction. You have access "
-    "to the Pakistan Penal Code, Code of Criminal Procedure, Family Courts "
-    "Act, Muslim Family Laws Ordinance, Zainab Alert Act, and Supreme Court "
-    "of Pakistan judgments. If asked anything outside Pakistani law "
-    "(cooking, sports, general knowledge, foreign law etc.), politely refuse "
-    "and redirect to legal topics. Always cite the specific law or case you "
-    "are referencing. Answer in the same language the user writes in "
-    "(English or Urdu)."
+    "legal rights, and matters under Pakistani jurisdiction. "
+    "Your knowledge base is LegalEase's library of Pakistani statute text "
+    "(Acts, Ordinances, Codes and Orders); it contains no court judgments or "
+    "case law. For each question the system retrieves the most relevant "
+    "statute passages and lists them below as numbered sources; the user "
+    "did not write them and cannot see them, so never call them passages "
+    "the user provided. Base your answer on these passages, citing them by "
+    "[n]. Cite a section number only if it appears in those passages. Never "
+    "cite case names, law-report citations (PLD, SCMR, MLD, CLC, YLR or "
+    "similar) or any judgment. If the passages don't cover part of the "
+    "question, say that LegalEase's statute library doesn't cover it, point "
+    "to the closest passage that does apply, and don't fill the gap from "
+    "memory. "
+    "If asked anything outside Pakistani law (cooking, sports, general "
+    "knowledge, foreign law etc.), politely refuse and redirect to legal "
+    "topics. Answer in the same language the user writes in (English or "
+    "Urdu)."
 )
 
 OUT_OF_SCOPE_REFUSAL = (
@@ -103,11 +116,18 @@ class LegalChatService:
 
         Returns the spec-mandated shape:
             { "response": str, "sources": list[str], "session_id": str }
+
+        Split into three phases so no DB transaction stays open across the
+        slow work (embedding-model load, query rewrite, answer generation).
+        Supabase's pooler kills a connection left idle-in-transaction, which
+        surfaced as a 500 on the first message after a backend restart.
         """
-        # 1) Resolve / create the session up front so we have an id for both
-        #    in-scope and refusal responses.
+        # Phase 1 — short DB write: resolve / create the session, read the
+        # history, persist the user message (we want a full audit of what
+        # was asked, whatever the outcome), then commit.
         if session_id is not None:
             session = self.get_session(session_id, user)
+            history = self._recent_history(session.id, limit=10)
         else:
             session = ChatSession(
                 user_id=user.id,
@@ -118,27 +138,27 @@ class LegalChatService:
             )
             self.db.add(session)
             self.db.flush()
+            history = []
 
         lang = session.language_hint or _detect_language(message)
-
-        # Persist the user message regardless of scope outcome — we want a
-        # full audit of what was asked.
-        user_msg = ChatMessage(
-            session_id=session.id,
+        sid = session.id
+        self.db.add(ChatMessage(
+            session_id=sid,
             sender_type=SenderType.USER,
             content=message,
             detected_language=lang,
-        )
-        self.db.add(user_msg)
-        self.db.flush()
+        ))
+        session.total_messages = (session.total_messages or 0) + 1
+        self.db.commit()
+        # From here until phase 3, touch no ORM object: commit expired them,
+        # and a lazy reload would open a new transaction.
 
-        # 2) Retrieval
-        index_size = embeddings.build_or_load(self.db)
+        # Phase 2 — retrieval + LLM, no DB transaction held.
+        index_size = embeddings.build_or_load()
         if index_size == 0:
             logger.warning("Chat called but FAISS index is empty.")
-            return self._refuse(
-                session,
-                lang,
+            return self._reply(
+                sid, lang,
                 "The legal knowledge base is still being built. Please try again in a few minutes.",
             )
 
@@ -149,23 +169,19 @@ class LegalChatService:
             if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
         ]
 
-        # 3) Out-of-scope refusal — no LLM call, no hallucination risk
+        # Out-of-scope refusal — no LLM call, no hallucination risk
         if not passages:
             logger.info(
                 f"Chat refusal — no chunks above {settings.RAG_SIMILARITY_THRESHOLD} threshold"
             )
-            return self._refuse(session, lang, OUT_OF_SCOPE_REFUSAL)
+            return self._reply(sid, lang, OUT_OF_SCOPE_REFUSAL)
 
-        # 4) Build the prompt: system + context + history + user
         context_block = "\n\n".join(
             f"[{i + 1}] Source: {embeddings.record_source(p)}\n"
             f"{embeddings.record_text(p)}"
             for i, p in enumerate(passages)
         )
-
-        history = self._recent_history(session.id, exclude=user_msg.id, limit=10)
         history.append({"role": "user", "content": message})
-
         system = (
             f"{SYSTEM_PROMPT}\n\n"
             "--- Relevant Pakistani legal authorities (cite by [n]) ---\n"
@@ -173,18 +189,22 @@ class LegalChatService:
             "--- End authorities ---"
         )
 
-        # 5) Call OpenAI
         t0 = time.perf_counter()
-        try:
-            ai_text = self.ai.chat(history, system=system)
-        except AIServiceUnavailable:
-            # Re-raise so the router returns a 503 with the hint, no AI
-            # message persisted.
-            raise
+        # AIServiceUnavailable propagates -> router returns 503; the user
+        # message stays saved without a reply.
+        raw_text = self.ai.chat(history, system=system)
         elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
-        # 6) Persist AI message with citations
-        source_names = self._unique_sources(passages)
+        # Every section cited must appear in the retrieved passages; case
+        # law (which the statute-only corpus never contains) is removed.
+        checked = check_citations(
+            raw_text,
+            [{"source": embeddings.record_source(p), "text": embeddings.record_text(p)}
+             for p in passages],
+            lang=lang,
+        )
+        logger.info(f"Citation check: {checked.summary()}")
+
         citations_payload = [
             {
                 "source": embeddings.record_source(p),
@@ -194,54 +214,48 @@ class LegalChatService:
             }
             for p in passages
         ]
-        ai_msg = ChatMessage(
-            session_id=session.id,
-            sender_type=SenderType.AI,
-            content=ai_text,
+        # Phase 3 — short DB write: persist the reply.
+        return self._reply(
+            sid, lang, checked.text,
             citations=citations_payload,
             response_time_ms=elapsed_ms,
-            detected_language=lang,
+            sources=self._unique_sources(passages),
         )
-        self.db.add(ai_msg)
-        session.total_messages = (session.total_messages or 0) + 2
-        self.db.commit()
-        self.db.refresh(session)
-
-        return {
-            "response": ai_text,
-            "sources": source_names,
-            "session_id": str(session.id),
-        }
 
     # ----- Internal ------------------------------------------------------
 
-    def _refuse(self, session: ChatSession, lang: str, message: str) -> dict:
-        ai_msg = ChatMessage(
-            session_id=session.id,
+    def _reply(
+        self,
+        session_id: uuid.UUID,
+        lang: str,
+        content: str,
+        *,
+        citations: list[dict] | None = None,
+        response_time_ms: int = 0,
+        sources: list[str] | None = None,
+    ) -> dict:
+        """Persist the AI message in its own short transaction."""
+        self.db.add(ChatMessage(
+            session_id=session_id,
             sender_type=SenderType.AI,
-            content=message,
-            citations=None,
-            response_time_ms=0,
+            content=content,
+            citations=citations,
+            response_time_ms=response_time_ms,
             detected_language=lang,
-        )
-        self.db.add(ai_msg)
-        session.total_messages = (session.total_messages or 0) + 2
+        ))
+        session = self.db.get(ChatSession, session_id)
+        session.total_messages = (session.total_messages or 0) + 1
         self.db.commit()
         return {
-            "response": message,
-            "sources": [],
-            "session_id": str(session.id),
+            "response": content,
+            "sources": sources or [],
+            "session_id": str(session_id),
         }
 
-    def _recent_history(
-        self, session_id: uuid.UUID, *, exclude: uuid.UUID, limit: int
-    ) -> list[dict]:
+    def _recent_history(self, session_id: uuid.UUID, *, limit: int) -> list[dict]:
         rows = (
             self.db.query(ChatMessage)
-            .filter(
-                ChatMessage.session_id == session_id,
-                ChatMessage.id != exclude,
-            )
+            .filter(ChatMessage.session_id == session_id)
             .order_by(ChatMessage.created_at.desc())
             .limit(limit)
             .all()
