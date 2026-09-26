@@ -135,6 +135,46 @@ export default {
             "sup.citation-marker": { color: theme("colors.brick"), fontWeight: "600" },
           },
         },
+        // Design system v1 reading style for AI output (`prose prose-ds`):
+        // Plex Sans throughout, ink table rule under the header row, hairline
+        // row dividers, list markers in Text 2 (Seal is never decoration).
+        ds: {
+          css: {
+            "--tw-prose-body": theme("colors.ds.text"),
+            "--tw-prose-headings": theme("colors.ds.text"),
+            "--tw-prose-lead": theme("colors.ds.text-2"),
+            "--tw-prose-links": theme("colors.ds.text"),
+            "--tw-prose-bold": theme("colors.ds.text"),
+            "--tw-prose-counters": theme("colors.ds.text-2"),
+            "--tw-prose-bullets": theme("colors.ds.text-2"),
+            "--tw-prose-hr": theme("colors.ds.rule"),
+            "--tw-prose-quotes": theme("colors.ds.text"),
+            "--tw-prose-quote-borders": theme("colors.ds.rule"),
+            "--tw-prose-captions": theme("colors.ds.text-2"),
+            "--tw-prose-code": theme("colors.ds.text"),
+            "--tw-prose-th-borders": theme("colors.ds.ink"),
+            "--tw-prose-td-borders": theme("colors.ds.rule"),
+            fontFamily: theme("fontFamily.ds-sans").join(", "),
+            fontSize: "17px",
+            lineHeight: "28px",
+            "h1, h2, h3, h4": { fontFamily: theme("fontFamily.ds-sans").join(", "), fontWeight: "600" },
+            h1: { fontSize: "24px", lineHeight: "32px", marginTop: "1.4em", marginBottom: "0.5em" },
+            h2: { fontSize: "21px", lineHeight: "30px", marginTop: "1.4em", marginBottom: "0.5em" },
+            h3: { fontSize: "19px", lineHeight: "28px", marginTop: "1.6em", marginBottom: "0.5em" },
+            h4: { fontSize: "17px", lineHeight: "28px" },
+            "h1:first-child, h2:first-child, h3:first-child": { marginTop: "0" },
+            a: {
+              fontWeight: "600",
+              textDecorationColor: theme("colors.ds.underline"),
+              textDecorationThickness: "2px",
+              textUnderlineOffset: "5px",
+            },
+            table: { fontSize: "16px", lineHeight: "24px" },
+            "thead th": { color: theme("colors.ds.text-2"), fontWeight: "600", fontSize: "15px", paddingBottom: "12px" },
+            thead: { borderBottomWidth: "2px" },
+            "tbody td": { paddingTop: "14px", paddingBottom: "14px" },
+          },
+        },
       }),
       maxWidth: {
         "ds-content": "1064px",   // content column max

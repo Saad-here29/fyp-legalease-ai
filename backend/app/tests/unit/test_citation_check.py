@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from app.ai.citation_check import check_citations
+from app.ai.citation_check import check_citations, normalize_markers
 
 MFLO_CSV = {
     "source": "Muslim Family Laws Ordinance, 1961",
@@ -155,3 +155,35 @@ def test_replay_clean_answers_unchanged(case):
     r = check_citations(case["answer"], case["passages"])
     assert r.text == case["answer"]
     assert r.unverified == [] and r.removed_case_citations == []
+
+
+# ----- The model's own "【n】" citation format --------------------------------
+# gpt-oss sometimes cites as "【5】" or "【5†L1-L3】" (18% of stored answers,
+# Sept 2026). These are rewritten to "[n]" before any check runs.
+
+@pytest.mark.parametrize("raw, expected", [
+    ("fine up to Rs 5,000【5】.", "fine up to Rs 5,000[5]."),
+    ("to the Chairman【5†L1-L3】.", "to the Chairman[5]."),
+    ("pregnancy【6†L5】 rule", "pregnancy[6] rule"),
+    ("both【4, 5】.", "both[4][5]."),
+    ("【 2 †source】", "[2]"),
+    ("plain [3] marker and a link [text](http://x)", "plain [3] marker and a link [text](http://x)"),
+    ("【not a number】", "【not a number】"),
+])
+def test_normalize_markers(raw, expected):
+    assert normalize_markers(raw) == expected
+
+
+def test_fullwidth_markers_in_range_are_kept_as_brackets():
+    r = check_citations("Maintenance may be certified【1】 and ordered【1†L2-L3】.", [MFLO_CSV])
+    assert "【" not in r.text
+    assert r.text.count("[1]") == 2
+    assert r.removed_markers == []
+
+
+def test_fullwidth_marker_out_of_range_is_removed():
+    # One passage supplied, so "【9】" / "【9†L1-L3】" point at nothing.
+    r = check_citations("Maintenance may be certified【1】 and more【9】 and【9†L1-L3】.", [MFLO_CSV])
+    assert "[1]" in r.text
+    assert "9" not in r.text and "【" not in r.text
+    assert r.removed_markers == ["[9]", "[9]"]

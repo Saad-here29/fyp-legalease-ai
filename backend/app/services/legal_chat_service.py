@@ -58,7 +58,11 @@ SYSTEM_PROMPT = (
     "If asked anything outside Pakistani law (cooking, sports, general "
     "knowledge, foreign law etc.), politely refuse and redirect to legal "
     "topics. Answer in the same language the user writes in (English or "
-    "Urdu)."
+    "Urdu). "
+    # The chat UI shows this opening line as a highlighted "Short answer" box.
+    "Begin every substantive answer with one sentence starting \"Short "
+    "answer:\" (in Urdu, \"مختصر جواب:\") that states the core point, then "
+    "give the detailed breakdown. Don't add it to refusals."
 )
 
 OUT_OF_SCOPE_REFUSAL = (

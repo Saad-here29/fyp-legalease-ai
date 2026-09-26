@@ -208,7 +208,9 @@ export default function AppShell({ title, subtitle, eyebrow, headerActions, bare
       )}
 
       {bare ? (
-        <main className="flex-1 min-w-0 flex flex-col lg:h-screen">{children}</main>
+        // Full-height pages with their own columns (AI Chat): fill the
+        // viewport below the mobile bar (h-16) or beside the sidebar.
+        <main className="flex-1 min-w-0 flex flex-col h-[calc(100dvh-4rem)] lg:h-screen">{children}</main>
       ) : (
         <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-14">
           {/* Left-aligned column, 56px from the sidebar, max 1064px (mockups pp. 4, 8). */}

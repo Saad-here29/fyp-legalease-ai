@@ -39,8 +39,19 @@ function linkCitations(text, citeId) {
   return text.replace(/\[(\d{1,2})\](?!\()/g, (_, n) => `[${n}](#${citeAnchor(citeId, n)})`);
 }
 
+// "ink" = the previous editorial theme (pages not yet migrated); "ds" =
+// design system v1 (docs/STYLE_GUIDE.md), where markers are small ink boxes.
+const VARIANTS = { ink: "prose-ink", ds: "prose-ds" };
+
+// Non-citation links open in a new tab.
+const ExternalLink = ({ href, children, ...props }) => (
+  <a href={href} target="_blank" rel="noreferrer" {...props}>
+    {children}
+  </a>
+);
+
 // eslint-disable-next-line no-unused-vars -- `node` is react-markdown's AST prop; keep it off the DOM
-const citationLink = ({ node, href, children, ...props }) =>
+const InkLink = ({ node, href, children, ...props }) =>
   href?.startsWith("#cite-") ? (
     <sup className="citation-marker">
       <a href={href} className="no-underline">
@@ -48,19 +59,27 @@ const citationLink = ({ node, href, children, ...props }) =>
       </a>
     </sup>
   ) : (
-    <a href={href} target="_blank" rel="noreferrer" {...props}>
-      {children}
-    </a>
+    <ExternalLink href={href} {...props}>{children}</ExternalLink>
   );
 
-export default function Markdown({ children, citeId, className = "" }) {
+// eslint-disable-next-line no-unused-vars -- `node` is react-markdown's AST prop; keep it off the DOM
+const DsLink = ({ node, href, children, ...props }) =>
+  href?.startsWith("#cite-") ? (
+    <a href={href} className="ds-cite" aria-label={`Source ${children}`}>
+      {children}
+    </a>
+  ) : (
+    <ExternalLink href={href} {...props}>{children}</ExternalLink>
+  );
+
+export default function Markdown({ children, citeId, variant = "ink", className = "" }) {
   const text = children || "";
   return (
-    <div className={`prose prose-ink max-w-none ${className}`}>
+    <div className={`prose ${VARIANTS[variant]} max-w-none ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeBreaks]}
-        components={{ a: citationLink }}
+        components={{ a: variant === "ds" ? DsLink : InkLink }}
       >
         {citeId ? linkCitations(text, citeId) : text}
       </ReactMarkdown>

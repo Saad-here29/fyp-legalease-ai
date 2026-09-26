@@ -196,6 +196,19 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
   users should ask one clear legal question at a time, much as a lawyer
   would want a client to ask one clear question rather than six mixed
   together.
+- **Known limitation — Urdu khula question misses the relevant statute**
+  (observed 2026-09-27, future work, not urgent). "خلع کیا ہے اور عورت
+  عدالت سے خلع کیسے لے سکتی ہے؟" (what is khula and how can a woman obtain
+  it from the court?) retrieved a single, unrelated Code of Criminal
+  Procedure passage, so the answer honestly said the library has no khula
+  provision — although the Muslim Family Laws Ordinance, 1961 (dissolution
+  of marriage) is indexed. Likely the same terminology-mismatch pattern as
+  the earlier English divorce/talaq fix, which taught the query rewrite to
+  map everyday wording onto the statutes' terms but hasn't been extended to
+  Urdu phrasing. Next step: replay a handful of Urdu family-law questions
+  through `rewrite_search_query` and compare the rewrites and retrieved
+  passages with their English equivalents (offline apart from the rewrite
+  calls — mind the Groq token budget).
 
 ## Reliability pass — citations, DB connections, output polish (confirmed 2026-09-26)
 Committed `cbc48ad` and `1c32ff3`, pushed to `origin/main`. Full backend
@@ -217,6 +230,12 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
   - Chat system prompt, the default prompt in `client.py`, and the
     `/research/analyze` template no longer claim judgment access or ask for
     case citations. Live re-tests: 0 case citations across all runs.
+  - **Model's own citation format normalised (2026-09-27).** gpt-oss
+    sometimes cites as "【5】" / "【5†L1-L3】" instead of "[5]" (10 of 56
+    stored answers with sources). `normalize_markers()` rewrites these to
+    "[n]" before the checks, so they're range-checked like any other marker
+    (an out-of-range "【9】" used to slip through); the chat page applies the
+    same rewrite when displaying answers stored before the fix.
   - Known limits: it checks a section number *exists* in the retrieved
     text, not that the answer describes it correctly; table-of-contents
     chunks make every listed section look present; same-numbered sections

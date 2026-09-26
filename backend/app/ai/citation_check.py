@@ -9,7 +9,9 @@ comes back, `check_citations()`:
     unless that exact citation appears in a passage;
   * marks each Section / Article reference whose number is not found in
     the passages "(unverified)" and lists them in a closing note;
-  * drops [n] source markers that point past the passages supplied.
+  * drops [n] source markers that point past the passages supplied —
+    after first rewriting the model's own "【n】" / "【n†L1-L3】" citation
+    format to "[n]" (`normalize_markers`), so every marker is validated.
 
 Deterministic regex/string matching, no LLM call. It verifies that a cited
 number EXISTS in the retrieved text, not that the answer describes it
@@ -380,11 +382,25 @@ def _remove_case_citations(text: str, passages_norm: str, marker: str,
     return re.sub(rf"{esc}(?:\s*{esc})+", marker, result)
 
 
+# The model (gpt-oss) sometimes cites in its own format — "【5】",
+# "【5†L1-L3】", "【4, 5】" — instead of the "[n]" the prompt asks for. 18% of
+# stored answers did (Sept 2026). Rewriting to "[n]" before the checks means
+# those markers are range-checked like any other and the UI can link them.
+_FULLWIDTH_MARKER = re.compile(r"【\s*(\d{1,2}(?:\s*,\s*\d{1,2})*)\s*(?:†[^】]*)?】")
+
+
+def normalize_markers(text: str) -> str:
+    """Rewrite "【5†L1-L3】" to "[5]" and "【4, 5】" to "[4][5]"; other text unchanged."""
+    return _FULLWIDTH_MARKER.sub(
+        lambda m: "".join(f"[{n.strip()}]" for n in m.group(1).split(",")), text)
+
+
 def check_citations(answer: str, passages: list[dict], lang: str = "en") -> CitationCheck:
     """`passages` are the retrieved records (need `source` and `text`), in
     the same order they were numbered [1..n] in the prompt."""
     words = _MARKERS["ur" if lang == "ur" else "en"]
     passages_norm = re.sub(r"\s+", " ", _norm(" ".join(p.get("text") or "" for p in passages)))
+    answer = normalize_markers(answer)
     result = CitationCheck(text=answer)
 
     # 1) Case-law citations

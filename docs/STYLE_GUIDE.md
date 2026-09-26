@@ -141,7 +141,7 @@ for them** — adapt each page to what exists (decided 2026-09-27):
 |---|---|
 | Dashboards, Cases list/detail (pp. 4–6, 8–9) | Remove Calendar, cause list, deadlines, client messages, and the student reading/practice sections. Keep only real data. |
 | Research (p. 11) | Remove the jurisdiction and court filters and the "Judgments" source type — the index is statute text only, and these filters were removed for that reason. |
-| AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. |
+| AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. No scope / linked-case tags, "Save to case" or attach button (not built). Meta line counts statutes; "Checked against source" is derived from the backend citation check's "(unverified)" flags. |
 | Document Analysis (p. 12) | No page references on extracted values — the API has none. |
 | Contracts (p. 13) | Only the 3 real templates (NDA, Employment, Service Agreement); no "Export .docx" — no export exists. |
 | Login (p. 2) | No "I am a" role picker (login is email + password; the account holds the role) and no English / اردو switch (the interface isn't translated). Hero copy made true: "tied to the statute it came from", "Citations checked against the statute text", "Federal statutes of the Pakistan Code, in one search" (the index has only three provincial Acts). |
@@ -175,7 +175,8 @@ extend these.
   `frontend/tailwind.config.js` and `frontend/src/index.css`; token test page
   at `/design-system` (not linked from the app).
 - **Migrated:** `AppShell` (sidebar, page header, mobile drawer), `AuthShell`
-  (ink identity panel shared by all six auth pages), Login.
+  (ink identity panel shared by all six auth pages), Login, AI Chat
+  (incl. `prose-ds` for AI output, `.ds-cite` markers, the Short answer box).
 - **Not yet migrated:** every other page's content (the auth pages other than
   Login keep old-style forms inside the new frame) still uses the previous tokens
   (`paper`, `ink-panel`, `ink-text`, `ink-muted`, `hairline`, `brick`,

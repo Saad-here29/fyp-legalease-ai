@@ -124,6 +124,14 @@
       focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-ink;
   }
 
+  /* Citation marker in AI answers ("[1]" -> a small ink box linking to its
+     source row), per the AI Chat mockup. */
+  .ds-cite {
+    @apply inline-flex items-center justify-center min-w-[20px] h-5 px-1 mx-0.5 rounded-ds-sm bg-ds-ink text-white
+      font-ds-sans font-semibold text-[12px] leading-none no-underline align-[0.12em] hover:bg-ds-ink-2
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ds-ink;
+  }
+
   /* Status tags — pass / fail / review / neutral / active. */
   .ds-tag        { @apply inline-flex items-center gap-1.5 h-8 px-3 rounded-ds font-ds-sans font-semibold text-[14px] leading-[20px]; }
   .ds-tag-pass   { @apply ds-tag bg-ds-pass-tint text-ds-pass; }
