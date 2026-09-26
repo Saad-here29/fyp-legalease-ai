@@ -5,6 +5,7 @@ import { Send, Loader2, Bot, User as UserIcon, BookOpen, MessageSquarePlus } fro
 import AppShell from "@/components/layout/AppShell";
 import { chatApi } from "./api";
 import { cnInput } from "@/lib/formStyles";
+import { renderInline } from "@/lib/markdownLite";
 
 const SUGGESTIONS = [
   "What is the penalty for child abuse under the Zainab Alert Act?",
@@ -12,20 +13,6 @@ const SUGGESTIONS = [
   "Explain khula under Pakistani Family Law",
   "What is murder under Section 302 of the Pakistan Penal Code?",
 ];
-
-// Bold via **text**, newlines preserved, and "[n]" turned into a small
-// superscript footnote marker — per the design system, citations are
-// numbered footnotes in the text, never badges/chips.
-function renderInline(text) {
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return escaped
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\[(\d+)\]/g, '<sup class="citation-marker">$1</sup>')
-    .replace(/\n/g, "<br/>");
-}
 
 export default function ChatPage() {
   const qc = useQueryClient();
@@ -271,9 +258,11 @@ function EmptyState({ onPick }) {
       <Bot className="h-9 w-9 text-ink-muted mb-4" />
       <h3 className="font-editorial text-2xl text-ink-text">LegalEase AI assistant</h3>
       <p className="text-ink-muted mt-2 max-w-md text-sm">
-        Ask any question about Pakistani law. I'll cite the source statute
-        or judgment for every answer. Out-of-scope questions are politely
-        refused.
+        Ask any question about Pakistani law. Answers are grounded in
+        LegalEase&apos;s library of Pakistani statute text (Acts, Ordinances,
+        Codes and Orders) and cite the passages they rely on — the library
+        holds no court judgments or case law. Out-of-scope questions are
+        politely refused.
       </p>
       <div className="mt-6 w-full max-w-xl">
         {SUGGESTIONS.map((s) => (

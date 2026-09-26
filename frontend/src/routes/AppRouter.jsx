@@ -16,6 +16,8 @@ import ResearchPage from "@/features/legal-research/ResearchPage";
 import ResearchDetailPage from "@/features/legal-research/ResearchDetailPage";
 import DocumentsPage from "@/features/document-analysis/DocumentsPage";
 import CaseDetailPage from "@/features/case-management/CaseDetailPage";
+import ContractsPage from "@/features/contract-drafting/ContractsPage";
+import ContractDetailPage from "@/features/contract-drafting/ContractDetailPage";
 import ComingSoonPage from "@/components/common/ComingSoonPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -175,12 +177,16 @@ export default function AppRouter() {
       <Route
         path={ROUTES.CONTRACTS}
         element={
-          <ProtectedRoute allowedRoles={[ROLES.LAWYER]}>
-            <ComingSoonPage
-              title="Contract Drafting"
-              description="Template-based contract drafting with clause suggestions, compliance checks, and version history."
-              eta="Iteration 3"
-            />
+          <ProtectedRoute allowedRoles={[ROLES.LAWYER, ROLES.CLIENT]}>
+            <ContractsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.CONTRACT_DETAIL}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.LAWYER, ROLES.CLIENT]}>
+            <ContractDetailPage />
           </ProtectedRoute>
         }
       />

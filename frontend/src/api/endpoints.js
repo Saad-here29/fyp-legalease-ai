@@ -54,11 +54,11 @@ export const ENDPOINTS = {
     status: (jobId) => `/ocr/jobs/${jobId}`,
   },
   contracts: {
-    templates: "/contracts/templates",
-    drafts: "/contracts/drafts",
-    draftById: (id) => `/contracts/drafts/${id}`,
-    suggestClause: "/contracts/suggest-clause",
-    complianceCheck: (id) => `/contracts/drafts/${id}/compliance`,
+    list: "/contracts",
+    draft: "/contracts/draft",
+    byId: (id) => `/contracts/${id}`,
+    versions: (id) => `/contracts/${id}/versions`,
+    checkCompliance: (id) => `/contracts/${id}/check-compliance`,
   },
   simulator: {
     scenarios: "/simulator/scenarios",

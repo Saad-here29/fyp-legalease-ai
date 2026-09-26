@@ -32,6 +32,13 @@ export const CASE_TYPES = Object.freeze({
   MAINTENANCE: "maintenance",
 });
 
+// Matches backend/app/models/enums.py ContractType exactly.
+export const CONTRACT_TYPES = Object.freeze({
+  NDA: "nda",
+  EMPLOYMENT: "employment",
+  SERVICE_AGREEMENT: "service_agreement",
+});
+
 export const STORAGE_KEYS = Object.freeze({
   ACCESS_TOKEN: "legalease.access_token",
   REFRESH_TOKEN: "legalease.refresh_token",
@@ -60,6 +67,7 @@ export const ROUTES = Object.freeze({
   RESEARCH_DETAIL: "/research/:id",
   DOCUMENTS: "/documents",
   CONTRACTS: "/contracts",
+  CONTRACT_DETAIL: "/contracts/:id",
   SIMULATOR: "/simulator",
   NOTIFICATIONS: "/notifications",
   PROFILE: "/profile",
