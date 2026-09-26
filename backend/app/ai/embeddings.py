@@ -23,6 +23,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.ai.model_loading import MODEL_LOAD_LOCK
 from app.core.config import settings
 from app.core.logging import logger
 
@@ -59,9 +60,12 @@ def _load_model():
     global _MODEL
     if _MODEL is not None:
         return _MODEL
-    from sentence_transformers import SentenceTransformer
-    logger.info(f"Loading embedding model: {settings.EMBEDDING_MODEL_NAME}")
-    _MODEL = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
+    # Shared with the NER loader: concurrent `transformers` imports race.
+    with MODEL_LOAD_LOCK:
+        if _MODEL is None:
+            from sentence_transformers import SentenceTransformer
+            logger.info(f"Loading embedding model: {settings.EMBEDDING_MODEL_NAME}")
+            _MODEL = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
     return _MODEL
 
 

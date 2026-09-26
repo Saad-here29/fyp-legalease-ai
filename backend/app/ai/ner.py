@@ -17,6 +17,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.ai.model_loading import MODEL_LOAD_LOCK
 from app.core.config import settings
 from app.core.logging import logger
 
@@ -138,13 +139,16 @@ def _load():
             _STATE = "unavailable"
             return None
         try:
-            from transformers import AutoModelForTokenClassification, AutoTokenizer
-            logger.info(f"Loading NER model from {path}")
-            tok = AutoTokenizer.from_pretrained(str(path))
-            # Saved by transformers 5.x as a plain BertTokenizer, which emits
-            # token_type_ids — DistilBERT's forward() rejects them.
-            tok.model_input_names = ["input_ids", "attention_mask"]
-            model = AutoModelForTokenClassification.from_pretrained(str(path)).eval()
+            # Shared with the embedding loader: concurrent `transformers`
+            # imports race (see app/ai/model_loading.py).
+            with MODEL_LOAD_LOCK:
+                from transformers import AutoModelForTokenClassification, AutoTokenizer
+                logger.info(f"Loading NER model from {path}")
+                tok = AutoTokenizer.from_pretrained(str(path))
+                # Saved by transformers 5.x as a plain BertTokenizer, which
+                # emits token_type_ids — DistilBERT's forward() rejects them.
+                tok.model_input_names = ["input_ids", "attention_mask"]
+                model = AutoModelForTokenClassification.from_pretrained(str(path)).eval()
             _TAGGER = _Tagger(tok, model)
             _STATE = "loaded"
             logger.info("NER model ready")
