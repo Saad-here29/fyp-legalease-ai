@@ -179,7 +179,7 @@ function StructuredAnalysisPanel({ result }) {
           <div className="text-center">
             <p className="font-medium text-ink-text">Analysing this passage…</p>
             <p className="text-xs mt-1">
-              Llama-3.3 is structuring the Issue, Findings, Judgment,
+              The AI is structuring the Issue, Findings, Judgment,
               Legal Basis and Relevance. Usually 2–4 seconds.
             </p>
           </div>

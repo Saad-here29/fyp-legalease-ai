@@ -8,18 +8,10 @@ import { ROUTES } from "@/constants";
 import { researchApi } from "./api";
 import { cnInput } from "@/lib/formStyles";
 
-const TYPE_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "statute", label: "Statutes" },
-  { key: "judgment", label: "Judgments" },
-];
-
 export default function ResearchPage() {
   const [query, setQuery] = useState("");
-  const [court, setCourt] = useState("");
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
 
   const { mutate, data, isPending, isError, error, reset } = useMutation({
     mutationFn: (payload) => researchApi.search(payload),
@@ -31,10 +23,8 @@ export default function ResearchPage() {
     reset();
     mutate({
       query: query.trim(),
-      court: court || null,
       year_from: yearFrom ? Number(yearFrom) : null,
       year_to: yearTo ? Number(yearTo) : null,
-      case_type: typeFilter === "all" ? null : typeFilter,
       top_k: 10,
     });
   };
@@ -42,7 +32,7 @@ export default function ResearchPage() {
   return (
     <AppShell
       title="AI legal research"
-      subtitle="Semantic search over Pakistani statutes, Cr.P.C., PPC, and Supreme Court judgments"
+      subtitle="Semantic search over Pakistani statute text — Acts, Ordinances, Codes and Orders"
     >
       <form onSubmit={submit} className="pb-8 mb-8 border-b border-hairline space-y-5">
         <div className="flex items-end gap-3">
@@ -60,32 +50,7 @@ export default function ResearchPage() {
           </AppButton>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm text-ink-muted">Type:</span>
-          {TYPE_FILTERS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTypeFilter(t.key)}
-              className={`text-sm transition-colors ${
-                typeFilter === t.key ? "text-ink-text font-medium" : "text-ink-muted hover:text-ink-text"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <label className="block text-xs text-ink-muted mb-1.5">Court (judgments only)</label>
-            <input
-              value={court}
-              onChange={(e) => setCourt(e.target.value)}
-              placeholder="e.g. Supreme Court"
-              className={cnInput(false)}
-            />
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
           <div>
             <label className="block text-xs text-ink-muted mb-1.5">Year from</label>
             <input
@@ -140,7 +105,7 @@ export default function ResearchPage() {
       {data && data.results.length === 0 && !isPending && (
         <p className="text-sm text-ink-muted text-center py-8">
           No matching authorities found. Try different keywords or remove the
-          court / year filters.
+          year filters.
         </p>
       )}
 

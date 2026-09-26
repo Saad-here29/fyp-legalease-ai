@@ -7,7 +7,7 @@ const STEPS = [
     icon: FileStack,
     step: "01",
     title: "Ingest & chunk",
-    description: "Statutes and judgments are split into indexed passages.",
+    description: "Pakistani statute text is split into indexed passages.",
   },
   {
     icon: Search,
