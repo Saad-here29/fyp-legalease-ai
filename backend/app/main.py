@@ -35,6 +35,12 @@ async def lifespan(_: FastAPI):
     except Exception as e:  # noqa: BLE001
         logger.warning(f"Corpus seed skipped: {e}")
 
+    # Legal NER model for Document Analysis (~13 s on CPU): load in a
+    # background thread so startup isn't blocked; an analyze request that
+    # arrives first waits on the loader's lock instead of failing.
+    from app.ai import ner
+    ner.start_background_load()
+
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 

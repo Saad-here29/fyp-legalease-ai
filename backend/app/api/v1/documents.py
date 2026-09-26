@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,8 +17,11 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.ai import ner
 from app.ai.client import get_ai_client
+from app.ai.summary_sections import extract_clauses_and_risks
 from app.core.config import settings
+from app.core.logging import logger
 from app.core.exceptions import (
     FileTooLarge,
     NotAuthorized,
@@ -195,10 +199,16 @@ def get_document(
     )
 
 
+# NER entity types surfaced in the flat response lists (all kept types
+# are also returned grouped in `entities`).
+_PARTY_TYPES = ("per", "org", "resp")
+_REFERENCE_TYPES = ("caseno", "appealcaseno", "refcase", "ref", "refcourt", "appealcourt")
+
+
 @router.post(
     "/{document_id}/analyze",
     response_model=DocumentAnalysisResult,
-    summary="Run AI summarisation + clause/risk analysis on a document",
+    summary="LLM summary + clauses/risks, and legal NER (parties, dates, references)",
 )
 def analyze_document(
     document_id: uuid.UUID,
@@ -235,17 +245,34 @@ def analyze_document(
             db.commit()
         document_type = doc.document_type
 
-    # Phase 2 — the slow part. No DB session held while this runs.
-    ai = get_ai_client()
-    summary_text = ai.summarise(text, hint=f"Document type: {document_type.value}")
+    # Phase 2 — the slow part. No DB session held while this runs. The NER
+    # model (CPU) and the LLM summary (network) are independent, so NER runs
+    # in a worker thread while the LLM call is in flight.
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="ner") as pool:
+        ner_future = pool.submit(ner.extract_entities, text)
+        ai = get_ai_client()
+        summary_text = ai.summarise(text, hint=f"Document type: {document_type.value}")
+        try:
+            ner_result = ner_future.result()
+        except Exception as e:  # noqa: BLE001 — NER must never sink the summary
+            logger.warning(f"NER failed on document {document_id}: {type(e).__name__}: {e}")
+            ner_result = ner.NerResult(available=False)
+
+    key_clauses, risks = extract_clauses_and_risks(summary_text)
+    parties = [e.text for e in sorted(ner_result.by_type(*_PARTY_TYPES),
+                                      key=lambda e: -e.count)]
+    dates = [e.text for e in ner_result.by_type("date")]
+    references = [e.text for e in ner_result.by_type(*_REFERENCE_TYPES)]
+    entities = ner_result.as_json()
 
     # Phase 3 — short write: persist the result in a fresh session.
     with SessionLocal() as db:
         doc = db.get(Document, document_id)
         analysis = doc.analysis or DocumentAnalysis(document_id=doc.id)
         analysis.summary = summary_text
-        analysis.identified_clauses = {"raw": summary_text[:2000]}
-        analysis.risk_flags = {}
+        analysis.identified_clauses = {"source": "llm_summary", "items": key_clauses}
+        analysis.risk_flags = {"source": "llm_summary", "items": risks}
+        analysis.extracted_entities = entities if ner_result.available else None
         analysis.document_classification = doc.document_type.value
         if doc.analysis is None:
             db.add(analysis)
@@ -256,8 +283,11 @@ def analyze_document(
     return DocumentAnalysisResult(
         document_id=document_id,
         summary=summary_text,
-        key_clauses=[],
-        parties=[],
-        dates=[],
-        risks=[],
+        key_clauses=key_clauses,
+        parties=parties,
+        dates=dates,
+        risks=risks,
+        references=references,
+        entities=entities,
+        ner_available=ner_result.available,
     )

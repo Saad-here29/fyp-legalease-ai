@@ -7,8 +7,8 @@ re-scored on the project machine the same day.
 
 - **Training notebook:** [`ai-services/ner_training/ner_training_colab.ipynb`](../ai-services/ner_training/ner_training_colab.ipynb)
 - **Training data:** `data/raw/ner_courtroom_data.zip` (LHC + SCP CoNLL files; gitignored, see [`data/README.md`](../data/README.md))
-- **Trained model:** `ai-services/ner_training/trained_model/` (gitignored — 500 MB; see [Model files](#model-files))
-- **Status:** trained and validated; **not yet integrated** into the backend.
+- **Trained model:** `backend/storage/models/legal_ner/` (gitignored — 539 MB; see [Model files](#model-files))
+- **Status:** trained, validated, and **integrated into Document Analysis** (`POST /documents/{id}/analyze`) — see [Backend integration](#backend-integration).
 
 ## Headline results
 
@@ -129,8 +129,9 @@ rows run together) are skipped rather than guessed at.
 
 ## Model files
 
-`ai-services/ner_training/trained_model/ner_model_output.zip` (500,740,367 bytes)
-extracts to `ner_model_output/`:
+The Colab download `ner_model_output.zip` (500,740,367 bytes) extracts to six
+files; the backend loads them from `backend/storage/models/legal_ner/`
+(`NER_MODEL_PATH`):
 
 | File | Size | Contents |
 |---|---:|---|
@@ -156,26 +157,112 @@ e.g. on an SCP test sentence:
 `appealcourt` "Lahore High Court, Lahore" (0.96), `appealcaseno`
 "W.P.No. 11983/2005" (0.96).
 
-## Notes for backend integration (next step)
+## Backend integration
 
-Found while validating the model locally — none of these block integration,
-but each needs handling:
+Built 2026-09-26 into `POST /documents/{id}/analyze`.
 
-1. **Tokenizer/version mismatch.** The model was saved with `transformers`
-   5.x, which records the tokenizer as a plain `BertTokenizer`. That tokenizer
-   emits `token_type_ids`, which DistilBERT rejects (`TypeError: unexpected
-   keyword argument 'token_type_ids'`). Fix at load time:
-   `tokenizer.model_input_names = ["input_ids", "attention_mask"]`.
-2. **Word-level grouping.** With the pipeline's default `"simple"`
-   aggregation, words split into subwords can come back fragmented
-   (`Islam` + `##abad`). Use `aggregation_strategy="first"` (matches how the
-   model was trained) to get whole words.
-3. **Long documents.** The model reads at most 512 tokens at a time (trained
-   on 256). Uploaded documents must be split into sentences/chunks before
-   tagging.
-4. **Speed and memory (CPU).** Loading takes ~13 s and ~0.5–0.8 GB RAM;
-   tagging ran at ~6–7 sentences/second in batches of 32. Load the model
-   once at startup (like the embedding model), not per request.
-5. **Domain.** Trained on court *judgments*. Document Analysis also handles
-   contracts and other documents, where accuracy will be lower — dates,
-   money, people and organisations should transfer best.
+**Code:** `backend/app/ai/ner.py` (loading, chunking, tagging, clean-up),
+`backend/app/ai/summary_sections.py` (clauses/risks from the LLM summary),
+`backend/app/api/v1/documents.py` (endpoint). Config: `NER_MODEL_PATH`
+(default `./storage/models/legal_ner`), `NER_ENABLED` (default `true`).
+Migration `c41e7d2b9a10` adds `document_analysis.extracted_entities` (JSONB).
+
+**How it runs**
+
+- **Loading.** The app's startup starts a background thread that loads the
+  model (the server answers requests immediately; the model is ready ~18 s
+  after startup, mostly the first `transformers` import). An analyze request
+  arriving earlier waits for it. If the weights folder is missing or
+  `NER_ENABLED=false`, analysis still returns the LLM summary with
+  `ner_available: false`.
+- **Tokenizer fix.** `model_input_names = ["input_ids", "attention_mask"]` —
+  the transformers-5 tokenizer otherwise sends `token_type_ids`, which
+  DistilBERT rejects.
+- **Word splitting matches the training data.** Text is split on whitespace
+  with punctuation at word edges split off (`W.P.No.` → `W.P.No` `.`) and
+  internal punctuation kept (`30.7.1983`, `NO.1074`). Each word takes the
+  label of its first subword, then B-/I- tags are joined into entities. (The
+  Hugging Face pipeline's grouping was tried first and replaced: it splits
+  words at every dot, so `30.7.1983` came back as two dates. Switching
+  raised entity precision on the live judgment test from 0.780 to 0.843 and
+  recall from 0.845 to 0.893.)
+- **Long documents.** The first 30,000 characters are split into sentences
+  and packed into chunks of ≤ 200 subword tokens (oversized sentences are
+  split on word boundaries); every entity keeps its offset in the original
+  text, so the returned text is exactly as written in the document.
+- **Clean-up.** Duplicate LHC/SCP labels merged (`caseNo.`→`caseno`,
+  `refCase`→`refcase`, `refCourt`→`refcourt`); `Misc.name`, `FIRno`,
+  `mutationNo.` and `witnessName` dropped; predictions below 0.5 confidence
+  dropped; repeats de-duplicated with a mention count.
+- **In the request.** NER (CPU) runs in a worker thread while the LLM summary
+  call (network) is in flight, with no database connection open during
+  either.
+
+**Response fields**
+
+| Field | Source |
+|---|---|
+| `parties` | NER `per` + `org` + `resp`, most-mentioned first |
+| `dates` | NER `date`, document order |
+| `references` | NER `caseno`, `appealcaseno`, `refcase`, `ref`, `refcourt`, `appealcourt` |
+| `entities` | All kept NER entities grouped by type, with `count` and `score` |
+| `ner_available` | `false` when the model isn't loaded |
+| `key_clauses`, `risks` | Parsed from sections 4 and 5 of the **LLM** summary (`clauses_and_risks_source: "llm_summary"`) — not NER output |
+
+**Live results (real HTTP, 2026-09-26)**
+
+*Supreme Court judgment* — the first complete judgment in the held-out SCP
+test split, rebuilt as a `.txt` upload (147,851 characters; the backend reads
+the first 30,000, which contain 84 unique gold entities after the same
+merge/drop rules):
+
+- HTTP 200 in 9.2 s (NER and LLM in parallel); no connection held
+  idle-in-transaction.
+- Unique entities: 89 predicted, 75 matching gold exactly →
+  **precision 0.843, recall 0.893** (one document — indicative, not a
+  replacement for the test-set numbers above).
+- Dates 21/21, case numbers, appeal court and appeal case numbers all exact.
+  Most misses are boundary differences (`Khalid Abbas Khan` vs gold
+  `Mr. Khalid Abbas Khan`) or long statutory references split or merged
+  differently from the annotation.
+- `parties` includes the judges and the court itself (`MIAN SAQIB NISAR`,
+  `SUPREME COURT OF PAKISTAN`): the model's `per`/`org` types mean "person"
+  and "organisation", not litigant.
+
+*Out-of-domain document* — `audit_test.pdf`, a student report on
+Pakistan's IT/telecom sector, not a legal document. HTTP 200 in 7.8 s.
+Performance is poor, as expected for a model trained only on judgments:
+
+- **References are wrong:** the two "cited cases" are the title line
+  (`National University of Computer and Emerging Sciences Saadullah
+  22I-8795`) and the report title (`IT & Telecom Sector Pakistan (FY 2026`).
+- **No person found** — the author's name was swallowed into the bogus
+  reference above.
+- **Mislabels:** `Ufone` (a telecom operator) tagged as a location.
+- **Dates mostly missed:** only `FY 2026`.
+- **Partial transfer of general types:** organisations (`PTA`, `NTC`,
+  `National CERT`), cities and some amounts (`Rs 837`, `Rs 285`,
+  `US$ 509.6`) were found.
+
+The LLM-derived `key_clauses`/`risks` were sensible for both documents.
+
+**Known limitations**
+
+- The model is trained on court judgments only; on contracts, reports and
+  other documents expect the out-of-domain behaviour above.
+- Only the first 30,000 characters are tagged (the LLM summary reads the
+  first 20,000 — see below).
+- `parties` = people and organisations named, not strictly the litigants.
+- The clause/risk parser handles the LLM's bullets, numbered lists and
+  tables; a bullet with its own sub-bullets comes back as separate items.
+- CPU cost: ~7 s of tagging for a 30,000-character document; the model adds
+  ~0.6 GB of RAM to the backend process.
+
+**Groq request-size limit (found during this testing).** Groq's on-demand
+tier caps a request at 8,000 tokens per minute including the reserved reply.
+After the chat reply cap was raised to 2,000 tokens, a summary request with
+30,000 characters of text (~6,500 tokens) was rejected with HTTP 413 and the
+endpoint returned 503 for any document over ~22,000 characters. The summary
+input is now capped at 20,000 characters (`SUMMARY_MAX_CHARS` in
+`app/ai/client.py`). Several analyses inside one minute can still hit the
+per-minute limit on the free tier.

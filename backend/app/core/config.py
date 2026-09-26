@@ -64,6 +64,13 @@ class Settings(BaseSettings):
     FAISS_INDEX_PATH: str = "./storage/faiss/legal_corpus.faiss"
     FAISS_METADATA_PATH: str = "./storage/faiss/legal_corpus_meta.json"
 
+    # ===== Legal NER (Document Analysis) =====
+    # Fine-tuned DistilBERT from ai-services/ner_training/ (weights gitignored;
+    # see docs/ner_training_results.md). Missing folder -> NER is skipped and
+    # /documents/{id}/analyze still returns the LLM summary.
+    NER_MODEL_PATH: str = "./storage/models/legal_ner"
+    NER_ENABLED: bool = True
+
     # ===== Tesseract =====
     TESSERACT_CMD: str = ""
     TESSERACT_LANG: str = "eng+urd"

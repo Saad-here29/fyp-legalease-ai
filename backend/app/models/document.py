@@ -63,6 +63,8 @@ class DocumentAnalysis(Base, TimestampMixin):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     identified_clauses: Mapped[dict | None] = mapped_column(JSONBType, nullable=True)
     risk_flags: Mapped[dict | None] = mapped_column(JSONBType, nullable=True)
+    # Legal NER output grouped by entity type: {type: [{text, count, score}]}
+    extracted_entities: Mapped[dict | None] = mapped_column(JSONBType, nullable=True)
     document_classification: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     document: Mapped["Document"] = relationship(back_populates="analysis")
