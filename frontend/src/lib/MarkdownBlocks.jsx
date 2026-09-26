@@ -1,8 +1,10 @@
-// Renders the LLM document summary. The model answers in markdown —
-// "**1) Summary**" style headings, bullet/numbered lists and pipe tables
-// (often with <br> inside cells) — so this handles exactly that subset.
+// Renders the block-level markdown the LLM writes in document summaries and
+// drafted contracts: "**1) Summary**" / "### 1. Definitions" headings,
+// "---" rules, bullet and numbered lists (numbering kept — contract clauses
+// are numbered) and pipe tables (often with <br> inside cells).
 // Text is HTML-escaped before any markup is added, so the model's output
-// can't inject tags.
+// can't inject tags. For chat answers with [n] citation markers, use
+// renderInline from ./markdownLite instead.
 
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -16,7 +18,8 @@ function inline(s) {
 }
 
 const TABLE_SEP = /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/;
-const BULLET = /^(?:[-*+•]|\d{1,2}[.)])\s+(.*)$/;
+const BULLET = /^[-*+•]\s+(.*)$/;
+const NUMBERED = /^(\d{1,3})[.)]\s+(.*)$/;
 const HEADING = /^(?:#{1,6}\s+(.+)|\*\*([^*].*?)\*\*:?)$/;
 
 function cells(line) {
@@ -29,7 +32,8 @@ function toBlocks(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
-    if (line === "---" || line === "***") {
+    // "___" is deliberately not a rule: in contracts it's a signature line.
+    if (/^(-{3,}|\*{3,})$/.test(line)) {
       blocks.push({ type: "rule" });
     } else if (line.startsWith("|")) {
       const rows = [];
@@ -43,11 +47,13 @@ function toBlocks(text) {
     } else if (HEADING.test(line)) {
       const m = line.match(HEADING);
       blocks.push({ type: "heading", text: m[1] || m[2] });
-    } else if (BULLET.test(line)) {
+    } else if (BULLET.test(line) || NUMBERED.test(line)) {
+      const num = line.match(NUMBERED);
+      const ordered = !!num;
+      const item = ordered ? num[2] : line.match(BULLET)[1];
       const last = blocks[blocks.length - 1];
-      const item = line.match(BULLET)[1];
-      if (last?.type === "list") last.items.push(item);
-      else blocks.push({ type: "list", items: [item] });
+      if (last?.type === "list" && last.ordered === ordered) last.items.push(item);
+      else blocks.push({ type: "list", ordered, start: ordered ? Number(num[1]) : 1, items: [item] });
     } else {
       blocks.push({ type: "para", text: line });
     }
@@ -55,7 +61,7 @@ function toBlocks(text) {
   return blocks;
 }
 
-export default function SummaryText({ text }) {
+export default function MarkdownBlocks({ text }) {
   const html = (s) => ({ __html: inline(s) });
   return (
     <div className="space-y-3 text-sm text-ink-text leading-relaxed [&_strong]:font-medium">
@@ -63,14 +69,20 @@ export default function SummaryText({ text }) {
         if (b.type === "rule") return <hr key={i} className="border-hairline-subtle" />;
         if (b.type === "heading")
           return <h3 key={i} className="font-medium pt-2" dangerouslySetInnerHTML={html(b.text)} />;
-        if (b.type === "list")
+        if (b.type === "list") {
+          const List = b.ordered ? "ol" : "ul";
           return (
-            <ul key={i} className="list-disc pl-5 space-y-1">
+            <List
+              key={i}
+              start={b.ordered ? b.start : undefined}
+              className={`${b.ordered ? "list-decimal" : "list-disc"} pl-5 space-y-1`}
+            >
               {b.items.map((it, j) => (
                 <li key={j} dangerouslySetInnerHTML={html(it)} />
               ))}
-            </ul>
+            </List>
           );
+        }
         if (b.type === "table")
           return (
             <div key={i} className="overflow-x-auto">
