@@ -224,6 +224,21 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
     and extract its six files into `backend/storage/models/legal_ner/`.
     Without them the backend still runs — analysis returns the LLM summary
     with `ner_available: false`.
+- **Frontend** (commit `4caeb58`): the Documents page now calls `/analyze`
+  and shows the LLM summary / clauses / risks and the NER entities in two
+  visually separate, labelled panels; `ner_available: false` shows a note.
+- **Tested on a real, unseen document** — an SC bail order, Crl.P.
+  187-P/2026, uploaded through the web app. Full output and line-by-line
+  review in `docs/demo_examples.md` (for the report and panel demo). Three
+  NER errors found; each traced to its cause before fixing (commit
+  `6124d26`): a line-break abbreviation bleed (`KP Tahir Khan`) and a
+  mislabelled own case number were fixed with narrow, tested rules; a
+  place name tagged as a person was left as a documented model limitation.
+  Kept visible as "found → fixed", not deleted.
+- **Future work** for the next retrain (capitalisation gap in case numbers,
+  duplicate label spellings, tiny classes, place-name coverage):
+  `docs/ner_training_results.md` "Future work — retraining checklist" and
+  `data/README.md` (commit `3151d44`).
 
 ## Contract Drafting & Compliance status — built + fully verified (confirmed 2026-09-21)
 - New `/contracts/*` endpoints: draft a contract from one of 3 templates
@@ -250,6 +265,38 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
     correctly flagged failed.
   - Version history endpoint confirmed working.
 - Full backend suite: **31/31 passing**, no regressions.
+- **Frontend committed + verified 2026-09-26** (commits `f88ad1a`,
+  `bc23611`): contract list, draft form for the 3 templates, detail page
+  with compliance check and version history. Smoke-tested through the dev
+  proxy: draft 201, list/open/check-compliance/versions 200 (all 4 NDA
+  clauses pass), client draft 403, client access to another party's
+  contract 403. Contract text renders through the shared
+  `lib/MarkdownBlocks.jsx` (current drafts use headings, rules and
+  numbered clauses, which the old inline renderer showed as raw symbols).
+
+## UI accuracy sweep — every claim matches the system (confirmed 2026-09-26)
+Commits `60e81d2`, `4cede9f`, `2a5745f`, `dee2bf0` (plus the chat welcome
+text in `bc23611`). Every user-facing statement was checked against
+actual system behaviour, not just reworded:
+- **Corpus is statutes only**, described everywhere in the chat system
+  prompt's terms ("Pakistani statute text — Acts, Ordinances, Codes and
+  Orders … no court judgments or case law"): chat welcome text, Student
+  dashboard, landing "How answers are grounded", Legal Research subtitle,
+  Research detail page. The only remaining mention of judgments is the
+  Library coming-soon page, which describes a planned feature.
+- **Current AI model**: the Research detail loading text said "Llama-3.3"
+  (retired); it now says "The AI is structuring…" so it can't go stale again.
+- **Corpus size read live**: new `GET /research/stats` returns
+  `{chunks, documents}` from the loaded index (currently 53,739 / 900); the
+  Research page's loading text uses it instead of a hard-coded, stale
+  "88,036 chunks".
+- **Inert controls removed**: the Type (All/Statutes/Judgments), Court and
+  Year filters. Tested against the live API first: "Statutes" returned the
+  same results as "All", "Judgments" always 0, and Court / Year ranges
+  returned exactly the same results as no filter (the index has no court or
+  year metadata).
+- Backend suite **91/91 passing**; frontend lint clean on changed files;
+  production build clean.
 
 ## Folder structure
 ```
@@ -326,22 +373,21 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
    for exactly what moved/was renamed/was deleted. Tier B follow-ups
    (prompt-file relocation, repositories/services pattern decision) still
    open, deliberately deferred to their own session.
-3. **Next up: UI redesign, one page at a time — starting with the Login
-   page.** Per the standing rule below: apply the agreed style rules,
-   review/confirm the page actually works before moving to the next one.
-   Do not touch backend logic while doing this.
+3. ~~UI redesign~~ — done: every page converted to the design system (see
+   `docs/STYLE_GUIDE.md`), followed by the 2026-09-26 accuracy sweep (see
+   "UI accuracy sweep" above).
 4. ~~Build Contract Drafting & Compliance module~~ — done (2026-09-21),
    built + fully verified end-to-end. See "Contract Drafting & Compliance
    status" above.
 5. **Next up, in this order** (set 2026-09-26):
-   a. ~~NER Colab training~~ — done (2026-09-26): trained, validated and
-      integrated into Document Analysis. See "Legal NER status" above.
-      Frontend for Document Analysis results is the follow-up.
-   b. **Finalize + commit the Contracts UI** — built, still uncommitted,
-      pending review.
-   c. **Practice Simulator (Iteration 4) — final missing core module.**
-      Conversation via LLM, but grading/rubric logic must be custom-built,
-      not just LLM-judged.
+   a. ~~NER Colab training~~ — done (2026-09-26): trained, validated,
+      integrated into Document Analysis (backend + frontend), tested on a
+      real unseen judgment. See "Legal NER status" above.
+   b. ~~Finalize + commit the Contracts UI~~ — done (2026-09-26), committed
+      and smoke-tested. See "Contract Drafting & Compliance status" above.
+   c. **Next up: Practice Simulator (Iteration 4) — the last missing core
+      module.** Conversation via LLM, but grading/rubric logic must be
+      custom-built, not just LLM-judged.
 6. Add missing security pieces: rate limiting, file upload sanitization,
    basic prompt-injection input handling.
 7. Add test coverage for RAG acceptance criteria (MRR, recall@5, refusal rate).
