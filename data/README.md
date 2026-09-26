@@ -25,7 +25,20 @@ are tracked.
   set. Kept distinct from the lawyer QA set, never merged into it.
 - `ner_courtroom/{LHC,SCP}/` — Lahore High Court / Supreme Court of Pakistan
   judgment text for a separate NER training task, not part of the statute
-  corpus pipeline below.
+  corpus pipeline below. Known limitations of this data, to address in any
+  future retraining (details and evidence in
+  [`docs/ner_training_results.md`](../docs/ner_training_results.md#future-work--retraining-checklist)):
+  - **Case-number capitalisation gap.** SCP writes a judgment's own case
+    number in capitals ("CIVIL APPEAL NO.1074 OF 2009", labelled `caseno`
+    333 times); mixed-case "Criminal Petition No. …" appears only 9 times
+    and never as `caseno`. The trained model therefore mislabels a
+    mixed-case heading's own number (seen on a real 2026 order). A
+    post-processing rule currently compensates; the lasting fix is
+    mixed-case / lower-case augmentation of the training sentences.
+  - **Same labels spelled differently by source:** LHC `caseNo.` /
+    `refCase` / `refCourt` vs SCP `caseno` / `refcase` / `refcourt`.
+  - **Classes too small to learn:** `FIRno` (12 training examples),
+    `mutationNo.` (5), `witnessName` (18).
 
 If you're setting this up fresh and don't have `data/raw/` populated, ask
 whoever last had it (it's not published anywhere else yet) — everything

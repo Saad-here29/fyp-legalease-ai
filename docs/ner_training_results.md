@@ -99,13 +99,40 @@ gives the model no consistent pattern to learn. `resp` (respondent, 0.48 /
 0.37) and the cited-court types overlap heavily with `per`, `org` and court
 names, so the model often gets the span right but the type wrong.
 
-**Likely fix for a retrain:** merge each duplicate pair into one label
-(e.g. `refCourt` + `refcourt` → `refcourt`) before training. This is a
-data-preparation change in the notebook's label-loading step; it would give
-those classes 300–650 training examples each under one name and remove the
-cross-dataset false positives. `Misc.name`, `mutationNo.` and
-`witnessName` could reasonably be dropped (mapped to `O`) rather than
-learned badly.
+## Future work — retraining checklist
+
+Known limitations of the training data, to fix at the data-preparation
+step of the notebook the next time the model is retrained. Items 2 and 4
+were found after training, on a real 2026 Supreme Court order
+([demo_examples.md](demo_examples.md#iteration--errors-found--investigated--fixed)).
+
+1. **Merge duplicate labels.** Map each LHC/SCP pair to one label
+   (`refCourt` + `refcourt` → `refcourt`, etc.) before training. This gives
+   those classes 300–650 examples each under one name and removes the
+   cross-dataset false positives. The backend currently merges them after
+   prediction instead.
+2. **Case-number capitalisation gap (root cause of a real-document error).**
+   SCP writes a judgment's own number in capitals ("CIVIL APPEAL NO.1074 OF
+   2009"): 333 `caseno` examples, 156 of them directly after the bench
+   list. Mixed-case "Criminal Petition No." appears only 9 times, as a cited
+   case (4), a case appealed from (3) or unlabelled (2), and never as
+   `caseno`. The model therefore learned "capitals = this case", and
+   labelled a real order's mixed-case heading number as a case appealed
+   from; rewriting only that line in capitals flipped it to `caseno`.
+   **Fix:** augment training with mixed-case and lower-case copies of
+   sentences containing case numbers (and other capitalised headings), then
+   re-check the heading on the demo order. The post-processing rule
+   `relabel_own_case_number` in `backend/app/ai/ner.py` compensates
+   meanwhile. Keep it until a retrained model is shown to label the demo
+   order correctly without it, then remove it.
+3. **Drop classes too small to learn.** Map `Misc.name`, `mutationNo.`,
+   `FIRno` and `witnessName` to `O` rather than learning them badly (the
+   backend already discards them after prediction).
+4. **More place-name coverage.** The model tagged part of the police-station
+   name "Lund Khawar, Mardan" as a person, and the prediction flipped with
+   surrounding context. This is a model limitation with no code
+   workaround. It needs more annotated examples of place names (police
+   stations, districts, tehsils) in party and counsel blocks.
 
 ## Training setup
 
