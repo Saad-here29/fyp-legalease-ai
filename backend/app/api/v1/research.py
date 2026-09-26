@@ -32,8 +32,10 @@ router = APIRouter()
     response_model=ResearchIndexStats,
     summary="Size of the searchable library (passages and source statutes)",
 )
-def index_stats(user: CurrentUser):
-    # Declared before GET /{entry_id} so "stats" isn't parsed as an id.
+def index_stats():
+    # Public: only two counts, shown on the (logged-out) landing page as well
+    # as the Research page. Declared before GET /{entry_id} so "stats" isn't
+    # parsed as an id.
     return embeddings.index_stats()
 
 
