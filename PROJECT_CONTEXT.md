@@ -26,9 +26,8 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
   modules below.
 - Modules NOT built yet: **Practice Simulator (last missing core module,
   current priority)**. Notifications backend work still deferred past it
-  (de-scoped, see above). NER Colab training notebook exists
-  (`ai-services/ner_training/ner_training_colab.ipynb`) but has not been
-  run yet — status still needs checking, not confirmed working.
+  (de-scoped, see above). Legal NER is trained and integrated into
+  Document Analysis (2026-09-26) — see "Legal NER status" below.
 - UI needs a full but careful redesign — must not break working backend calls.
 
 ## Backend / database status (confirmed 2026-09-13)
@@ -206,6 +205,26 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
   parser fixed — "**Issue:**" had left a stray "** " at the start of every
   field.
 
+## Legal NER status — trained + integrated (confirmed 2026-09-26)
+- Model: `distilbert-base-multilingual-cased` fine-tuned on Colab on LHC +
+  SCP judgment data (`ai-services/ner_training/ner_training_colab.ipynb`).
+  Validation F1 0.811 (reproduced exactly by a local re-score); held-out
+  SCP test F1 0.784. Full results, weak-category analysis and integration
+  details: `docs/ner_training_results.md`.
+- Integrated into `POST /documents/{id}/analyze` (commit `ce04f28`):
+  `parties` / `dates` / `references` / `entities` from NER, `key_clauses` /
+  `risks` parsed from the LLM summary and labelled as such. Live test on a
+  real SCP judgment: entity precision 0.843, recall 0.893. Poor on
+  non-legal documents (expected, documented).
+- **Model weights are NOT in git** (`backend/storage/` is gitignored; 539 MB).
+  - Local: `backend/storage/models/legal_ner/` (what the backend loads) and
+    the original download `ai-services/ner_training/trained_model/ner_model_output.zip`.
+  - **Backup: `ner_model_output.zip` on Google Drive** (backed up 2026-09-26,
+    confirmed by the user). To restore on a fresh clone, download the zip
+    and extract its six files into `backend/storage/models/legal_ner/`.
+    Without them the backend still runs — analysis returns the LLM summary
+    with `ner_available: false`.
+
 ## Contract Drafting & Compliance status — built + fully verified (confirmed 2026-09-21)
 - New `/contracts/*` endpoints: draft a contract from one of 3 templates
   (NDA, Employment, Service Agreement — config in
@@ -315,9 +334,9 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
    built + fully verified end-to-end. See "Contract Drafting & Compliance
    status" above.
 5. **Next up, in this order** (set 2026-09-26):
-   a. **NER Colab training** — not yet started. Notebook already exists
-      at `ai-services/ner_training/ner_training_colab.ipynb`; data zipped at
-      `data/raw/ner_courtroom_data.zip`.
+   a. ~~NER Colab training~~ — done (2026-09-26): trained, validated and
+      integrated into Document Analysis. See "Legal NER status" above.
+      Frontend for Document Analysis results is the follow-up.
    b. **Finalize + commit the Contracts UI** — built, still uncommitted,
       pending review.
    c. **Practice Simulator (Iteration 4) — final missing core module.**
