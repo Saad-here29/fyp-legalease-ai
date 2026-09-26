@@ -63,6 +63,11 @@ ai-services/data/processed/
 data/raw/
 data/processed/
 
+# Trained NER model (500 MB zip / 539 MB weights, over GitHub's 100 MB
+# limit). Reproducible from ai-services/ner_training/ner_training_colab.ipynb;
+# results are documented in docs/ner_training_results.md.
+ai-services/ner_training/trained_model/
+
 # ===== Uploads / Storage =====
 backend/uploads/
 backend/storage/
