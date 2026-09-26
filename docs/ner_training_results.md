@@ -209,6 +209,10 @@ Migration `c41e7d2b9a10` adds `document_analysis.extracted_entities` (JSONB).
 | `ner_available` | `false` when the model isn't loaded |
 | `key_clauses`, `risks` | Parsed from sections 4 and 5 of the **LLM** summary (`clauses_and_risks_source: "llm_summary"`) — not NER output |
 
+**Worked example for the report/demo:** an unseen 2026 Supreme Court bail
+order run through the web app, with the full output and a line-by-line
+review — [demo_examples.md](demo_examples.md#example-1--document-analysis-on-an-unseen-supreme-court-order).
+
 **Live results (real HTTP, 2026-09-26)**
 
 *Supreme Court judgment* — the first complete judgment in the held-out SCP
