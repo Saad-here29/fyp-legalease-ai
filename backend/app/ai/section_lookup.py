@@ -81,14 +81,17 @@ def toc_entries(text: str) -> list[tuple[str, str]]:
     return entries if len(entries) >= 3 else clean(_TOC_ENTRY)
 
 
-def pick_entries(question: str, entries: list[tuple[str, str]], search_query: str = "") -> list[tuple[str, str]]:
-    """Entries the question points at: explicit section numbers (from the
-    question or its search rewrite) first, then entries whose title shares a
-    word stem (first 6 letters) with the user's OWN question — "polygamous"
-    ~ "Polygamy". Title words are not taken from the rewrite: it adds statute
-    names ("Transfer of Property Act") whose words collide with unrelated
-    section titles ("Certain transfers void")."""
-    numbers = {n.upper() for n in _SECTION_REF.findall(f"{question} {search_query}")}
+def pick_entries(question: str, entries: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Entries the user's OWN question points at: explicit section numbers
+    first, then entries whose title shares a word stem (first 6 letters) with
+    a question word — "polygamous" ~ "Polygamy".
+
+    Nothing is taken from the search rewrite. It invents section numbers
+    (seen on the eval set: "Companies Act 2017 (Section 2)", "Transfer of
+    Property Act Section 62") and adds statute names whose words collide with
+    unrelated section titles ("Transfer of Property Act" ~ "Certain transfers
+    void")."""
+    numbers = {n.upper() for n in _SECTION_REF.findall(question)}
     by_number = [e for e in entries if e[0].upper() in numbers]
     if by_number:
         return by_number[:MAX_SECTIONS]
@@ -124,7 +127,7 @@ def _chunks_by_statute(meta_id: int, n: int) -> dict[str, list[int]]:
     return out
 
 
-def section_passages(question: str, retrieved: list[dict], search_query: str = "") -> list[dict]:
+def section_passages(question: str, retrieved: list[dict]) -> list[dict]:
     """Extra passages for the sections a retrieved TOC chunk maps the
     question to. Each returned record is an index metadata dict plus
     `relevance` (the TOC chunk's score) and `via_toc` (its section)."""
@@ -139,7 +142,7 @@ def section_passages(question: str, retrieved: list[dict], search_query: str = "
     for toc in [r for r in retrieved if is_toc(embeddings.record_text(r))]:
         key = squash(embeddings.record_source(toc))
         ids = statutes.get(key, [])
-        for number, title in pick_entries(question, toc_entries(embeddings.record_text(toc)), search_query):
+        for number, title in pick_entries(question, toc_entries(embeddings.record_text(toc))):
             head = _heading_pattern(number, title)
             for i in ids:
                 text = embeddings.record_text(meta[i])

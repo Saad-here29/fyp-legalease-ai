@@ -172,7 +172,7 @@ class LegalChatService:
         # A table-of-contents chunk often outranks the section text it lists
         # (fixed-size chunks split sections). Follow it to the sections the
         # question points at; their text replaces the contents list.
-        extra = section_lookup.section_passages(message, passages, search_query)
+        extra = section_lookup.section_passages(message, passages)
         if extra:
             logger.info(
                 f"Section lookup: +{len(extra)} passages via contents list "

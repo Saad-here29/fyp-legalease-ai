@@ -106,18 +106,22 @@ def test_page_headers_are_not_entries():
     assert ("7", "Talaq") in entries
 
 
-def test_title_words_come_from_the_question_not_the_rewrite():
+def test_title_words_come_from_the_question_only():
     # A real false positive: the rewrite added "Transfer of Property Act",
-    # whose word "transfer" matched an unrelated Land Reforms Act entry.
+    # whose word "transfer" matched an unrelated Land Reforms Act entry. The
+    # rewrite is no longer consulted, so only the question's words count.
     entries = [("5", "Partitioning of joint holdings"), ("6", "Certain transfers void")]
     question = "The land we bought was replatted and the road moved; do we keep access?"
-    rewrite = "easement of access claim after road realignment under Transfer of Property Act 1882"
-    assert section_lookup.pick_entries(question, entries, rewrite) == []
+    assert section_lookup.pick_entries(question, entries) == []
 
 
-def test_section_number_from_the_rewrite_still_counts():
-    entries = [("6", "Polygamy"), ("7", "Talaq")]
-    assert section_lookup.pick_entries("how is talaq done?", entries, "MFLO Section 7 talaq") == [("7", "Talaq")]
+def test_section_numbers_come_from_the_question_only():
+    entries = [("2", "Definitions"), ("6", "Polygamy"), ("7", "Talaq")]
+    # A number the user wrote is followed ...
+    assert section_lookup.pick_entries("What is Section 7?", entries) == [("7", "Talaq")]
+    # ... one only the rewrite invented ("Companies Act 2017 (Section 2)") is not:
+    # this question has no number and no title word, so nothing is picked.
+    assert section_lookup.pick_entries("How long does company registration take?", entries) == []
 
 
 def test_generic_title_words_do_not_match():
