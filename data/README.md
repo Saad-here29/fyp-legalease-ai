@@ -109,3 +109,95 @@ Known limitations of the statute corpus, found by measurement on
    chunk id and text, so year/court search filters can't work (they were
    removed from the Research page). Adding each statute's enactment year
    would make a year filter meaningful.
+
+### Investigated and rejected (2026-09-26)
+
+Tried while chasing the TOC / split-section problem above. Recorded with
+the evidence so they aren't re-investigated from scratch. Statute and
+section judgements below are the developer's assessment, not a lawyer's.
+
+**Earlier options, simulated on "restrictions on polygamy", "What is
+Section 6 of MFLO?" and "procedure for talaq under Section 7" — none put
+the section text in front of the model (0 of 3 each):**
+
+- *Demote or drop table-of-contents chunks* — other statutes scoring above
+  0.65 simply took the freed slot.
+- *Take more chunks from the statute whose contents chunk was retrieved* —
+  it added that statute's Section 5 and definitions chunks, not 6 or 7.
+- *Fuse a BM25 keyword ranking with the embedding search (reciprocal rank
+  fusion)* — BM25 alone ranked the Section 7 text 3rd, but fusion still
+  left it out of the top 5.
+
+**Change 1 — a query-rewrite prompt that names the governing statute.**
+The rewrite (`AIClient.rewrite_search_query`) was told to include the
+governing statute's name ("and the section number only if you are sure").
+
+- *Why it was tried:* the orphaned-grandchild question ("My father died
+  before my grandfather…") is refused because its rewrite doesn't name the
+  Muslim Family Laws Ordinance; with the statute named, the Section 4 chunk
+  moves from rank 57 to rank 3 (0.702) and the question is answered.
+- *Eval (48 of the 78 eval questions with clean results; the rest were
+  lost to the Groq daily token limit):* answerable (≥1 passage ≥ 0.65) rose
+  from 29 (60%) to 38 (79%), mean top-1 similarity 0.648 → 0.675; 11
+  questions went refused → answerable, 2 answerable → refused. Of the 11,
+  about 7 were genuine gains (defamation → PPC §499/500; fraud → PPC §415
+  where the current prompt wrote the *Indian* "IPC"; sexual assault → PPC
+  §376; easement → found the Easements Act; land documents → Registration
+  Act; khula revocation; the orphaned grandchild).
+- *Why rejected — false confidence:*
+  - **Foreign questions stopped being refused.** A Nigerian company-
+    registration question ("CAC") and a Thailand contract question — both
+    refused before — became answerable from Pakistani statutes.
+  - **It names statutes that don't exist.** It named a statute in 42 of 48
+    rewrites (current prompt: 16), with 14 names not in the library; about
+    10 don't exist as named: "Guardianship Act 1925", "Guardianship and
+    Wills Act 1890", "Employment Ordinance 1961", "Khyber Pakhtunkhwa
+    Companies Act 2017", "Prescription Act 1900", "Punjab Motor Vehicles
+    Ordinance 1914", "Registration of Births and Deaths Act 1961", "West
+    Pakistan Rent Restriction Ordinance 1979", "West Pakistan Landlord and
+    Tenant Act 1920", "West Pakistan Premises Rent Control Ordinance 1961".
+    (The current prompt does this too — "Guardianship Act 1991", "Tenancy
+    Act 1965" — but about three times less often.)
+  - **It invents section numbers:** "Companies Act 2017 (Section 2)",
+    "Transfer of Property Act 1882 Section 62" (a mortgage section) for an
+    easement question.
+  - Its longer outputs hit the 150-token rewrite cap twice.
+  - A wrong name never reaches the user directly (the answer is still
+    grounded and citation-checked); the harm is turning honest refusals
+    into confident answers from the wrong law.
+- *To revisit:* forbid section numbers in the rewrite, forbid adding a
+  Pakistani statute when the question concerns another country, raise the
+  rewrite cap to ~200 tokens, then re-run the full 78-question comparison
+  (≈80k Groq tokens — plan it around the daily limit) and re-check every
+  newly answerable question by hand.
+
+**Change 2 — look up a statute's contents list directly whenever the
+rewrite names that statute** (instead of only when its contents chunk
+happens to reach the top 5).
+
+- *Topic questions, replayed on 16 real rewrites:* section text reached
+  the model 8/16 today vs 10/16 with the change. Gained: "How long does a
+  talaq notice take to become effective?" (2/2, via Section 7's 90-day
+  rule). Still failing: "Can my husband marry a second wife without my
+  permission?" (0/2 — the question never says "polygamy").
+- *Why rejected — wrong sections:* on the eval set it fired on 24 rewrites
+  and about 10 fetched irrelevant or wrong sections, which would be put in
+  front of the model:
+  - PPC §298C (Qadiani group) and §301/302 for a **fraud** question;
+  - PPC §338D (confirmation of death sentence) for a sentencing question;
+  - PPC §319 (punishment for qatl-i-khata) and §327 for "What is the
+    punishment for stealing a car?" — almost every PPC title contains
+    "Punishment";
+  - Sale of Goods Act §6 for a burglary; Industrial Relations Act §11–12
+    for unpaid wages; Companies Act "§2 Definitions" from a section number
+    the rewrite invented; MFLO §5 (marriage registration) for several
+    family questions.
+  About 9 triggers were relevant (Guardians and Wards Act §25 for custody,
+  7 times; MFLO §8 for khula/dissolution, 3 times).
+- *Causes:* generic words in section titles ("punishment", "registration",
+  "marriage", "goods"); section numbers invented by the rewrite (the live
+  lookup now takes numbers only from the user's question); and the PPC's
+  contents list spans many chunks whose entries parse badly ("319.
+  Punishment for q atlikhata 320").
+- *Verdict:* not worth tightening further — section-based chunking (1)
+  removes the need for any contents-list lookup.
