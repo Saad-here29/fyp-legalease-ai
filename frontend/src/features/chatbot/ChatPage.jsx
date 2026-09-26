@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Send, Loader2, Bot, User as UserIcon, BookOpen, MessageSquarePlus } from "lucide-react";
+import { ArrowUp, Loader2, MessageSquarePlus } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
+import AppButton from "@/components/ui/AppButton";
+import Markdown from "@/lib/Markdown";
+import { citeAnchor } from "@/lib/citations";
 import { chatApi } from "./api";
 import { cnInput } from "@/lib/formStyles";
-import { renderInline } from "@/lib/markdownLite";
 
 const SUGGESTIONS = [
   "What is the penalty for child abuse under the Zainab Alert Act?",
@@ -13,6 +15,17 @@ const SUGGESTIONS = [
   "Explain khula under Pakistani Family Law",
   "What is murder under Section 302 of the Pakistan Penal Code?",
 ];
+
+const clock = (d) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+// Stored citations are one entry per retrieved passage, in the order the
+// model was given them — so entry i is the "[i+1]" in the answer.
+const numbered = (citations) =>
+  (citations || []).map((c, i) => ({
+    n: c.n ?? i + 1,
+    source: c.source || c.title || "",
+    excerpt: c.excerpt || "",
+  }));
 
 export default function ChatPage() {
   const qc = useQueryClient();
@@ -37,13 +50,13 @@ export default function ChatPage() {
         setMessages(
           history.map((m) => ({
             id: m.id,
-            role: m.sender_type === "AI" ? "assistant" : "user",
+            // API sends "ai" / "user" (lowercase); the old "AI" check showed
+            // every reloaded answer as a user message.
+            role: String(m.sender_type).toLowerCase() === "ai" ? "assistant" : "user",
             content: m.content,
-            sources: (m.citations || []).map((c) => c.source || c.title || ""),
-            time: new Date(m.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            citations: numbered(m.citations),
+            elapsedMs: m.response_time_ms ?? null,
+            time: clock(new Date(m.created_at)),
           }))
         );
       })
@@ -58,9 +71,9 @@ export default function ChatPage() {
     mutationFn: async (payload) => {
       const t0 = performance.now();
       const data = await chatApi.sendMessage(payload);
-      return { data, elapsedMs: Math.round(performance.now() - t0) };
+      return { data, clientMs: Math.round(performance.now() - t0) };
     },
-    onSuccess: ({ data, elapsedMs }) => {
+    onSuccess: ({ data, clientMs }) => {
       if (data.session_id) setSessionId(data.session_id);
       setMessages((prev) => [
         ...prev,
@@ -68,9 +81,9 @@ export default function ChatPage() {
           id: `ai-${Date.now()}`,
           role: "assistant",
           content: data.response,
-          sources: data.sources || [],
-          elapsedMs,
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          citations: numbered(data.citations),
+          elapsedMs: data.response_time_ms ?? clientMs,
+          time: clock(new Date()),
         },
       ]);
       qc.invalidateQueries({ queryKey: ["chat-sessions"] });
@@ -85,16 +98,9 @@ export default function ChatPage() {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || sendMutation.isPending) return;
-
     setMessages((prev) => [
       ...prev,
-      {
-        id: `me-${Date.now()}`,
-        role: "user",
-        content: trimmed,
-        sources: [],
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      },
+      { id: `me-${Date.now()}`, role: "user", content: trimmed, citations: [], time: clock(new Date()) },
     ]);
     setInput("");
     sendMutation.mutate({ message: trimmed, session_id: sessionId });
@@ -106,25 +112,24 @@ export default function ChatPage() {
   };
 
   return (
-    <AppShell title="AI legal assistant" subtitle="Pakistani law only · Every answer cites the source">
-      <div className="grid gap-10 lg:grid-cols-[1fr_280px] h-[calc(100vh-220px)]">
-        <div className="flex flex-col min-h-0 border-t border-hairline pt-4">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto pr-2 space-y-6">
-            {messages.length === 0 && !sendMutation.isPending && (
-              <EmptyState onPick={(q) => setInput(q)} />
-            )}
+    <AppShell title="AI legal assistant" subtitle="Answers from Pakistani statute text, with the passages they cite">
+      <div className="grid gap-10 lg:grid-cols-[1fr_280px] h-[calc(100vh-230px)]">
+        <div className="flex flex-col min-h-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto pr-2">
+            <div className="max-w-3xl">
+              {messages.length === 0 && !sendMutation.isPending && (
+                <EmptyState onPick={(q) => setInput(q)} />
+              )}
 
-            {messages.map((m) => (
-              <ChatBubble key={m.id} message={m} />
-            ))}
+              {messages.map((m) =>
+                m.role === "user" ? <Question key={m.id} message={m} /> : <Answer key={m.id} message={m} />
+              )}
 
-            {sendMutation.isPending && <Typing />}
+              {sendMutation.isPending && <Thinking />}
+            </div>
           </div>
 
-          <form
-            onSubmit={submit}
-            className="mt-4 flex items-end gap-3 border-t border-hairline pt-4"
-          >
+          <form onSubmit={submit} className="mt-4 max-w-3xl flex items-end gap-3 border-t border-hairline pt-4">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -134,39 +139,28 @@ export default function ChatPage() {
                   submit(e);
                 }
               }}
-              placeholder="Ask about Pakistani law... (English or Urdu)"
+              placeholder="Ask about Pakistani law — English or Urdu"
               rows={2}
-              className={cnInput(false, "flex-1 resize-none py-2")}
+              className={cnInput(false, "flex-1 resize-none py-2 text-base")}
               disabled={sendMutation.isPending}
             />
-            <button
-              type="submit"
-              disabled={sendMutation.isPending || !input.trim()}
-              className="h-10 w-10 shrink-0 bg-ink-panel text-paper hover:bg-ink-panel/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
-              aria-label="Send"
-            >
-              {sendMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </button>
+            <AppButton type="submit" disabled={sendMutation.isPending || !input.trim()} className="shrink-0">
+              {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+              Ask
+            </AppButton>
           </form>
         </div>
 
-        <div>
-          <button
-            onClick={startNew}
-            className="w-full h-9 border border-hairline text-sm text-ink-text hover:border-ink-text transition-colors flex items-center justify-center gap-2 mb-8"
-          >
+        <aside>
+          <AppButton variant="secondary" onClick={startNew} className="w-full mb-8">
             <MessageSquarePlus className="h-4 w-4" />
             New conversation
-          </button>
+          </AppButton>
 
-          <h2 className="font-editorial text-lg text-ink-text mb-1">Recent sessions</h2>
-          <div className="border-t border-hairline pt-1 mt-3">
+          <h2 className="font-editorial text-xl text-ink-text">Recent sessions</h2>
+          <div className="border-t border-hairline mt-3">
             {!sessions || sessions.length === 0 ? (
-              <p className="text-sm text-ink-muted">Your conversations will appear here.</p>
+              <p className="type-meta pt-3">Your conversations will appear here.</p>
             ) : (
               <ul>
                 {sessions.slice(0, 8).map((s) => (
@@ -177,105 +171,109 @@ export default function ChatPage() {
                         sessionId === s.id ? "bg-hairline-subtle/60" : "hover:bg-hairline-subtle/40"
                       }`}
                     >
-                      <div className="text-sm font-medium truncate">{s.title || "Untitled"}</div>
-                      <div className="text-xs text-ink-muted">{s.total_messages} messages</div>
+                      <div className="text-[15px] font-medium truncate">{s.title || "Untitled"}</div>
+                      <div className="type-meta">{s.total_messages} messages</div>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-        </div>
+        </aside>
       </div>
     </AppShell>
   );
 }
 
-function ChatBubble({ message }) {
-  const isUser = message.role === "user";
+function Question({ message }) {
   return (
-    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-      <div className="h-8 w-8 rounded-full bg-ink-panel/5 border border-hairline flex items-center justify-center shrink-0">
-        {isUser ? (
-          <UserIcon className="h-4 w-4 text-ink-muted" />
-        ) : (
-          <Bot className="h-4 w-4 text-ink-muted" />
-        )}
-      </div>
-      <div className={`max-w-[min(75ch,85%)] text-sm leading-relaxed ${isUser ? "text-right" : ""}`}>
-        <div
-          className="whitespace-pre-wrap text-ink-text"
-          dangerouslySetInnerHTML={{ __html: renderInline(message.content) }}
-        />
-
-        {!isUser && message.sources?.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-hairline-subtle">
-            <div className="flex items-center gap-1.5 text-xs text-ink-muted mb-1.5">
-              <BookOpen className="h-3 w-3" />
-              Sources
-            </div>
-            <ol className="text-xs text-ink-muted space-y-0.5 list-decimal list-inside">
-              {message.sources.map((src, i) => (
-                <li key={i}>{src}</li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        <div className="text-xs mt-1.5 text-ink-muted/70">
-          {message.time}
-          {!isUser && message.elapsedMs != null && (
-            <> · Generated in {(message.elapsedMs / 1000).toFixed(1)}s</>
-          )}
-        </div>
-      </div>
+    <div className="pt-8 first:pt-2">
+      <p className="type-meta mb-1.5">You · {message.time}</p>
+      <p className="text-lg font-medium text-ink-text leading-snug whitespace-pre-wrap">{message.content}</p>
     </div>
   );
 }
 
-function Typing() {
+function Answer({ message }) {
+  // Only passages the answer actually cites get a footnote, keeping their
+  // original numbers so "[3]" in the text always means footnote 3.
+  const cited = new Set(
+    [...message.content.matchAll(/\[(\d{1,2})\](?!\()/g)].map((m) => Number(m[1]))
+  );
+  const footnotes = message.citations.filter((c) => cited.has(c.n));
+  // Some statutes are indexed under two titles, one OCR-damaged ("Muslim
+  // Family Laws Ordinance, 1961" / "THE MUSLIM FAMILY LAWS ORDINAN CE,
+  // 1961"): compare letters and digits only so they count once.
+  const statutes = new Set(
+    footnotes.map((c) => c.source.toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^the/, ""))
+  ).size;
+
+  const meta = [
+    statutes ? `${statutes} statute${statutes === 1 ? "" : "s"}` : null,
+    message.elapsedMs != null ? `${(message.elapsedMs / 1000).toFixed(1)}s` : null,
+    message.time,
+  ].filter(Boolean);
+
   return (
-    <div className="flex gap-3">
-      <div className="h-8 w-8 rounded-full border border-hairline flex items-center justify-center shrink-0">
-        <Bot className="h-4 w-4 text-ink-muted" />
-      </div>
-      <div className="flex items-center gap-1 py-2">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="h-1.5 w-1.5 rounded-full bg-ink-muted animate-bounce"
-            style={{ animationDelay: `${i * 0.15}s` }}
-          />
-        ))}
-      </div>
+    <article className="pt-4 pb-8 border-b border-hairline-subtle">
+      <Markdown citeId={message.id}>{message.content}</Markdown>
+
+      <p className="type-meta mt-4">{meta.join(" · ")}</p>
+
+      {footnotes.length > 0 && (
+        <ol className="mt-3 pt-3 border-t border-hairline-subtle space-y-2">
+          {footnotes.map((c) => (
+            <li key={c.n} id={citeAnchor(message.id, c.n)} className="flex gap-3 text-sm scroll-mt-4">
+              <span className="text-brick font-semibold w-4 shrink-0 text-right">{c.n}</span>
+              <span className="min-w-0">
+                <span className="text-ink-text font-medium">{c.source}</span>
+                {c.excerpt && (
+                  <span className="block text-ink-muted line-clamp-2 mt-0.5">{c.excerpt}</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </article>
+  );
+}
+
+function Thinking() {
+  return (
+    <div className="flex items-center gap-2.5 pt-4 pb-8 type-meta">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Searching the statute library and drafting an answer…
     </div>
   );
 }
 
 function EmptyState({ onPick }) {
   return (
-    <div className="flex flex-col items-center text-center py-10">
-      <Bot className="h-9 w-9 text-ink-muted mb-4" />
-      <h3 className="font-editorial text-2xl text-ink-text">LegalEase AI assistant</h3>
-      <p className="text-ink-muted mt-2 max-w-md text-sm">
-        Ask any question about Pakistani law. Answers are grounded in
-        LegalEase&apos;s library of Pakistani statute text (Acts, Ordinances,
-        Codes and Orders) and cite the passages they rely on — the library
-        holds no court judgments or case law. Out-of-scope questions are
-        politely refused.
+    <div className="py-6">
+      <p className="eyebrow mb-3">Pakistani statute law</p>
+      <h3 className="type-title">Ask a legal question.</h3>
+      <p className="type-lead mt-4 max-w-2xl">
+        Answers are grounded in LegalEase&apos;s library of Pakistani statute text
+        (Acts, Ordinances, Codes and Orders) and cite the passages they rely on.
+        The library holds no court judgments or case law, and questions outside
+        Pakistani law are refused.
       </p>
-      <div className="mt-6 w-full max-w-xl">
+
+      <p className="type-meta mt-10 mb-2">Try one of these</p>
+      <ul className="border-t border-hairline">
         {SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() => onPick(s)}
-            className="w-full text-left text-sm text-ink-text hover:bg-hairline-subtle/40 px-2 -mx-2 py-3 border-b border-hairline-subtle transition-colors"
-          >
-            {s}
-          </button>
+          <li key={s} className="border-b border-hairline-subtle">
+            <button
+              onClick={() => onPick(s)}
+              className="w-full text-left text-base text-ink-text hover:bg-hairline-subtle/40 px-2 -mx-2 py-3.5 transition-colors"
+            >
+              {s}
+            </button>
+          </li>
         ))}
-      </div>
-      <p className="mt-6 text-xs text-ink-muted">Bilingual · English & Urdu</p>
+      </ul>
+      <p className="type-meta mt-6">English &amp; Urdu</p>
     </div>
   );
 }
