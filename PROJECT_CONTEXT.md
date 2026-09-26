@@ -28,7 +28,8 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
   current priority)**. Notifications backend work still deferred past it
   (de-scoped, see above). Legal NER is trained and integrated into
   Document Analysis (2026-09-26) — see "Legal NER status" below.
-- UI needs a full but careful redesign — must not break working backend calls.
+- UI redesign done (every page on the design system) and accuracy-swept
+  2026-09-26 — see "UI accuracy sweep" below.
 
 ## Backend / database status (confirmed 2026-09-13)
 - `backend/app/models/` was found completely missing on audit (every router/
