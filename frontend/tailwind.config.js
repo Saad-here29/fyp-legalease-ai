@@ -53,15 +53,17 @@ export default {
         // Rolled out one page at a time — see docs/STYLE_GUIDE.md.
         // Additive only: none of the tokens above are touched, so pages not
         // yet converted keep looking exactly as they did before.
+        // 2026-09 overhaul: same paper/ink identity, higher contrast. On
+        // paper: ink-text 16.0:1, ink-muted 7.9:1 (was 5.3), brick 7.2:1.
         paper: "#F6F1E7",
         "ink-panel": "#1E2E28",
-        "ink-text": "#241F1A",
-        "ink-muted": "#6B6255",
-        hairline: "#C9BFA8",
-        "hairline-subtle": "#E4DCC9",
+        "ink-text": "#1A1611",
+        "ink-muted": "#51493E",
+        hairline: "#B5A88B",
+        "hairline-subtle": "#DCD1BA",
         // Accent and "urgent" status intentionally share this hex — see
         // docs/STYLE_GUIDE.md for why. Use `brick` for both.
-        brick: "#7A3226",
+        brick: "#8A3324",
         "status-active": "#3E6E52",
         "status-pending": "#B08B3C",
       },
@@ -74,6 +76,38 @@ export default {
         // using `font-serif` are unaffected until they're redesigned too.
         editorial: ["Georgia", "'Times New Roman'", "serif"],
       },
+      // `prose prose-ink`: the single style for ALL AI-generated content
+      // (chat answers, document summaries, contract text).
+      typography: ({ theme }) => ({
+        ink: {
+          css: {
+            "--tw-prose-body": theme("colors.ink-text"),
+            "--tw-prose-headings": theme("colors.ink-text"),
+            "--tw-prose-lead": theme("colors.ink-muted"),
+            "--tw-prose-links": theme("colors.brick"),
+            "--tw-prose-bold": theme("colors.ink-text"),
+            "--tw-prose-counters": theme("colors.brick"),
+            "--tw-prose-bullets": theme("colors.brick"),
+            "--tw-prose-hr": theme("colors.hairline-subtle"),
+            "--tw-prose-quotes": theme("colors.ink-text"),
+            "--tw-prose-quote-borders": theme("colors.brick"),
+            "--tw-prose-captions": theme("colors.ink-muted"),
+            "--tw-prose-code": theme("colors.ink-text"),
+            "--tw-prose-th-borders": theme("colors.hairline"),
+            "--tw-prose-td-borders": theme("colors.hairline-subtle"),
+            // AI answers use ###-level headings: keep them sans and modest
+            // so they structure the answer without shouting over the page's
+            // own serif headings.
+            "h1, h2, h3, h4": { fontFamily: theme("fontFamily.sans").join(", "), fontWeight: "600" },
+            h1: { fontSize: "1.375em" },
+            h2: { fontSize: "1.25em" },
+            h3: { fontSize: "1.125em", marginTop: "1.5em", marginBottom: "0.5em" },
+            a: { textUnderlineOffset: "3px" },
+            "thead th": { color: theme("colors.ink-muted"), fontWeight: "600" },
+            "sup.citation-marker": { color: theme("colors.brick"), fontWeight: "600" },
+          },
+        },
+      }),
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -112,5 +146,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 };

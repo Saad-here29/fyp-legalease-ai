@@ -94,7 +94,7 @@ export default function AppShell({ title, subtitle, headerActions, children }) {
               to={to}
               end
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
+                `flex items-center gap-3 px-3 py-2.5 text-[15px] transition-colors ${
                   isActive
                     ? "bg-paper/10 text-paper"
                     : "text-paper/60 hover:text-paper hover:bg-paper/5"
@@ -111,7 +111,7 @@ export default function AppShell({ title, subtitle, headerActions, children }) {
           <NavLink
             to={ROUTES.PROFILE}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
+              `flex items-center gap-3 px-3 py-2.5 text-[15px] transition-colors ${
                 isActive
                   ? "bg-paper/10 text-paper"
                   : "text-paper/60 hover:text-paper hover:bg-paper/5"
@@ -135,11 +135,11 @@ export default function AppShell({ title, subtitle, headerActions, children }) {
         <header className="flex items-center justify-between gap-4 px-6 lg:px-10 py-6 border-b border-hairline">
           <div className="min-w-0">
             {title && (
-              <h1 className="font-editorial text-2xl lg:text-3xl text-ink-text truncate">
+              <h1 className="font-editorial text-3xl lg:text-4xl leading-tight tracking-tight text-ink-text truncate">
                 {title}
               </h1>
             )}
-            {subtitle && <p className="text-sm text-ink-muted mt-1">{subtitle}</p>}
+            {subtitle && <p className="text-base text-ink-muted mt-1.5">{subtitle}</p>}
           </div>
 
           <div className="flex items-center gap-5 shrink-0">

@@ -81,6 +81,29 @@
     margin-left: 1px;
   }
 
+  /* ===== Type scale (2026-09 overhaul) =====
+     Serif (font-editorial) for identity moments, sans for everything else.
+     Steps are deliberately far apart; body text is never below 16px. */
+  .type-display {
+    @apply font-editorial text-5xl sm:text-6xl lg:text-7xl leading-[1.04] tracking-tight text-ink-text;
+  }
+  .type-title {
+    @apply font-editorial text-4xl lg:text-5xl leading-[1.1] tracking-tight text-ink-text;
+  }
+  .type-section {
+    @apply font-editorial text-3xl lg:text-4xl leading-tight text-ink-text;
+  }
+  .type-lead {
+    @apply text-lg lg:text-xl leading-relaxed text-ink-muted;
+  }
+  /* Small uppercase label above a heading — one of the accent's places. */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.16em] text-brick;
+  }
+  .type-meta {
+    @apply text-sm text-ink-muted;
+  }
+
   /* Every serif heading/greeting/identity-moment uses font-editorial.
      Bold at the CSS level (not per-usage) so every existing and future
      `font-editorial` element gets real weight contrast against body text
