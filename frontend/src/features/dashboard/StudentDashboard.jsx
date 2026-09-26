@@ -62,7 +62,7 @@ export default function StudentDashboard() {
         <section>
           <h2 className="font-editorial text-xl text-ink-text mb-1">Legal research</h2>
           <p className="text-sm text-ink-muted mb-2">
-            Search statutes and judgments by meaning. Filter by court, year, and
+            Search Pakistani statutes by meaning. Filter by court, year, and
             case type — every result links to the source passage.
           </p>
           <div className="border-t border-hairline pt-4 mt-3">
@@ -71,9 +71,10 @@ export default function StudentDashboard() {
               Search the library
             </AppButton>
             <p className="mt-4 text-xs text-ink-muted">
-              Library contains seeded Pakistani statutes (PPC, Family Courts Act,
-              Contract Act, Cr.P.C., MFLO, Constitution) plus landmark judgments
-              from the Supreme Court and High Courts.
+              The library is Pakistani statute text — about 900 Acts, Ordinances,
+              Codes and Orders, including the PPC, Cr.P.C., Family Courts Act,
+              MFLO, Contract Act and the Constitution. It holds no court
+              judgments or case law.
             </p>
           </div>
         </section>
