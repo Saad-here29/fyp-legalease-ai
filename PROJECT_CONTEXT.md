@@ -31,6 +31,46 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
 - UI redesign done (every page on the design system) and accuracy-swept
   2026-09-26 — see "UI accuracy sweep" below.
 
+## ⚠️ Known constraint — Groq free-tier limits (CRITICAL for demo day)
+Every AI feature — chat (query rewrite + answer), Research analysis,
+Document Analysis summaries, contract drafting — runs on one Groq key,
+free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
+2026-09-26 from Groq's own responses:
+- **200,000 tokens per day** — the binding limit. Hit on 2026-09-26 after a
+  day of retrieval testing: Groq's 429 read "tokens per day (TPD): Limit
+  200000, Used 199915". Once exhausted, every AI feature above fails or
+  stalls; the rest of the app (login, cases, document upload and text
+  extraction, contracts list) keeps working, and Legal Research search
+  still returns results but with the raw question (its LLM query rewrite
+  falls back silently), so matches are less precise.
+- **8,000 tokens per minute** and **1,000 requests per day** (from the
+  `x-ratelimit-*` headers). A chat answer needs ~5,000 tokens including its
+  reserved reply, so back-to-back questions are paced by the SDK retrying
+  Groq 429s (8–16 s waits) rather than failing.
+- **What 200k/day means:** roughly **35–40 chat answers per day** in total,
+  across all users and all testing.
+- **Recovery is a rolling 24-hour window, ~8k tokens/hour on average** —
+  but only on average: tokens come back 24 hours after they were spent, so
+  recovery follows the previous day's usage. A heavy testing burst means a
+  lockout at the same time the next day.
+
+**Demo-day plan:**
+1. **Do not run heavy testing on demo day**, or in the 24 hours before the
+   demo slot — anything spent then is unavailable during the demo.
+2. **Strongly consider a paid Groq tier** (Dev tier, console.groq.com →
+   Settings → Billing) for the demo period, **or a dedicated demo-day API
+   key kept completely unused until then** — switch `GROQ_API_KEY` in
+   `backend/.env` to it on the day and restart the backend. **The key must
+   come from a separate Groq account/organisation:** Groq meters limits per
+   organisation (its 429 names `organization org_…`), so a second key in the
+   same account shares the same 200k/day.
+3. Rehearse with the questions you'll show, the day *before* the day
+   before — then leave the budget untouched.
+4. If the budget runs out mid-demo, the app degrades rather than crashes:
+   cases, document upload and research search still work; AI answers
+   return an error toast. Keep a recorded fallback (the documented real-document run in
+   `docs/demo_examples.md`) ready to show instead.
+
 ## Backend / database status (confirmed 2026-09-13)
 - `backend/app/models/` was found completely missing on audit (every router/
   service imported ORM classes — User, Case, Document, ChatSession, etc. —
@@ -389,6 +429,9 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
    c. **Next up: Practice Simulator (Iteration 4) — the last missing core
       module.** Conversation via LLM, but grading/rubric logic must be
       custom-built, not just LLM-judged.
+   d. **Before the demo: secure LLM capacity** — paid Groq tier or an
+      unused demo-day key; see "⚠️ Known constraint — Groq free-tier
+      limits" above.
 6. Add missing security pieces: rate limiting, file upload sanitization,
    basic prompt-injection input handling.
 7. Add test coverage for RAG acceptance criteria (MRR, recall@5, refusal rate).
