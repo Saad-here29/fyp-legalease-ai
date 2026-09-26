@@ -63,11 +63,20 @@ CHAT_MAX_TOKENS = 2000
 # chars (~4,300 tokens) leaves room for the 2,000-token reply.
 SUMMARY_MAX_CHARS = 20_000
 
+# The search-query rewrite returns ~20 words, but it went through chat() and
+# reserved the full CHAT_MAX_TOKENS: ~2,300 tokens per message of the 8,000
+# tokens/minute budget before the answer was even generated. Measured on
+# gpt-oss-120b: with default reasoning a rewrite uses 140-210 tokens, and a
+# 100-token cap returned an EMPTY rewrite (98 went to reasoning); with
+# reasoning_effort="low" it uses 20-97. So: low effort, 150-token cap.
+REWRITE_MAX_TOKENS = 150
+REWRITE_REASONING_EFFORT = "low"
 
-def _content(resp) -> str:
+
+def _content(resp, max_tokens: int = CHAT_MAX_TOKENS) -> str:
     choice = resp.choices[0]
     if choice.finish_reason == "length":
-        logger.warning(f"LLM reply hit max_tokens={CHAT_MAX_TOKENS} and was cut off")
+        logger.warning(f"LLM reply hit max_tokens={max_tokens} and was cut off")
     return choice.message.content or ""
 
 
@@ -139,8 +148,16 @@ class AIClient:
 
     # -------- Public API -------------------------------------------------
 
-    def chat(self, history: list[dict], system: str = SYSTEM_PROMPT_LEGAL_CHAT) -> str:
-        """history: [{role, content}] for prior turns + latest user message."""
+    def chat(
+        self,
+        history: list[dict],
+        system: str = SYSTEM_PROMPT_LEGAL_CHAT,
+        *,
+        max_tokens: int = CHAT_MAX_TOKENS,
+        reasoning_effort: str | None = None,
+    ) -> str:
+        """history: [{role, content}] for prior turns + latest user message.
+        `reasoning_effort` is passed to Groq's reasoning models only."""
         if not self.enabled:
             raise AIServiceUnavailable(
                 message="The AI assistant is not configured.",
@@ -160,7 +177,7 @@ class AIClient:
             try:
                 if prov != self.provider:
                     logger.info(f"Falling back from {self.provider} to {prov}")
-                return self._chat_with_provider(prov, history, system)
+                return self._chat_with_provider(prov, history, system, max_tokens, reasoning_effort)
             except AIServiceUnavailable as e:
                 last_err = e
                 continue
@@ -218,7 +235,10 @@ class AIClient:
             "explanation, and never an apology or refusal sentence."
         )
         try:
-            rewritten = self.chat([{"role": "user", "content": query}], system=system).strip()
+            rewritten = self.chat(
+                [{"role": "user", "content": query}], system=system,
+                max_tokens=REWRITE_MAX_TOKENS, reasoning_effort=REWRITE_REASONING_EFFORT,
+            ).strip()
             return rewritten or query
         except AIServiceUnavailable:
             return query
@@ -245,25 +265,31 @@ class AIClient:
     # -------- Provider implementations -----------------------------------
 
     def _chat_with_provider(
-        self, provider: str, history: list[dict], system: str
+        self, provider: str, history: list[dict], system: str,
+        max_tokens: int = CHAT_MAX_TOKENS, reasoning_effort: str | None = None,
     ) -> str:
         if provider == "groq":
-            return self._chat_groq(history, system)
+            return self._chat_groq(history, system, max_tokens, reasoning_effort)
         if provider == "openai":
-            return self._chat_openai(history, system)
+            return self._chat_openai(history, system, max_tokens)
         if provider == "gemini":
             return self._chat_gemini(history, system)
         raise AIServiceUnavailable(message=f"Unknown provider: {provider}")
 
-    def _chat_groq(self, history: list[dict], system: str) -> str:
+    def _chat_groq(
+        self, history: list[dict], system: str,
+        max_tokens: int = CHAT_MAX_TOKENS, reasoning_effort: str | None = None,
+    ) -> str:
         try:
             resp = self._groq.chat.completions.create(
                 model=settings.GROQ_MODEL,
                 messages=[{"role": "system", "content": system}, *history],
                 temperature=0.3,
-                max_tokens=CHAT_MAX_TOKENS,
+                max_tokens=max_tokens,
+                # Not a named argument in openai 1.51; Groq reads it from the body.
+                extra_body={"reasoning_effort": reasoning_effort} if reasoning_effort else None,
             )
-            return _content(resp)
+            return _content(resp, max_tokens)
         except Exception as e:  # noqa: BLE001
             logger.warning(f"Groq chat failed: {type(e).__name__}: {e}")
             raise AIServiceUnavailable(
@@ -271,15 +297,17 @@ class AIClient:
                 hint=f"Groq: {type(e).__name__}. Trying fallback provider...",
             )
 
-    def _chat_openai(self, history: list[dict], system: str) -> str:
+    def _chat_openai(
+        self, history: list[dict], system: str, max_tokens: int = CHAT_MAX_TOKENS,
+    ) -> str:
         try:
             resp = self._openai.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[{"role": "system", "content": system}, *history],
                 temperature=0.3,
-                max_tokens=CHAT_MAX_TOKENS,
+                max_tokens=max_tokens,
             )
-            return _content(resp)
+            return _content(resp, max_tokens)
         except Exception as e:  # noqa: BLE001
             logger.warning(f"OpenAI chat failed: {type(e).__name__}: {e}")
             raise AIServiceUnavailable(
