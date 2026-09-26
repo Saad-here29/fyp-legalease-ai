@@ -193,21 +193,25 @@ class ResearchService:
             ("legal_basis", r"legal\s*basis|basis"),
             ("relevance", r"relevance"),
         ]
-        # Build a single regex that splits on labelled headers
+        # Labelled headers come as "**Issue**:", "**Issue:**" or "Issue:".
+        # A closing ** after the colon is only stripped when the label opened
+        # with ** — otherwise "Legal Basis: **Section 2**" would lose the
+        # opening marker of its (bold) body.
         pattern = re.compile(
-            r"^\s*\**\s*(issue|findings?|judgment|judgement|ruling|legal\s*basis|basis|relevance)\s*\**\s*[:\-]\s*",
+            r"^\s*#*\s*(\*\*)?\s*"
+            r"(issue|findings?|judgment|judgement|ruling|legal\s*basis|basis|relevance)"
+            r"\s*(?(1)(?:\*\*\s*[:\-]|[:\-]\s*\*\*|[:\-])|[:\-])\s*",
             re.IGNORECASE | re.MULTILINE,
         )
-        parts = pattern.split(raw)
-        # parts = [pre, label1, body1, label2, body2, ...]
-        if len(parts) >= 3:
-            for i in range(1, len(parts), 2):
-                label = parts[i].lower().strip()
-                body = parts[i + 1].strip() if i + 1 < len(parts) else ""
-                for key, rx in labels:
-                    if re.fullmatch(rx, label, re.IGNORECASE):
-                        sections[key] = body
-                        break
+        matches = list(pattern.finditer(raw))
+        for n, m in enumerate(matches):
+            label = m.group(2).lower().strip()
+            end = matches[n + 1].start() if n + 1 < len(matches) else len(raw)
+            body = raw[m.end():end].strip()
+            for key, rx in labels:
+                if re.fullmatch(rx, label, re.IGNORECASE):
+                    sections[key] = body
+                    break
 
         # Fallback — if parsing produced nothing useful, dump the raw into Issue
         if not any(sections.values()):

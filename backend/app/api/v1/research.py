@@ -60,6 +60,12 @@ def analyze_passage(
     user: CurrentUser,
     db: Session = Depends(get_db),
 ):
+    # Same split as /documents/analyze and /chat/message, minus the write
+    # phase (nothing is persisted here). Phase 1 is the auth lookup, which
+    # left a transaction open on this session: close it so no connection
+    # sits idle-in-transaction during the LLM call, which Supabase's pooler
+    # kills (-> intermittent 500). Phase 2 needs no DB.
+    db.close()
     return ResearchService(db).structured_analysis(
         text=payload.text,
         source=payload.source,

@@ -203,12 +203,17 @@ def get_document(
 def analyze_document(
     document_id: uuid.UUID,
     user: CurrentUser,
+    request_db: Session = Depends(get_db),
 ):
     """Split into three phases so no DB session is held open across the
     slow, synchronous call to the LLM. Supabase's connection pooler will
     kill an idle-in-transaction connection that sits open too long, which
     is exactly what a single long-lived session wrapping the LLM call risks
     turning into an intermittent 500 on this endpoint."""
+
+    # The auth dependency loaded `user` through the request session, which
+    # left a transaction open. Close it (the loaded user stays readable).
+    request_db.close()
 
     # Phase 1 — short read: fetch the document, check access, get the text
     # to summarise. Session closes before we ever touch the network.

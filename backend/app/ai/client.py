@@ -53,6 +53,18 @@ SYSTEM_PROMPT_LEGAL_CHAT = (
 )
 
 
+# gpt-oss-120b is a reasoning model: its hidden reasoning counts against
+# this budget, so 800 cut long answers off mid-sentence.
+CHAT_MAX_TOKENS = 2000
+
+
+def _content(resp) -> str:
+    choice = resp.choices[0]
+    if choice.finish_reason == "length":
+        logger.warning(f"LLM reply hit max_tokens={CHAT_MAX_TOKENS} and was cut off")
+    return choice.message.content or ""
+
+
 def _key(value: str | None) -> bool:
     v = (value or "").strip()
     return bool(v) and v != "demo" and not v.startswith("sk-...")
@@ -243,9 +255,9 @@ class AIClient:
                 model=settings.GROQ_MODEL,
                 messages=[{"role": "system", "content": system}, *history],
                 temperature=0.3,
-                max_tokens=800,
+                max_tokens=CHAT_MAX_TOKENS,
             )
-            return resp.choices[0].message.content or ""
+            return _content(resp)
         except Exception as e:  # noqa: BLE001
             logger.warning(f"Groq chat failed: {type(e).__name__}: {e}")
             raise AIServiceUnavailable(
@@ -259,9 +271,9 @@ class AIClient:
                 model=settings.OPENAI_MODEL,
                 messages=[{"role": "system", "content": system}, *history],
                 temperature=0.3,
-                max_tokens=800,
+                max_tokens=CHAT_MAX_TOKENS,
             )
-            return resp.choices[0].message.content or ""
+            return _content(resp)
         except Exception as e:  # noqa: BLE001
             logger.warning(f"OpenAI chat failed: {type(e).__name__}: {e}")
             raise AIServiceUnavailable(

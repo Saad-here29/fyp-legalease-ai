@@ -70,3 +70,32 @@ def test_trim_handles_already_clean_text():
 
 def test_trim_handles_empty_input():
     assert _trim_to_sentence("") == ""
+
+
+# ============================================================
+# Structured-analysis parser: bold labels in both styles
+# ============================================================
+@pytest.mark.parametrize("label_style", ["**{}:**", "**{}**:", "{}:"])
+def test_parse_structured_strips_bold_label_markers(label_style):
+    # Real gpt-oss output uses "**Issue:**" — the closing ** used to leak
+    # into every field as a leading "** ".
+    raw = "\n\n".join(
+        f"{label_style.format(k)} {k} text."
+        for k in ("Issue", "Findings", "Judgment", "Legal Basis", "Relevance")
+    )
+    a = ResearchService._parse_structured(raw)
+    assert a.issue == "Issue text."
+    assert a.findings == "Findings text."
+    assert a.judgment == "Judgment text."
+    assert a.legal_basis == "Legal Basis text."
+    assert a.relevance == "Relevance text."
+
+
+@pytest.mark.parametrize("line", [
+    "**Legal Basis:** **Section 2, DMMA 1939**.",
+    "**Legal Basis**: **Section 2, DMMA 1939**.",
+    "Legal Basis: **Section 2, DMMA 1939**.",
+])
+def test_parse_structured_keeps_bold_body_intact(line):
+    a = ResearchService._parse_structured(f"Issue: x\n{line}")
+    assert a.legal_basis == "**Section 2, DMMA 1939**."
