@@ -100,7 +100,8 @@ mockups on pages 2–13 draw them, and are marked *(derived)* below.
 - **Buttons**
   - `.ds-btn-primary` — Seal fill, white text. **One per view.**
   - `.ds-btn-secondary` — 1px ink outline, transparent fill.
-  - `.ds-link` — text link: semibold text, tan underline (`ds-underline`).
+  - `.ds-link` — text link: semibold ink text, tan underline (`ds-underline`).
+    See **Links** below for where each link style applies.
   - `.ds-btn-disabled` / `disabled` — `ds-disabled` fill, text-2.
   - All buttons are at least 44px tall with a visible focus outline.
 - **Status tags** — `.ds-tag-pass` (✓ Passes), `.ds-tag-fail` (✗ Fails),
@@ -114,6 +115,16 @@ mockups on pages 2–13 draw them, and are marked *(derived)* below.
 - **Panels** *(derived — Extracted data, Next hearing)* — Sheet fill with a
   1px Rule border for document-like content; Ink fill with paper text for a
   single highlighted fact (e.g. next hearing). 2–4px corners, no shadow.
+
+### Links — decided 2026-09-27, don't re-decide per page
+
+| Where | Class | Look |
+|---|---|---|
+| **Auth screens only** — Login, Signup, Welcome, Forgot password, Reset password, OTP: their action links ("Forgot password?", "Create an account", "Sign in", "Resend code") | `.ds-link-seal` | Seal text, Seal underline (design page 2) |
+| **Everywhere else** — citations and source links, in-content links, secondary navigation ("View all", "Back to cases"), AI answer text | `.ds-link` | Ink text, tan underline (page 1 base rule) |
+
+Seal links are an auth-screen exception: in the app, Seal stays reserved for
+the uses listed in §01. Never use `.ds-link-seal` inside `AppShell`.
 
 Recurring patterns in the mockups: the ink sidebar with a Seal marker on the
 active item and the arch motif at its foot (page 7); ink hero bands with the
@@ -133,6 +144,7 @@ for them** — adapt each page to what exists (decided 2026-09-27):
 | AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. |
 | Document Analysis (p. 12) | No page references on extracted values — the API has none. |
 | Contracts (p. 13) | Only the 3 real templates (NDA, Employment, Service Agreement); no "Export .docx" — no export exists. |
+| Login (p. 2) | No "I am a" role picker (login is email + password; the account holds the role) and no English / اردو switch (the interface isn't translated). Hero copy made true: "tied to the statute it came from", "Citations checked against the statute text", "Federal statutes of the Pakistan Code, in one search" (the index has only three provincial Acts). |
 | Landing (p. 3) | No Pricing, free trial or "Start your free trial" copy. |
 
 **Copy must stay statute-only.** The mockups say "tied to the statute or
@@ -162,7 +174,10 @@ extend these.
   `rounded-ds`, `max-w-ds-content`), type classes and component classes in
   `frontend/tailwind.config.js` and `frontend/src/index.css`; token test page
   at `/design-system` (not linked from the app).
-- **Not yet migrated:** every real page still uses the previous tokens
+- **Migrated:** `AppShell` (sidebar, page header, mobile drawer), `AuthShell`
+  (ink identity panel shared by all six auth pages), Login.
+- **Not yet migrated:** every other page's content (the auth pages other than
+  Login keep old-style forms inside the new frame) still uses the previous tokens
   (`paper`, `ink-panel`, `ink-text`, `ink-muted`, `hairline`, `brick`,
   `font-editorial`, `.type-*`). Those tokens are **deprecated** — don't use
   them in new work; they are removed once the last page has moved.

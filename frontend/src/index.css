@@ -117,6 +117,12 @@
     @apply font-ds-sans font-semibold text-ds-text underline decoration-ds-underline decoration-2 underline-offset-[5px]
       hover:decoration-ds-text transition-colors;
   }
+  /* Auth screens only (Login, Signup, Forgot/Reset password, OTP): action
+     links in Seal, per design page 2. Everywhere else use .ds-link. */
+  .ds-link-seal {
+    @apply font-ds-sans font-semibold text-ds-seal underline decoration-1 underline-offset-4 hover:decoration-2 rounded-ds-sm
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-ink;
+  }
 
   /* Status tags — pass / fail / review / neutral / active. */
   .ds-tag        { @apply inline-flex items-center gap-1.5 h-8 px-3 rounded-ds font-ds-sans font-semibold text-[14px] leading-[20px]; }

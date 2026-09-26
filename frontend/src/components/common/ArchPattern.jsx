@@ -7,6 +7,36 @@
  * it can render light-on-dark (ink panel) or dark-on-light (hero) —
  * opacity is controlled by the caller (6–15%) so it never affects legibility.
  */
+/**
+ * Design system v1 motif: large pointed arches drawn as thin outlines,
+ * nested in pairs, rising from the bottom of an ink panel (design pages 2
+ * and 7). Decorative; colour comes from the caller's text colour.
+ */
+export function ArchOutlines({ className = "" }) {
+  const arch = (cx, w, top) =>
+    `M${cx - w} 800V${top + w * 1.1}C${cx - w} ${top + w * 0.45} ${cx - w * 0.4} ${top + w * 0.12} ${cx} ${top}` +
+    `C${cx + w * 0.4} ${top + w * 0.12} ${cx + w} ${top + w * 0.45} ${cx + w} ${top + w * 1.1}V800`;
+  return (
+    <svg
+      className={`absolute inset-x-0 bottom-0 w-full h-[62%] pointer-events-none ${className}`}
+      viewBox="0 0 860 800"
+      preserveAspectRatio="xMidYMax slice"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      {[290, 762].map((cx) => (
+        <g key={cx}>
+          <path d={arch(cx, 208, 20)} />
+          <path d={arch(cx, 152, 100)} />
+          <path d={arch(cx, 96, 190)} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 export default function ArchPattern({ className = "" }) {
   return (
     <svg

@@ -1,54 +1,52 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Scale } from "lucide-react";
-import ArchPattern from "@/components/common/ArchPattern";
+import { Check } from "lucide-react";
+import { ArchOutlines } from "@/components/common/ArchPattern";
+import Wordmark from "@/components/common/Wordmark";
 import { ROUTES } from "@/constants";
 
 // Shared shell for every public auth page (Login, Signup, Welcome, Forgot
-// Password, OTP, Reset Password) — the two-pane ink-panel/paper split
-// introduced on the Login page. Extracted here once several pages needed
-// the identical treatment, so it isn't duplicated per page. Distinct from
-// the old AuthLayout.jsx (dark navy/gold glassmorphism), which this
-// replaces for every converted auth page.
+// Password, OTP, Reset Password) — design system v1, per the Login mockup
+// (docs/design_reference page 2): ink identity panel on the left with the
+// outline arches, a Display headline, a short statement and check-marked
+// points; the form on Paper on the right.
 //
-// `showArch`: the faint architectural-arch background motif is spec'd for
-// every auth page's dark panel (and the Landing hero, separately). Defaults
-// on so every current and future AuthShell consumer matches automatically;
-// pass `showArch={false}` for the rare page that shouldn't have it.
-export default function AuthShell({ heroTitle, heroSubtitle, tagline, showArch = true, children }) {
+// Copy here must stay true to the product: the AI answers from Pakistani
+// statute text only (no judgments), and the library is the federal
+// Pakistan Code.
+export default function AuthShell({ heroTitle, heroSubtitle, heroPoints = [], children }) {
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Left — identity / hero panel */}
-      <div className="relative bg-ink-panel text-paper flex flex-col px-8 py-10 md:px-14 md:py-14 overflow-hidden">
-        {showArch && <ArchPattern className="text-paper opacity-[0.08]" />}
+    <div className="min-h-screen grid grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-1 lg:grid-cols-[43fr_57fr] bg-ds-paper font-ds-sans text-ds-text">
+      {/* Left — identity panel */}
+      <div className="relative bg-ds-ink text-ds-paper overflow-hidden flex flex-col px-6 py-6 sm:px-10 lg:px-[60px] lg:py-11">
+        <ArchOutlines className="hidden lg:block text-ds-paper/[0.07]" />
 
-        <Link
-          to={ROUTES.LANDING}
-          className="relative z-10 inline-flex items-center gap-2 text-base font-medium text-paper/85 hover:text-paper transition-colors w-fit"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to home
+        <Link to={ROUTES.LANDING} className="relative w-fit rounded-ds focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-paper" aria-label="LegalEase AI home">
+          <Wordmark onInk />
         </Link>
 
-        <div className="relative z-10 flex-1 flex flex-col justify-center max-w-sm">
-          <div className="flex items-center gap-2.5 mb-10">
-            <Scale className="h-5 w-5 text-paper/70" strokeWidth={2} />
-            <span className="text-sm text-paper/70">LegalEase AI</span>
-          </div>
-
-          <h1 className="font-editorial text-4xl leading-tight mb-3">{heroTitle}</h1>
-          {heroSubtitle && (
-            <p className="text-sm text-paper/60 leading-relaxed">{heroSubtitle}</p>
+        <div className="relative hidden lg:flex flex-1 flex-col justify-end pt-24">
+          {heroTitle && (
+            <h1 className="font-ds-serif font-medium text-[clamp(48px,4.8vw,72px)] leading-[1.06] tracking-tight text-ds-paper">
+              {heroTitle}
+            </h1>
+          )}
+          {heroSubtitle && <p className="mt-8 max-w-[480px] text-[18px] leading-[28px] text-ds-paper/80">{heroSubtitle}</p>}
+          {heroPoints.length > 0 && (
+            <ul className="mt-12 space-y-3">
+              {heroPoints.map((p) => (
+                <li key={p} className="flex items-start gap-3 text-[16px] leading-[24px] text-ds-paper/80">
+                  <Check className="h-5 w-5 shrink-0 mt-0.5 text-[#8FC7A4]" strokeWidth={2} aria-hidden="true" />
+                  {p}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-
-        <p className="relative z-10 text-xs text-paper/40">
-          {tagline || "Pakistani law · case management & research"}
-        </p>
       </div>
 
       {/* Right — form panel */}
-      <div className="bg-paper flex items-center justify-center px-8 py-10 md:px-14 md:py-14">
-        <div className="w-full max-w-sm">{children}</div>
+      <div className="flex items-center justify-center px-4 sm:px-10 py-12 lg:py-16">
+        <div className="w-full max-w-[428px]">{children}</div>
       </div>
     </div>
   );

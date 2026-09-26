@@ -7,11 +7,9 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import AuthShell from "@/layouts/AuthShell";
-import AppButton from "@/components/ui/AppButton";
 import { authApi, dashboardRouteFor, extractAuthError } from "./api";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTES } from "@/constants";
-import { cnInput } from "@/lib/formStyles";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -63,45 +61,42 @@ export default function LoginPage() {
 
   const onSubmit = (values) => loginMutation.mutate(values);
 
+  const fieldError = (e) =>
+    e && <p className="mt-2 text-[14px] leading-[20px] text-ds-seal" role="alert">{e.message}</p>;
+
   return (
     <AuthShell
-      heroTitle="Welcome back."
-      heroSubtitle="Sign in to continue to your cases, research, and the AI legal assistant."
+      heroTitle={<>Your chambers,<br />in order.</>}
+      heroSubtitle="Cases, research, documents and contract drafts for Pakistani practice — with every AI answer tied to the statute it came from."
+      heroPoints={[
+        "Citations checked against the statute text",
+        "Federal statutes of the Pakistan Code, in one search",
+      ]}
     >
-      <h2 className="font-editorial text-2xl text-ink-text mb-1">Sign in</h2>
-      <p className="text-sm text-ink-muted mb-6">
-        Enter your details to access your account.
-      </p>
+      <p className="ds-eyebrow">Welcome back</p>
+      <h1 className="font-ds-serif font-medium text-[40px] leading-[48px] sm:text-[48px] sm:leading-[56px] tracking-tight text-ds-text mt-3">
+        Sign in to LegalEase
+      </h1>
 
-      <div className="border-b border-hairline-subtle mb-8" />
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-10 space-y-7" noValidate>
         <div>
-          <label htmlFor="email" className="block text-sm text-ink-muted mb-1.5">
-            Email
-          </label>
+          <label htmlFor="email" className="ds-label mb-2.5">Email</label>
           <input
             id="email"
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
-            className={cnInput(errors.email)}
+            aria-invalid={!!errors.email}
+            className={`ds-input ${errors.email ? "border-ds-seal" : ""}`}
             {...register("email")}
           />
-          {errors.email && (
-            <p className="mt-1.5 text-xs text-brick">{errors.email.message}</p>
-          )}
+          {fieldError(errors.email)}
         </div>
 
         <div>
-          <div className="flex items-baseline justify-between mb-1.5">
-            <label htmlFor="password" className="block text-sm text-ink-muted">
-              Password
-            </label>
-            <Link
-              to={ROUTES.FORGOT_PASSWORD}
-              className="text-xs text-brick hover:underline underline-offset-2"
-            >
+          <div className="flex items-baseline justify-between mb-2.5">
+            <label htmlFor="password" className="ds-label mb-0">Password</label>
+            <Link to={ROUTES.FORGOT_PASSWORD} className="ds-link-seal text-[15px]">
               Forgot password?
             </Link>
           </div>
@@ -109,45 +104,34 @@ export default function LoginPage() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
               autoComplete="current-password"
-              className={cnInput(errors.password, "pr-8")}
+              aria-invalid={!!errors.password}
+              className={`ds-input pr-12 ${errors.password ? "border-ds-seal" : ""}`}
               {...register("password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-text"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center text-ds-text-2 hover:text-ds-text rounded-ds"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
-          {errors.password && (
-            <p className="mt-1.5 text-xs text-brick">{errors.password.message}</p>
-          )}
+          {fieldError(errors.password)}
         </div>
 
-        <AppButton
-          type="submit"
-          disabled={loginMutation.isPending}
-          className="w-full mt-2"
-        >
-          {loginMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
-        </AppButton>
+        <button type="submit" disabled={loginMutation.isPending} className="ds-btn-primary w-full min-h-[48px]">
+          {loginMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Signing in" /> : "Sign in"}
+        </button>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
-        <p className="text-sm text-ink-muted">
-          Don't have an account?{" "}
-          <Link
-            to={ROUTES.WELCOME}
-            className="text-brick hover:underline underline-offset-2"
-          >
-            Get started
-          </Link>
-        </p>
-      </div>
+      <p className="mt-8 text-center text-[16px] text-ds-text-2">
+        New to LegalEase?{" "}
+        <Link to={ROUTES.WELCOME} className="ds-link-seal">
+          Create an account
+        </Link>
+      </p>
     </AuthShell>
   );
 }
