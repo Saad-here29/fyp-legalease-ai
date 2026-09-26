@@ -118,6 +118,66 @@ def test_decode_bio_stray_or_mismatched_inside_tag_starts_new_entity():
     assert [(e["entity_group"], e["start"], e["end"]) for e in ents] == [("org", 0, 1), ("per", 2, 5)]
 
 
+# ---- corrections found on a real 2026 order (docs/demo_examples.md) --------
+
+def _ent(text, needle, label):
+    s = text.index(needle)
+    return {"entity_group": label, "score": 0.9, "start": s, "end": s + len(needle)}
+
+
+def _span(text, ent):
+    return text[ent["start"]:ent["end"]]
+
+
+def test_line_break_abbreviation_is_trimmed_from_person():
+    text = ": Mr. Altaf Khan, AAG KP \nTahir Khan, SI, PS Lund"
+    fixed = ner.trim_line_break_abbreviation(text, _ent(text, "KP \nTahir Khan", "per"))
+    assert _span(text, fixed) == "Tahir Khan"
+
+
+def test_trailing_abbreviation_after_line_break_is_trimmed():
+    text = "Tahir Khan\nSI, PS Lund"
+    fixed = ner.trim_line_break_abbreviation(text, _ent(text, "Tahir Khan\nSI", "per"))
+    assert _span(text, fixed) == "Tahir Khan"
+
+
+@pytest.mark.parametrize("text, needle, label", [
+    ("see PLD\n2015 SC 123 on this", "PLD\n2015 SC 123", "refcase"),   # not a person type
+    ("Justice S.\nAli Shah", "S.\nAli Shah", "per"),                       # single initial kept
+    ("Mr. Zafar\nKhan appeared", "Zafar\nKhan", "per"),                    # ordinary wrapped name
+    ("Mr. Altaf Khan, AAG", "Altaf Khan", "per"),                          # no line break
+])
+def test_trim_leaves_other_entities_alone(text, needle, label):
+    ent = _ent(text, needle, label)
+    assert ner.trim_line_break_abbreviation(text, ent) == ent
+
+
+HEADING = ("SUPREME COURT OF PAKISTAN\nJustice Aqeel Ahmed Abbasi\n"
+           "Criminal Petition No.187-P of 2026\n[Against the judgment dated 10.07.2026 "
+           "passed by the Peshawar High Court in Cr.MB No.1862-P/26]\nORDER\n"
+           "As held in Civil Petition No.12 of 2019, bail may be granted.")
+
+
+def test_own_case_number_in_heading_relabelled_caseno():
+    raw = [_ent(HEADING, "Criminal Petition No.187-P of 2026", "appealcaseno"),
+           _ent(HEADING, "Cr.MB No.1862-P/26", "appealcaseno"),
+           _ent(HEADING, "Civil Petition No.12 of 2019", "refcase")]
+    out = ner.relabel_own_case_number(HEADING, raw)
+    assert [e["entity_group"] for e in out] == ["caseno", "appealcaseno", "refcase"]
+
+
+def test_no_heading_marker_early_means_no_relabelling():
+    text = "x " * 1_500 + "Criminal Petition No.5 of 2020. Against this view ..."
+    raw = [_ent(text, "Criminal Petition No.5 of 2020", "refcase")]
+    assert ner.relabel_own_case_number(text, raw) == raw
+
+
+def test_heading_rule_ignores_non_case_entities():
+    raw = [_ent(HEADING, "Aqeel Ahmed Abbasi", "per"),
+           _ent(HEADING, "SUPREME COURT OF PAKISTAN", "refcase")]   # no "No." / digits
+    assert ner.relabel_own_case_number(HEADING, raw) == raw
+
+
 # ---- extraction + post-processing ----------------------------------------
 
 def test_entities_found_across_chunks_keep_document_offsets(fake):

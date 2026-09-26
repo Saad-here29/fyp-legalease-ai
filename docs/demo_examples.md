@@ -17,7 +17,7 @@ and the petitioner's age and illness.
 | SHA-256 | `91e45f1adccde11836e0dba2643a475a0d82fcc7962d563948a4c459e9635d9a` |
 | Run | Uploaded and analysed through the web app (Documents → Analyse) on 2026-09-26, twice; both runs produced identical entities |
 | Text extracted | 6,856 characters (digital PDF, no OCR needed) |
-| Full API response | [`demo/crl_p_187_p_2026/analysis_response.json`](demo/crl_p_187_p_2026/analysis_response.json) |
+| Full API response | Original run: [`analysis_response.json`](demo/crl_p_187_p_2026/analysis_response.json) · After the two fixes below: [`analysis_response_after_fixes.json`](demo/crl_p_187_p_2026/analysis_response_after_fixes.json) |
 
 **Why it counts as unseen.** The NER model was trained on the LHC and SCP
 courtroom datasets. This order is dated September 2026, and none of its
@@ -35,6 +35,8 @@ entities exactly.
 ### Part A — Extracted entities (legal NER model)
 
 These come from LegalEase's own fine-tuned model, not the language model.
+The table is the **original run**; the two rows marked *found → fixed*
+were corrected afterwards (see [Iteration](#iteration--errors-found--investigated--fixed)).
 
 | Type | Extracted | Verdict |
 |---|---|---|
@@ -50,21 +52,25 @@ These come from LegalEase's own fine-tuned model, not the language model.
 | | `Naeem Akhter` | Partial — surname "Afghan" (on the next token) missed |
 | People — parties & victims | `Nadar Khan` (petitioner), `Zafar Khan` (complainant), `Saadullah` (×4, deceased), `Zardali Khan` (×2, deceased), `Siraj` (co-accused) | Correct |
 | People — counsel | `Mr. Shabbir Hussain Gigyani`, `Mr. Altaf Khan`, `Mr. Zulfiqar Ahmed Bhutta`, `Syed Rifaqat Hussain Shah` | Correct |
-| | `KP Tahir Khan` | Partial — "KP" belongs to the line above ("AAG KP") |
+| | `KP Tahir Khan` | Partial — "KP" belongs to the line above ("AAG KP"). **Found → fixed:** now `Tahir Khan` |
 | People — staff | `Hamid/*` | Correct under the dataset's convention (stenographer initials are tagged as a person in the SCP data) |
 | Places | `Lund Khwar, District Mardan`, `Islamabad` | Correct |
 | | `Lund`, `Police Station` | Fragments of the police-station name "PS Lund Khawar, Mardan" |
-| Errors | `Khawar Mardan` tagged as a **person** | Wrong — part of the police-station name |
-| | `Criminal Petition No.187-P of 2026` as *case appealed from* | Wrong type — it is this case's own number |
+| Errors | `Khawar Mardan` tagged as a **person** | Wrong — part of the police-station name. **Investigated, not fixed** (model limitation) |
+| | `Criminal Petition No.187-P of 2026` as *case appealed from* | Wrong type — it is this case's own number. **Found → fixed:** now labelled as this case's number (`caseno`) |
 | | `FIR No.360/22` as *case appealed from* | Wrong type — it is the FIR number (the FIR type was dropped from the model's output because it scored 0 F1 in training) |
 | Missed | The respondent, "The State through AG, Khyber Pakhtunkhwa"; the "Standing Medical Board" | Not extracted |
 
-**Tally (33 unique entities):** 26 correct, 3 partial boundaries, 4 wrong;
-2 notable misses. That is in line with the model's held-out test F1 of
-0.784 and the 0.843 precision measured on a rebuilt SCP judgment (see
+| Tally (33 unique entities) | Correct | Partial | Wrong | Notable misses |
+|---|---:|---:|---:|---:|
+| Original run | 26 | 3 | 4 | 2 |
+| After the two fixes | **28** | 2 | 3 | 2 |
+
+The original run is in line with the model's held-out test F1 of 0.784
+and the 0.843 precision measured on a rebuilt SCP judgment (see
 [ner_training_results.md](ner_training_results.md)).
 
-What the response lists at the top of the panel:
+What the response lists at the top of the panel (original run):
 
 - **Parties (16):** Saadullah, Aqeel Ahmed Abbasi, Zardali Khan, SUPREME
   COURT OF PAKISTAN, Jamal Khan Mandokhail, Naeem Akhter, Nadar Khan,
@@ -76,10 +82,43 @@ What the response lists at the top of the panel:
   Court, Peshawar, Cr.MB No.1862-P/26, Cr.MB. No.1862-P/2026, FIR
   No.360/22, sections 302/324/34 PPC, Trial Court
 
+After the fixes the only change to these lists is `KP Tahir Khan` →
+`Tahir Khan` under Parties. The case number stays in References, since it
+is still a reference; only its type changes to `caseno`.
+
 "Parties" means every person or organisation named — judges, counsel and
 victims included — not only the litigants. That is how the model's
 person/organisation types work, and it should be described that way in
 the demo.
+
+### Iteration — errors found → investigated → fixed
+
+The review above found three NER errors. Each was investigated before any
+change (2026-09-26); they turned out to have three different causes, so
+they got three different responses.
+
+| Error | Suspected cause | What the evidence showed | Outcome |
+|---|---|---|---|
+| `Khawar Mardan` tagged as a person | Chunk boundary splitting the place name | **Not a chunking issue.** The whole name sat inside one chunk, 73 characters from its end. The model's own labels changed partway through the name: `Lund` place 0.71, `Khawar` person 0.67 (2nd choice place 0.15), `Mardan` person 0.81. Tagged with only the counsel block around it, the model got it right ("Lund Khawar Mardan", place, 0.79), so this is uncertainty on a rare place name that shifts with context. Forcing valid B-/I- sequences made it worse (the whole name became a person). | **Left as a documented model limitation.** The fix is more training examples of place names like this, not code. |
+| `KP Tahir Khan` | Line breaks lost during chunking | **Partly right.** Words are split on whitespace, so a line break reaches the model as a space, and the entity was literally `KP⏎Tahir Khan`. But the model also chose to tag `KP` as the start of a person (0.83). Tagging line by line fixed it but split wrapped names (`Mardan` separated from `Lund Khawar`), and this PDF wraps text down to one word per line. | **Fixed with a narrow rule:** when a person/respondent entity crosses a line break and one side is only a 2–3 letter all-caps abbreviation (KP, AAG, SI), that side is trimmed. Citations such as `PLD⏎2015` and single initials are never touched. |
+| Own case number labelled *case appealed from* | A post-processing heuristic mislabelling it | **No such heuristic existed.** Post-processing only merged the LHC/SCP spellings; the model predicted `appealcaseno` itself, at low confidence (0.29). The cause is the training data: SCP writes a judgment's own number in capitals ("CIVIL APPEAL NO.1074 OF 2009", labelled `caseno` 333 times, 156 of them right after the bench list as here), and mixed-case "Criminal Petition No." appears only 9 times, never as the judgment's own number. Rewriting just that line in capitals made the model answer `caseno`. | **Fixed with a heading rule:** a case number in the document's heading (before the "Against the judgment …" line or the ORDER/JUDGMENT title, within the first 2,000 characters) is the document's own case. The lasting fix is to add mixed-case copies of training sentences in a future retrain. |
+
+**Verification of the two fixes:**
+
+- **Targeted errors resolved.** Re-running this order through the live API
+  (fresh upload, HTTP 200, 8.4 s): `Criminal Petition No.187-P of 2026` is
+  now `caseno` and `KP Tahir Khan` is now `Tahir Khan`.
+- **No regressions.** Before/after entity sets were compared on three
+  documents. On this order the only differences are the two targeted
+  entities. On `audit_test.pdf` (19 entities) and the rebuilt SCP judgment
+  used in [ner_training_results.md](ner_training_results.md) (89
+  entities) the entity sets are identical.
+- **Tests.** 9 new unit tests cover both rules, including the cases they
+  must leave alone: citations, single initials, ordinary wrapped names,
+  body text after a missing heading. 88/88 backend tests pass.
+
+Code: `trim_line_break_abbreviation` and `relabel_own_case_number` in
+`backend/app/ai/ner.py`.
 
 ### Part B — AI summary (language model)
 
@@ -160,8 +199,12 @@ knowing before the demo):
   exactly as written in the order. That makes the language model's
   wrong-complainant error checkable against the source text, rather than
   having to trust the summary.
+- **Errors are investigated, not just listed.** Three NER errors from this
+  review were traced to their causes, and two were corrected with narrow,
+  tested rules. The iteration section above is a good slide.
 - **Known weak spots, stated up front:** boundary errors on names that run
-  across line breaks (`KP Tahir Khan`), place names mistaken for people
+  across line breaks (the `KP Tahir Khan` case is now handled by a rule),
+  place names mistaken for people
   (`Khawar Mardan`), and no role information (who is the petitioner vs
   counsel). These match the weak categories in the training evaluation.
 
@@ -170,7 +213,8 @@ knowing before the demo):
 1. Start the backend (with the NER weights in
    `backend/storage/models/legal_ner/`) and the frontend.
 2. Log in, open **Documents**, upload `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
-3. Click **Analyse**. The entities will match the table above exactly, since
+3. Click **Analyse**. The entities will match
+   `analysis_response_after_fixes.json` exactly (the post-fix state), since
    NER is deterministic. The summary will be worded differently on each run,
    because the language model is not deterministic, so re-check it before
    quoting it live.

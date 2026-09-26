@@ -1,0 +1,246 @@
+{
+  "document_id": "0a7f63a2-2139-471b-bede-33e422c4fcda",
+  "summary": "**1) Summary (plain language, 4‑6 sentences)**  \nThe Supreme Court of Pakistan allowed a criminal petition for leave to appeal filed by Nadar Khan, overturning the Peshawar High Court’s decision that denied him post‑arrest bail. The Court held that the lower courts failed to consider the serious health problems of the 78‑year‑old petitioner and the need for further factual inquiry into his alleged role in a firearm‑related homicide. Consequently, the Supreme Court converted the petition into an appeal, set aside the High Court judgment, and granted bail on the condition that the petitioner furnishes a bail bond of Rs 200,000 with an equal surety. The order emphasizes that the petitioner’s medical board report confirms hypertension, diabetes and ischemic heart disease, which the Court finds sufficient to merit bail despite the lack of a “life‑threatening” declaration. The decision is a short order dated 21 September 2026.\n\n**2) Parties**  \n- **Petitioner / Appellant:** Nadar Khan  \n- **Respondent:** The State (through the Attorney General, Khyber Pakhtunkhwa)  \n- **Complainant:** Zulfiqar Ahmed Bhutta (ASC) – represented by Syed Rifaqat Hussain Shah, AOR  \n- **Counsel for Petitioner:** Mr. Shabbir Hussain Gigyani, ASC  \n- **Counsel for the State:** Mr. Altaf Khan, AAG KP; Tahir Khan, SI, PS Lund Khawar, Mardan  \n- **Judges (Supreme Court):** Justice Jamal Khan Mandokhail, Justice Naeem Akhter Afghan, Justice Aqeel Ahmed Abbasi  \n\n**3) Key dates (in document order)**  \n- **11 April 2022:** FIR No. 360/22 registered (sections 302/324/34 PPC).  \n- **10 July 2026:** Peshawar High Court judgment dismissing bail.  \n- **21 September 2026:** Supreme Court hearing and issuance of the order (also the date of the short order).  \n\n**4) Key clauses / obligations**  \n- **Conversion to appeal:** The criminal petition is treated as an appeal and is allowed.  \n- **Set‑aside of lower‑court judgment:** The High Court’s decision dated 10 July 2026 is nullified.  \n- **Grant of bail:** Post‑arrest bail is granted subject to:  \n  - **Bail bond:** Rs 200,000 payable to the trial court.  \n  - **Surety:** One surety in the same amount (Rs 200,000).  \n- **Medical consideration:** The Court notes the petitioner’s serious illnesses (hypertension, diabetes, ischemic heart disease) as a factor justifying bail, despite the medical board not labeling them “life‑threatening.”  \n- **Further inquiry:** The Court observes that factual issues (e.g., recovery of the weapon, the petitioner’s exact role) remain unresolved and require continued investigation.  \n\n**5) Risk flags / missing standard clauses**  \n- **No explicit duration or conditions for bail:** The order does not state the period for which bail is valid or any reporting requirements (e.g., surrender of passport, regular court appearances).  \n- **Absence of a medical‑facility provision:** While health is cited, the order does not mandate that the petitioner receive specialized treatment in custody or specify how medical care will be ensured.  \n- **No mention of a bond forfeiture clause:** Standard bail orders often include consequences for non‑appearance; this is omitted.  \n- **Lack of security for trial:** No provision for a “surety bond” beyond the monetary amount, nor any requirement for a guarantor’s background check.  \n- **No direction for the trial court to set a next hearing date:** The order leaves the procedural timetable for the trial court unspecified, potentially causing delays.  \n- **No reference to the preservation of evidence:** The order does not address the status of the unrecovered weapon or the forensic evidence (empties) that were central to the factual dispute.  \n\nThese omissions could expose the State to procedural challenges or affect the petitioner’s rights if not addressed in subsequent proceedings.",
+  "key_clauses": [
+    "Conversion to appeal: The criminal petition is treated as an appeal and is allowed.",
+    "Set‑aside of lower‑court judgment: The High Court’s decision dated 10 July 2026 is nullified.",
+    "Grant of bail: Post‑arrest bail is granted subject to",
+    "Bail bond: Rs 200,000 payable to the trial court.",
+    "Surety: One surety in the same amount (Rs 200,000).",
+    "Medical consideration: The Court notes the petitioner’s serious illnesses (hypertension, diabetes, ischemic heart disease) as a factor justifying bail, despite the medical board not labeling them “life‑threatening.”",
+    "Further inquiry: The Court observes that factual issues (e.g., recovery of the weapon, the petitioner’s exact role) remain unresolved and require continued investigation."
+  ],
+  "parties": [
+    "Saadullah",
+    "Aqeel Ahmed Abbasi",
+    "Zardali Khan",
+    "SUPREME COURT OF PAKISTAN",
+    "Jamal Khan Mandokhail",
+    "Naeem Akhter",
+    "Nadar Khan",
+    "Mr. Shabbir Hussain Gigyani",
+    "Mr. Altaf Khan",
+    "Tahir Khan",
+    "Khawar Mardan",
+    "Mr. Zulfiqar Ahmed Bhutta",
+    "Syed Rifaqat Hussain Shah",
+    "Siraj",
+    "Zafar Khan",
+    "Hamid/*"
+  ],
+  "dates": [
+    "10.07.2026",
+    "21.09.2026",
+    "11.04.2022",
+    "21st Sept, 2026"
+  ],
+  "risks": [
+    "No explicit duration or conditions for bail: The order does not state the period for which bail is valid or any reporting requirements (e.g., surrender of passport, regular court appearances).",
+    "Absence of a medical‑facility provision: While health is cited, the order does not mandate that the petitioner receive specialized treatment in custody or specify how medical care will be ensured.",
+    "No mention of a bond forfeiture clause: Standard bail orders often include consequences for non‑appearance; this is omitted.",
+    "Lack of security for trial: No provision for a “surety bond” beyond the monetary amount, nor any requirement for a guarantor’s background check.",
+    "No direction for the trial court to set a next hearing date: The order leaves the procedural timetable for the trial court unspecified, potentially causing delays.",
+    "No reference to the preservation of evidence: The order does not address the status of the unrecovered weapon or the forensic evidence (empties) that were central to the factual dispute."
+  ],
+  "references": [
+    "Criminal Petition No.187-P of 2026",
+    "Peshawar High Court, Peshawar",
+    "Cr.MB No.1862-P/26",
+    "Cr.MB. No.1862-P/2026",
+    "FIR No.360/22",
+    "sections 302/324/34 PPC",
+    "Trial Court"
+  ],
+  "entities": {
+    "org": [
+      {
+        "text": "SUPREME COURT OF PAKISTAN",
+        "count": 1,
+        "score": 0.849
+      }
+    ],
+    "per": [
+      {
+        "text": "Jamal Khan Mandokhail",
+        "count": 1,
+        "score": 0.899
+      },
+      {
+        "text": "Naeem Akhter",
+        "count": 1,
+        "score": 0.955
+      },
+      {
+        "text": "Aqeel Ahmed Abbasi",
+        "count": 2,
+        "score": 0.962
+      },
+      {
+        "text": "Nadar Khan",
+        "count": 1,
+        "score": 0.969
+      },
+      {
+        "text": "Mr. Shabbir Hussain Gigyani",
+        "count": 1,
+        "score": 0.956
+      },
+      {
+        "text": "Mr. Altaf Khan",
+        "count": 1,
+        "score": 0.97
+      },
+      {
+        "text": "Tahir Khan",
+        "count": 1,
+        "score": 0.915
+      },
+      {
+        "text": "Khawar Mardan",
+        "count": 1,
+        "score": 0.745
+      },
+      {
+        "text": "Mr. Zulfiqar Ahmed Bhutta",
+        "count": 1,
+        "score": 0.947
+      },
+      {
+        "text": "Syed Rifaqat Hussain Shah",
+        "count": 1,
+        "score": 0.986
+      },
+      {
+        "text": "Siraj",
+        "count": 1,
+        "score": 0.894
+      },
+      {
+        "text": "Saadullah",
+        "count": 4,
+        "score": 0.891
+      },
+      {
+        "text": "Zafar Khan",
+        "count": 1,
+        "score": 0.91
+      },
+      {
+        "text": "Zardali Khan",
+        "count": 2,
+        "score": 0.892
+      },
+      {
+        "text": "Hamid/*",
+        "count": 1,
+        "score": 0.836
+      }
+    ],
+    "caseno": [
+      {
+        "text": "Criminal Petition No.187-P of 2026",
+        "count": 1,
+        "score": 0.678
+      }
+    ],
+    "date": [
+      {
+        "text": "10.07.2026",
+        "count": 3,
+        "score": 0.981
+      },
+      {
+        "text": "21.09.2026",
+        "count": 1,
+        "score": 0.967
+      },
+      {
+        "text": "11.04.2022",
+        "count": 1,
+        "score": 0.974
+      },
+      {
+        "text": "21st Sept, 2026",
+        "count": 1,
+        "score": 0.944
+      }
+    ],
+    "appealcourt": [
+      {
+        "text": "Peshawar High Court, Peshawar",
+        "count": 2,
+        "score": 0.919
+      }
+    ],
+    "appealcaseno": [
+      {
+        "text": "Cr.MB No.1862-P/26",
+        "count": 1,
+        "score": 0.926
+      },
+      {
+        "text": "Cr.MB. No.1862-P/2026",
+        "count": 1,
+        "score": 0.943
+      },
+      {
+        "text": "FIR No.360/22",
+        "count": 1,
+        "score": 0.747
+      }
+    ],
+    "loc": [
+      {
+        "text": "Lund",
+        "count": 1,
+        "score": 0.711
+      },
+      {
+        "text": "Police Station",
+        "count": 1,
+        "score": 0.511
+      },
+      {
+        "text": "Lund Khwar, District Mardan",
+        "count": 1,
+        "score": 0.794
+      },
+      {
+        "text": "Islamabad",
+        "count": 1,
+        "score": 0.983
+      }
+    ],
+    "ref": [
+      {
+        "text": "sections 302/324/34 PPC",
+        "count": 1,
+        "score": 0.688
+      }
+    ],
+    "money": [
+      {
+        "text": "Rs.200,000/-",
+        "count": 1,
+        "score": 0.971
+      }
+    ],
+    "refcourt": [
+      {
+        "text": "Trial Court",
+        "count": 1,
+        "score": 0.758
+      }
+    ],
+    "Approved": [
+      {
+        "text": "Approved",
+        "count": 1,
+        "score": 0.854
+      }
+    ]
+  },
+  "ner_available": true,
+  "entities_source": "ner_model",
+  "clauses_and_risks_source": "llm_summary"
+}

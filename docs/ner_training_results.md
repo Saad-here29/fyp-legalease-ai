@@ -194,6 +194,13 @@ Migration `c41e7d2b9a10` adds `document_analysis.extracted_entities` (JSONB).
   `refCase`→`refcase`, `refCourt`→`refcourt`); `Misc.name`, `FIRno`,
   `mutationNo.` and `witnessName` dropped; predictions below 0.5 confidence
   dropped; repeats de-duplicated with a mention count.
+- **Two correction rules** (added 2026-09-26 after the real-document review
+  in [demo_examples.md](demo_examples.md#iteration--errors-found--investigated--fixed)):
+  a person entity that crosses a line break is trimmed of a 2–3 letter
+  all-caps abbreviation on either side (`KP⏎Tahir Khan` → `Tahir Khan`),
+  and a case number in the document's heading is labelled as the
+  document's own case (`caseno`). The second rule corrects a training-data
+  bias: SCP only ever writes a judgment's own number in capitals.
 - **In the request.** NER (CPU) runs in a worker thread while the LLM summary
   call (network) is in flight, with no database connection open during
   either.

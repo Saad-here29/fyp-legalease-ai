@@ -224,6 +224,72 @@ def chunk_text(text: str, count_tokens, max_tokens: int = CHUNK_TOKENS) -> list[
 
 # ---- Post-processing -------------------------------------------------------
 
+# Corrections for two failure modes found on a real 2026 Supreme Court order
+# (docs/demo_examples.md). Both are narrow, deterministic rules applied to
+# the model's output — the model itself is unchanged.
+
+_PERSON_TYPES = {"per", "resp"}
+_ABBREVIATION = re.compile(r"[A-Z]{2,3}\.?")   # not 1 letter: keeps initials ("S.")
+
+
+def trim_line_break_abbreviation(text: str, ent: dict) -> dict:
+    """Line breaks reach the model as plain spaces, so in a counsel block like
+        "Mr. Altaf Khan, AAG KP\\nTahir Khan, SI"
+    the province code "KP" ended one line and the model tagged "KP Tahir
+    Khan" as one person. When a person/respondent entity crosses a line
+    break and the part on one side is only a short all-caps abbreviation
+    (KP, AAG, SI, ...), drop that part. Limited to person types so
+    citations that legitimately start "PLD\\n2015 ..." are never touched."""
+    if ent["entity_group"] not in _PERSON_TYPES:
+        return ent
+    start, end = ent["start"], ent["end"]
+    span = text[start:end]
+    first_break = span.find("\n")
+    if first_break != -1 and _ABBREVIATION.fullmatch(span[:first_break].strip()):
+        start += first_break + 1
+    span = text[start:end]
+    last_break = span.rfind("\n")
+    if last_break != -1 and _ABBREVIATION.fullmatch(span[last_break + 1:].strip()):
+        end = start + last_break
+    while start < end and text[start].isspace():
+        start += 1
+    while end > start and text[end - 1].isspace():
+        end -= 1
+    return {**ent, "start": start, "end": end} if (start, end) != (ent["start"], ent["end"]) else ent
+
+
+# Where a judgment's heading ends: the "[Against the judgment ..." line that
+# introduces the lower-court decision, or the ORDER / JUDGMENT title.
+_HEADING_END = re.compile(r"\bAgainst\b|^\s*(?:ORDER|JUDGMENT|JUDGEMENT)\s*$", re.MULTILINE)
+_CASE_NUMBER = re.compile(r"\bNo\b|\bNos?\.", re.IGNORECASE)
+# A heading is the top of the document. If no marker appears this early,
+# assume there is no judgment-style heading and change nothing — a
+# capitalised "Against" deep in the body must not relabel cited cases.
+_HEADING_MAX_CHARS = 2_000
+
+
+def relabel_own_case_number(text: str, raw: list[dict]) -> list[dict]:
+    """In SCP training data a judgment's own number is written in capitals
+    ("CIVIL APPEAL NO.1074 OF 2009") and labelled caseno; mixed-case
+    "Criminal Petition No." only ever appears as a cited or appealed-from
+    case. So on a mixed-case heading the model labels the document's own
+    number `appealcaseno`. A case number that sits in the heading — before
+    the "Against the judgment ..." line or the ORDER/JUDGMENT title, where
+    the appealed-from case is named — is the document's own case."""
+    m = _HEADING_END.search(text, 0, _HEADING_MAX_CHARS)
+    if m is None:
+        return raw
+    heading_end = m.start()
+    out = []
+    for ent in raw:
+        if (ent["entity_group"] in ("appealcaseno", "refcase")
+                and ent["end"] <= heading_end
+                and _CASE_NUMBER.search(text[ent["start"]:ent["end"]])
+                and re.search(r"\d", text[ent["start"]:ent["end"]])):
+            ent = {**ent, "entity_group": "caseno"}
+        out.append(ent)
+    return out
+
 @dataclass
 class Entity:
     type: str
@@ -302,4 +368,5 @@ def extract_entities(text: str) -> NerResult:
                 "start": offset + p["start"],
                 "end": offset + p["end"],
             })
+    raw = relabel_own_case_number(text, [trim_line_break_abbreviation(text, r) for r in raw])
     return NerResult(available=True, entities=merge_predictions(text, raw))
