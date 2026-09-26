@@ -57,6 +57,12 @@ SYSTEM_PROMPT_LEGAL_CHAT = (
 # this budget, so 800 cut long answers off mid-sentence.
 CHAT_MAX_TOKENS = 2000
 
+# Groq's on-demand tier caps a request at 8,000 tokens per minute, counting
+# the prompt plus max_tokens. 30,000 chars of legal text is ~6,500 tokens,
+# which with CHAT_MAX_TOKENS was rejected (413 "Request too large"); 20,000
+# chars (~4,300 tokens) leaves room for the 2,000-token reply.
+SUMMARY_MAX_CHARS = 20_000
+
 
 def _content(resp) -> str:
     choice = resp.choices[0]
@@ -230,7 +236,7 @@ class AIClient:
             "3) Key dates (in document order)\n"
             "4) Key clauses / obligations\n"
             "5) Risk flags or missing standard clauses\n\n"
-            f"Document type hint: {hint}\n\n--- DOCUMENT ---\n{text[:30000]}"
+            f"Document type hint: {hint}\n\n--- DOCUMENT ---\n{text[:SUMMARY_MAX_CHARS]}"
         )
         history = [{"role": "user", "content": prompt}]
         sys_msg = "You are a Pakistani legal analyst. Be precise and concise."
