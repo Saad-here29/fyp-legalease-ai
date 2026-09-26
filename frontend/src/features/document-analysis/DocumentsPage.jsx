@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, ScanLine, AlertCircle, Bookmark, CheckCircle2 } from "lucide-react";
+import { Upload, FileText, Loader2, ScanLine, AlertCircle, Bookmark, CheckCircle2, Sparkles } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import AppButton from "@/components/ui/AppButton";
 import PanelCard from "@/features/dashboard/components/PanelCard";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES } from "@/constants";
 import { documentsApi } from "./api";
+import AnalysisResults from "./AnalysisResults";
 import { casesApi } from "@/features/case-management/api";
 import { cnInput } from "@/lib/formStyles";
 
@@ -15,11 +16,13 @@ export default function DocumentsPage() {
   const { user } = useAuthStore();
   const isLawyer = user?.role === ROLES.LAWYER;
   const [doc, setDoc] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
 
   const uploadMutation = useMutation({
     mutationFn: (file) => documentsApi.upload(file),
     onSuccess: (data) => {
       setDoc(data);
+      setAnalysis(null);
       toast.success("Document uploaded.", {
         description: data.extracted_text
           ? `${data.extracted_text.length.toLocaleString()} characters extracted`
@@ -28,6 +31,23 @@ export default function DocumentsPage() {
     },
     onError: (e) => {
       toast.error(e?.response?.data?.error?.message || "Upload failed.", {
+        description: e?.response?.data?.error?.hint,
+      });
+    },
+  });
+
+  const analyzeMutation = useMutation({
+    mutationFn: (id) => documentsApi.analyze(id),
+    onSuccess: (data) => {
+      setAnalysis(data);
+      toast.success("Analysis complete.", {
+        description: data.ner_available
+          ? `${data.parties.length} parties, ${data.dates.length} dates, ${data.references.length} references found`
+          : "Summary ready — entity extraction unavailable on this server.",
+      });
+    },
+    onError: (e) => {
+      toast.error(e?.response?.data?.error?.message || "Analysis failed.", {
         description: e?.response?.data?.error?.hint,
       });
     },
@@ -89,7 +109,30 @@ export default function DocumentsPage() {
         </PanelCard>
 
         {doc && (
-          <PanelCard title="Extracted document" description={doc.filename}>
+          <PanelCard
+            title="Extracted document"
+            description={doc.filename}
+            action={
+              <AppButton
+                disabled={!doc.extracted_text || analyzeMutation.isPending}
+                onClick={() => analyzeMutation.mutate(doc.id)}
+                className="shrink-0"
+                title={doc.extracted_text ? undefined : "No text to analyse in this file"}
+              >
+                {analyzeMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analysing…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    {analysis ? "Re-analyse" : "Analyse"}
+                  </>
+                )}
+              </AppButton>
+            }
+          >
             <div className="grid grid-cols-3 mb-4">
               <Stat label="Type" value={doc.document_type} />
               <Stat label="Size" value={formatBytes(doc.size_bytes)} />
@@ -121,6 +164,27 @@ export default function DocumentsPage() {
           </PanelCard>
         )}
       </div>
+
+      {analyzeMutation.isPending && (
+        <div className="mt-10 flex items-center gap-2 text-sm text-ink-muted">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Summarising and extracting entities — this usually takes 10–20 seconds…
+        </div>
+      )}
+
+      {analyzeMutation.isError && !analyzeMutation.isPending && (
+        <div className="mt-10 flex items-start gap-2 text-sm">
+          <AlertCircle className="h-4 w-4 text-brick shrink-0 mt-0.5" />
+          <p className="text-brick">
+            {analyzeMutation.error?.response?.data?.error?.message ||
+              "Analysis failed. Please try again in a minute."}
+          </p>
+        </div>
+      )}
+
+      {analysis && analysis.document_id === doc?.id && !analyzeMutation.isPending && (
+        <AnalysisResults analysis={analysis} />
+      )}
 
       {doc && isLawyer && <SaveToCasePanel doc={doc} onAttached={setDoc} />}
 
