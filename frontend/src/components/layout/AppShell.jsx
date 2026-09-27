@@ -217,7 +217,8 @@ export default function AppShell({ title, subtitle, eyebrow, headerActions, bare
           <div className="max-w-ds-content pt-10 lg:pt-12 pb-24">
             {(title || headerActions) && (
               <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-10 lg:mb-12">
-                <div className="min-w-0">
+                {/* Grows and wraps its title, so actions stay at the right (mockups pp. 8-9). */}
+                <div className="min-w-0 flex-1 basis-[420px]">
                   {eyebrow && <p className="ds-meta mb-2">{eyebrow}</p>}
                   {title && <h1 className="ds-h1">{title}</h1>}
                   {subtitle && <p className="ds-body text-ds-text-2 mt-2">{subtitle}</p>}

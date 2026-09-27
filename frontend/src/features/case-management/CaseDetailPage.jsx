@@ -2,24 +2,21 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  AlertCircle,
-  Upload,
-  FileText,
-  UserPlus,
-  Gavel,
-  ScanLine,
-} from "lucide-react";
+import { Loader2, AlertCircle, Check, ChevronRight } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
-import AppButton from "@/components/ui/AppButton";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES, ROUTES } from "@/constants";
 import { casesApi } from "./api";
 import { documentsApi } from "@/features/document-analysis/api";
-import { cnInput } from "@/lib/formStyles";
+import UploadStrip from "@/features/document-analysis/UploadStrip";
+import StatusTag from "./StatusTag";
+import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry } from "./caseMeta";
+
+// Case detail — design system v1, per the Case detail mockup
+// (docs/design_reference page 9). Adapted to what exists: no hearings,
+// issues framed, next-hearing panel, research or notes tabs (none are
+// built); the one primary action is the real status change, and "Add
+// document" uploads straight to this case.
 
 const NEXT_STATUS = {
   created: "assigned",
@@ -29,370 +26,378 @@ const NEXT_STATUS = {
   closed: null,
 };
 
-const STATUS_META = {
-  created: { dot: "bg-status-pending", label: "Created" },
-  assigned: { dot: "bg-status-pending", label: "Assigned" },
-  in_progress: { dot: "bg-status-active", label: "In progress" },
-  hearing_scheduled: { dot: "bg-status-active", label: "Hearing scheduled" },
-  closed: { dot: "bg-ink-muted", label: "Closed" },
-};
-
-const TIMELINE_ICON = {
-  CREATED: FileText,
-  STATUS: Gavel,
-  CLIENT_ASSIGNED: UserPlus,
-  DOCUMENT: Upload,
-  NOTE: FileText,
-};
+const fmtDateTime = (v) =>
+  new Date(v).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export default function CaseDetailPage() {
   const { id } = useParams();
   const { user } = useAuthStore();
   const isLawyer = user?.role === ROLES.LAWYER;
   const qc = useQueryClient();
+  const [tab, setTab] = useState("overview");
 
-  const caseQuery = useQuery({
-    queryKey: ["case", id],
-    queryFn: () => casesApi.get(id),
-  });
-  const timelineQuery = useQuery({
-    queryKey: ["case-timeline", id],
-    queryFn: () => casesApi.timeline(id),
-  });
-  const documentsQuery = useQuery({
-    queryKey: ["case-documents", id],
-    queryFn: () => casesApi.listDocuments(id),
-  });
+  const caseQuery = useQuery({ queryKey: ["case", id], queryFn: () => casesApi.get(id) });
+  const timelineQuery = useQuery({ queryKey: ["case-timeline", id], queryFn: () => casesApi.timeline(id) });
+  const documentsQuery = useQuery({ queryKey: ["case-documents", id], queryFn: () => casesApi.listDocuments(id) });
 
-  const c = caseQuery.data;
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["case", id] });
+    qc.invalidateQueries({ queryKey: ["case-timeline", id] });
+  };
+  const apiError = (fallback) => (e) =>
+    toast.error(e?.response?.data?.error?.message || fallback, { description: e?.response?.data?.error?.hint });
 
   const advanceStatus = useMutation({
     mutationFn: (status) => casesApi.updateStatus(id, status),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["case", id] });
-      qc.invalidateQueries({ queryKey: ["case-timeline", id] });
+      refresh();
       qc.invalidateQueries({ queryKey: ["cases"] });
       qc.invalidateQueries({ queryKey: ["case-stats"] });
       toast.success("Status updated.");
     },
-    onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Could not update status.",
-        { description: e?.response?.data?.error?.hint }
-      );
-    },
-  });
-
-  const assignClient = useMutation({
-    mutationFn: (email) => casesApi.assignClientByEmail(id, email),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["case", id] });
-      qc.invalidateQueries({ queryKey: ["case-timeline", id] });
-      toast.success("Client linked.");
-    },
-    onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Could not link client.",
-        { description: e?.response?.data?.error?.hint }
-      );
-    },
+    onError: apiError("Could not update status."),
   });
 
   const uploadDocument = useMutation({
     mutationFn: (file) => documentsApi.upload(file, { caseId: id }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["case", id] });
-      qc.invalidateQueries({ queryKey: ["case-timeline", id] });
+      refresh();
       qc.invalidateQueries({ queryKey: ["case-documents", id] });
+      setTab("documents");
       toast.success("Document uploaded and linked to this case.");
     },
-    onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Upload failed.",
-        { description: e?.response?.data?.error?.hint }
-      );
-    },
+    onError: apiError("Upload failed."),
   });
 
-  const [assignEmail, setAssignEmail] = useState("");
+  const breadcrumb = (
+    <Link to={ROUTES.CASES} className="ds-link font-medium">
+      Cases
+    </Link>
+  );
 
   if (caseQuery.isLoading) {
     return (
-      <AppShell title="Case">
-        <div className="flex items-center justify-center gap-2 py-12 text-ink-muted">
-          <Loader2 className="h-4 w-4 animate-spin" />
+      <AppShell eyebrow={breadcrumb} title="Case">
+        <p className="flex items-center gap-3 ds-body text-ds-text-2">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
           Loading case…
-        </div>
+        </p>
       </AppShell>
     );
   }
-
   if (caseQuery.isError) {
     return (
-      <AppShell title="Case">
-        <div className="max-w-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-brick shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-ink-text">
-                {caseQuery.error?.response?.data?.error?.message ||
-                  "Could not load this case."}
-              </p>
-              <Link
-                to={ROUTES.CASES}
-                className="text-sm text-brick hover:underline underline-offset-2 mt-2 inline-block"
-              >
-                ← Back to all cases
-              </Link>
-            </div>
-          </div>
-        </div>
+      <AppShell eyebrow={breadcrumb} title="Case">
+        <p className="flex items-start gap-2 ds-body text-ds-seal" role="alert">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
+          {caseQuery.error?.response?.data?.error?.message || "Could not load this case."}
+        </p>
       </AppShell>
     );
   }
 
+  const c = caseQuery.data;
+  const timeline = (timelineQuery.data || []).map(readableTimelineEntry);
+  const docs = documentsQuery.data || [];
   const nextStatus = NEXT_STATUS[c.status];
-  const statusMeta = STATUS_META[c.status] || {};
+
+  const headerActions = isLawyer && (
+    <>
+      <label
+        className={`ds-btn-secondary cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-ds-ink ${
+          uploadDocument.isPending ? "pointer-events-none opacity-70" : ""
+        }`}
+      >
+        <input
+          type="file"
+          accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
+          className="sr-only"
+          disabled={uploadDocument.isPending}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) uploadDocument.mutate(file);
+            e.target.value = "";
+          }}
+        />
+        {uploadDocument.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Uploading" /> : "Add document"}
+      </label>
+      {nextStatus && (
+        <button className="ds-btn-primary" disabled={advanceStatus.isPending} onClick={() => advanceStatus.mutate(nextStatus)}>
+          {advanceStatus.isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" aria-label="Updating" />
+          ) : (
+            `Mark as ${STATUS[nextStatus].label.toLowerCase()}`
+          )}
+        </button>
+      )}
+    </>
+  );
+
+  const tabs = [
+    { key: "overview", label: "Overview" },
+    { key: "timeline", label: "Timeline", count: timeline.length },
+    { key: "documents", label: "Documents", count: docs.length },
+  ];
 
   return (
-    <AppShell title={c.title} subtitle={`${c.case_type} · ${c.id.slice(0, 8)}`}>
-      <Link
-        to={ROUTES.CASES}
-        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-text mb-6"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        All cases
-      </Link>
-
-      <div className="pb-6 mb-8 border-b border-hairline">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap text-sm text-ink-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot || "bg-ink-muted"}`} />
-                {statusMeta.label || c.status}
+    <AppShell
+      eyebrow={breadcrumb}
+      title={c.title}
+      headerActions={headerActions}
+      subtitle={
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2">
+          <StatusTag status={c.status} />
+          {[TYPE_LABEL[c.case_type] || c.case_type, c.court_code, c.filing_date && `Filed ${fmtDate(c.filing_date)}`,
+            c.client_name && `Client: ${c.client_name}`]
+            .filter(Boolean)
+            .map((part, i) => (
+              <span key={i} className="flex items-center gap-3">
+                {i > 0 && <span aria-hidden="true">·</span>}
+                {part}
               </span>
-              {c.court_code && <span>· {c.court_code}</span>}
-              {c.filing_date && <span>· Filed {c.filing_date}</span>}
-            </div>
-            {c.description && (
-              <p className="text-sm text-ink-muted mt-3 max-w-2xl">{c.description}</p>
-            )}
-          </div>
-          {isLawyer && nextStatus && (
-            <AppButton
-              disabled={advanceStatus.isPending}
-              onClick={() => advanceStatus.mutate(nextStatus)}
-              className="shrink-0"
+            ))}
+        </span>
+      }
+    >
+      <div role="tablist" aria-label="Case sections" className="flex flex-wrap gap-x-8 border-b border-ds-rule">
+        {tabs.map((t) => {
+          const active = t.key === tab;
+          return (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.key)}
+              className={`min-h-[48px] -mb-px font-ds-sans text-[16px] border-b-2 transition-colors
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink ${
+                active ? "border-ds-seal font-semibold text-ds-text" : "border-transparent text-ds-text-2 hover:text-ds-text"
+              }`}
             >
-              {advanceStatus.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  Advance to {nextStatus.replace("_", " ")}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </AppButton>
-          )}
-        </div>
+              {t.label}
+              {t.count != null && <span className="tabular-nums"> {t.count}</span>}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-3">
-        <div className="space-y-10">
-          <Panel title="Parties">
-            <div className="space-y-4">
-              <div className="pb-4 border-b border-hairline-subtle">
-                <div className="text-xs text-ink-muted mb-1">Lawyer</div>
-                <div className="text-sm font-medium text-ink-text">{c.lawyer_name || "—"}</div>
-                <div className="text-xs text-ink-muted">{c.lawyer_email || ""}</div>
-              </div>
-              <div>
-                <div className="text-xs text-ink-muted mb-1">Client</div>
-                {c.client_email ? (
-                  <>
-                    <div className="text-sm font-medium text-ink-text">{c.client_name || "—"}</div>
-                    <div className="text-xs text-ink-muted">{c.client_email}</div>
-                  </>
-                ) : (
-                  <div className="text-sm text-ink-muted">Not yet assigned</div>
-                )}
-              </div>
-            </div>
-
+      <div className="mt-10">
+        {tab === "overview" && (
+          <Overview c={c} timeline={timeline} docs={docs} isLawyer={isLawyer} onShow={setTab} onRefresh={refresh} />
+        )}
+        {tab === "timeline" && <Timeline entries={timeline} loading={timelineQuery.isLoading} />}
+        {tab === "documents" && (
+          <div>
             {isLawyer && (
-              <div className="mt-5 pt-5 border-t border-hairline-subtle">
-                <label className="block text-xs text-ink-muted mb-1.5">
-                  {c.client_email ? "Reassign client by email" : "Assign client by email"}
-                </label>
-                <div className="flex items-end gap-2">
-                  <input
-                    type="email"
-                    placeholder="client@example.com"
-                    value={assignEmail}
-                    onChange={(e) => setAssignEmail(e.target.value)}
-                    className={cnInput(false, "flex-1")}
-                  />
-                  <button
-                    disabled={assignClient.isPending || !assignEmail.trim()}
-                    onClick={() => assignClient.mutate(assignEmail.trim())}
-                    className="h-9 w-9 flex items-center justify-center text-ink-muted hover:text-ink-text disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                    aria-label="Assign"
-                  >
-                    {assignClient.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserPlus className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+              <div className="mb-8">
+                <UploadStrip
+                  id="case-doc-upload"
+                  busy={uploadDocument.isPending}
+                  onFile={(f) => uploadDocument.mutate(f)}
+                  idleText="Drop a document to add to this case, or "
+                />
               </div>
             )}
-          </Panel>
-
-          {isLawyer && (
-            <Panel title="Upload document" description="Linked to this case">
-              <label
-                htmlFor="case-doc-upload"
-                className="block cursor-pointer border border-hairline hover:border-ink-text hover:bg-ink-text/[0.02] p-6 text-center transition-colors"
-              >
-                <input
-                  id="case-doc-upload"
-                  type="file"
-                  accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadDocument.mutate(file);
-                    e.target.value = "";
-                  }}
-                  disabled={uploadDocument.isPending}
-                />
-                {uploadDocument.isPending ? (
-                  <div className="flex items-center justify-center gap-2 text-sm text-ink-muted">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Uploading + OCR…
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2">
-                    <Upload className="h-5 w-5 text-ink-muted" />
-                    <p className="text-sm text-ink-text">Choose a file</p>
-                    <p className="text-xs text-ink-muted">
-                      PDF / DOCX / image — auto-OCR + AI analysis
-                    </p>
-                  </div>
-                )}
-              </label>
-            </Panel>
-          )}
-        </div>
-
-        <Panel title="Timeline" description="Every event on this case">
-          {timelineQuery.isLoading ? (
-            <LoadingBlock label="Loading…" small />
-          ) : timelineQuery.data?.length === 0 ? (
-            <p className="text-sm text-ink-muted py-4 text-center">No activity yet.</p>
-          ) : (
-            <ul>
-              {(timelineQuery.data || []).map((entry, i) => {
-                const Icon = TIMELINE_ICON[entry.kind] || Gavel;
-                return (
-                  <li key={i} className="py-3.5 border-b border-hairline-subtle last:border-0">
-                    <div className="text-xs text-ink-muted">
-                      {new Date(entry.timestamp).toLocaleString()}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <Icon className="h-3.5 w-3.5 text-ink-muted shrink-0" />
-                      <span className="text-sm font-medium text-ink-text">{entry.title}</span>
-                    </div>
-                    {entry.description && (
-                      <div className="text-xs text-ink-muted mt-0.5 pl-5">{entry.description}</div>
-                    )}
-                    {entry.actor_name && (
-                      <div className="text-xs text-ink-muted/70 mt-0.5 pl-5">
-                        by {entry.actor_name}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Panel>
-
-        <Panel title="Documents" description={`${c.document_count} attached`}>
-          {documentsQuery.isLoading ? (
-            <LoadingBlock label="Loading…" small />
-          ) : documentsQuery.data?.length === 0 ? (
-            <div className="text-center py-6">
-              <FileText className="h-7 w-7 text-ink-muted/50 mx-auto mb-2" />
-              <p className="text-sm text-ink-muted">No documents yet.</p>
-              {isLawyer && (
-                <p className="text-xs text-ink-muted mt-1">Upload one from the left panel.</p>
-              )}
-            </div>
-          ) : (
-            <ul>
-              {(documentsQuery.data || []).map((d) => (
-                <DocumentItem key={d.id} doc={d} />
-              ))}
-            </ul>
-          )}
-        </Panel>
+            <DocumentList docs={docs} loading={documentsQuery.isLoading} />
+          </div>
+        )}
       </div>
     </AppShell>
   );
 }
 
-function DocumentItem({ doc }) {
-  const [showText, setShowText] = useState(false);
-
+function Overview({ c, timeline, docs, isLawyer, onShow, onRefresh }) {
+  const recent = timeline.slice(-3).reverse();
   return (
-    <li className="py-3.5 border-b border-hairline-subtle last:border-0">
-      <div className="flex items-center gap-2.5">
-        <FileText className="h-4 w-4 text-ink-muted shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-ink-text truncate">{doc.filename}</div>
-          <div className="text-xs text-ink-muted">
-            {doc.file_type} · {doc.document_type}
+    <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
+      <div className="space-y-12">
+        <section>
+          <h2 className="ds-h3">Case summary</h2>
+          {c.description ? (
+            <p className="ds-body mt-3 whitespace-pre-wrap text-[17px] leading-[28px]">{c.description}</p>
+          ) : (
+            <p className="ds-body text-ds-text-2 mt-3">No summary added for this case.</p>
+          )}
+        </section>
+
+        <section>
+          <div className="flex items-end justify-between gap-4 pb-3 border-b-2 border-ds-ink">
+            <h2 className="ds-h3">Recent activity</h2>
+            {timeline.length > 3 && (
+              <button onClick={() => onShow("timeline")} className="ds-link text-[15px]">
+                All {timeline.length} events
+              </button>
+            )}
           </div>
-        </div>
+          {recent.length === 0 ? (
+            <p className="ds-body text-ds-text-2 py-4">No activity yet.</p>
+          ) : (
+            <TimelineRows entries={recent} />
+          )}
+        </section>
       </div>
 
-      {doc.extracted_text && (
-        <button
-          onClick={() => setShowText((v) => !v)}
-          className="mt-2 ml-6 inline-flex items-center gap-1 text-xs text-brick hover:underline underline-offset-2"
-        >
-          <ScanLine className="h-3 w-3" />
-          {showText ? "Hide" : "View"} extracted text ({doc.extracted_text.length} chars)
-        </button>
-      )}
+      <aside className="space-y-10">
+        <section>
+          <h2 className="ds-h4 pb-3 border-b border-ds-rule">Parties</h2>
+          <Person role="Lawyer" name={c.lawyer_name} email={c.lawyer_email} />
+          <Person role="Client" name={c.client_email ? c.client_name : null} email={c.client_email} empty="Not yet assigned" />
+          {isLawyer && <AssignClient caseId={c.id} hasClient={!!c.client_email} onDone={onRefresh} />}
+        </section>
 
-      {showText && (
-        <pre className="mt-2 ml-6 text-xs whitespace-pre-wrap text-ink-muted max-h-64 overflow-y-auto p-3 border border-hairline-subtle">
-          {doc.extracted_text}
-        </pre>
+        <section>
+          <div className="flex items-end justify-between gap-4 pb-3 border-b border-ds-rule">
+            <h2 className="ds-h4">Documents</h2>
+            {docs.length > 0 && (
+              <button onClick={() => onShow("documents")} className="ds-link text-[15px]">
+                All {docs.length}
+              </button>
+            )}
+          </div>
+          {docs.length === 0 ? (
+            <p className="ds-body text-ds-text-2 py-4">No documents yet.</p>
+          ) : (
+            <ul>
+              {docs.slice(0, 4).map((d) => (
+                <li key={d.id} className="flex items-center justify-between gap-3 min-h-[56px] border-b border-ds-rule">
+                  <span className="ds-body truncate">{d.filename}</span>
+                  <AnalysedLabel doc={d} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </aside>
+    </div>
+  );
+}
+
+function Person({ role, name, email, empty = "—" }) {
+  return (
+    <div className="py-4 border-b border-ds-rule">
+      <p className="ds-meta">{role}</p>
+      {name || email ? (
+        <>
+          <p className="font-ds-sans font-semibold text-[17px] leading-[24px] mt-0.5">{name || email}</p>
+          {name && email && <p className="ds-meta">{email}</p>}
+        </>
+      ) : (
+        <p className="ds-body text-ds-text-2 mt-0.5">{empty}</p>
+      )}
+    </div>
+  );
+}
+
+function AssignClient({ caseId, hasClient, onDone }) {
+  const [email, setEmail] = useState("");
+  const assign = useMutation({
+    mutationFn: (e) => casesApi.assignClientByEmail(caseId, e),
+    onSuccess: () => {
+      onDone();
+      setEmail("");
+      toast.success("Client linked.");
+    },
+    onError: (e) =>
+      toast.error(e?.response?.data?.error?.message || "Could not link client.", {
+        description: e?.response?.data?.error?.hint,
+      }),
+  });
+  return (
+    <form
+      className="pt-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (email.trim()) assign.mutate(email.trim());
+      }}
+    >
+      <label htmlFor="assign-client" className="ds-label">
+        {hasClient ? "Reassign client by email" : "Assign client by email"}
+      </label>
+      <div className="flex gap-2">
+        <input id="assign-client" type="email" placeholder="client@example.com" value={email}
+          onChange={(e) => setEmail(e.target.value)} className="ds-input" />
+        <button type="submit" className="ds-btn-secondary shrink-0 min-h-[48px]" disabled={assign.isPending || !email.trim()}>
+          {assign.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Linking" /> : "Link"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function Timeline({ entries, loading }) {
+  if (loading) return <p className="ds-body text-ds-text-2">Loading…</p>;
+  if (entries.length === 0) return <p className="ds-body text-ds-text-2">No activity yet.</p>;
+  return (
+    <div className="border-t-2 border-ds-ink max-w-[860px]">
+      <TimelineRows entries={[...entries].reverse()} />
+    </div>
+  );
+}
+
+function TimelineRows({ entries }) {
+  return (
+    <ul>
+      {entries.map((e, i) => (
+        <li key={i} className="grid sm:grid-cols-[170px_1fr] gap-x-6 gap-y-1 py-4 border-b border-ds-rule">
+          <span className="font-ds-sans font-semibold text-[15px] leading-[24px] text-ds-text">{fmtDateTime(e.timestamp)}</span>
+          <span className="ds-body">
+            {e.title}
+            {e.description && <span className="text-ds-text-2"> {e.description}</span>}
+            {e.actor_name && <span className="ds-meta block mt-0.5">by {e.actor_name}</span>}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AnalysedLabel({ doc }) {
+  return doc.summary ? (
+    <span className="inline-flex items-center gap-1 font-ds-sans font-semibold text-[14px] text-ds-pass shrink-0">
+      <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+      Analysed
+    </span>
+  ) : (
+    <span className="ds-meta shrink-0">Not analysed</span>
+  );
+}
+
+function DocumentList({ docs, loading }) {
+  if (loading) return <p className="ds-body text-ds-text-2">Loading…</p>;
+  if (docs.length === 0) return <p className="ds-body text-ds-text-2">No documents on this case yet.</p>;
+  return (
+    <ul className="border-t-2 border-ds-ink max-w-[860px]">
+      {docs.map((d) => (
+        <DocumentRow key={d.id} doc={d} />
+      ))}
+    </ul>
+  );
+}
+
+function DocumentRow({ doc }) {
+  return (
+    <li className="border-b border-ds-rule py-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+        <div className="min-w-0">
+          <p className="font-ds-sans font-semibold text-[17px] leading-[24px] break-words">{doc.filename}</p>
+          <p className="ds-meta">
+            {String(doc.file_type).toUpperCase()} · uploaded {fmtDate(doc.created_at)}
+            {doc.extracted_text ? ` · ${doc.extracted_text.length.toLocaleString()} characters` : " · no text extracted"}
+          </p>
+        </div>
+        <AnalysedLabel doc={doc} />
+      </div>
+      {doc.extracted_text && (
+        <details className="group mt-2">
+          <summary className="cursor-pointer list-none inline-flex items-center gap-1.5 min-h-[44px] font-ds-sans font-semibold text-[15px]
+            focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink [&::-webkit-details-marker]:hidden">
+            <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden="true" />
+            Extracted text
+          </summary>
+          <pre className="bg-ds-sheet border border-ds-rule rounded-ds p-4 max-h-72 overflow-y-auto font-ds-sans text-[14px] leading-[22px] whitespace-pre-wrap text-ds-text-2">
+            {doc.extracted_text}
+          </pre>
+        </details>
       )}
     </li>
-  );
-}
-
-function Panel({ title, description, children }) {
-  return (
-    <section>
-      {title && <h2 className="font-editorial text-xl text-ink-text mb-1">{title}</h2>}
-      {description && <p className="text-sm text-ink-muted mb-2">{description}</p>}
-      <div className="border-t border-hairline pt-1 mt-3">{children}</div>
-    </section>
-  );
-}
-
-function LoadingBlock({ label, small = false }) {
-  return (
-    <div className={`flex items-center justify-center gap-2 text-ink-muted ${small ? "py-6" : "py-12"}`}>
-      <Loader2 className="h-4 w-4 animate-spin" />
-      <span className="text-sm">{label}</span>
-    </div>
   );
 }

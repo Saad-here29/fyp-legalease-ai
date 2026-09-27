@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, ScanLine, AlertCircle, Check, ChevronRight } from "lucide-react";
+import { FileText, Loader2, ScanLine, AlertCircle, Check, ChevronRight } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES } from "@/constants";
 import { documentsApi } from "./api";
 import AnalysisResults from "./AnalysisResults";
+import UploadStrip from "./UploadStrip";
+import { formatBytes } from "@/lib/format";
 import { casesApi } from "@/features/case-management/api";
 
 // Documents — design system v1, per the Document Analysis mockup
@@ -14,8 +16,6 @@ import { casesApi } from "@/features/case-management/api";
 // status and one primary action, then AI summary | extracted data.
 // Adapted to what exists: no "View original" (no download endpoint), no
 // breadcrumb or document list (one document per visit), no page references.
-
-const ACCEPT = ".pdf,.docx,.txt,.png,.jpg,.jpeg";
 
 export default function DocumentsPage() {
   const { user } = useAuthStore();
@@ -169,60 +169,6 @@ export default function DocumentsPage() {
   );
 }
 
-function UploadStrip({ busy, onFile, again }) {
-  const [over, setOver] = useState(false);
-  const take = (file) => file && !busy && onFile(file);
-
-  return (
-    <label
-      htmlFor="doc-upload"
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        take(e.dataTransfer.files?.[0]);
-      }}
-      className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-2 min-h-[72px] px-6 py-4 border border-dashed rounded-ds
-        cursor-pointer transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-ds-ink ${
-        over ? "border-ds-ink bg-ds-sheet" : "border-[#C7BBA5] hover:bg-ds-sheet/60"
-      }`}
-    >
-      <input
-        id="doc-upload"
-        type="file"
-        accept={ACCEPT}
-        className="sr-only"
-        disabled={busy}
-        onChange={(e) => {
-          take(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-      <span className="flex items-center gap-4 ds-body">
-        {busy ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin text-ds-text-2" aria-hidden="true" />
-            Uploading and extracting text…
-          </>
-        ) : (
-          <>
-            <Upload className="h-5 w-5 text-ds-text-2" aria-hidden="true" />
-            <span>
-              {again ? "Drop another file to analyse, or " : "Drop a document to analyse, or "}
-              <span className="ds-link">browse</span>
-            </span>
-          </>
-        )}
-      </span>
-      <span className="ds-meta">PDF, DOCX, TXT, PNG, JPG · up to 20 MB</span>
-    </label>
-  );
-}
-
 function SaveToCase({ doc, onAttached, primary }) {
   const [selectedCaseId, setSelectedCaseId] = useState("");
 
@@ -296,10 +242,4 @@ function ErrorLine({ children }) {
       {children}
     </p>
   );
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

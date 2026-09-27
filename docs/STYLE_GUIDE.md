@@ -139,7 +139,7 @@ for them** — adapt each page to what exists (decided 2026-09-27):
 
 | Mockup | Adaptation |
 |---|---|
-| Dashboards, Cases list/detail (pp. 4–6, 8–9) | Remove Calendar, cause list, deadlines, client messages, and the student reading/practice sections. Keep only real data. |
+| Dashboards, Cases list/detail (pp. 4–6, 8–9) | Remove Calendar, cause list, deadlines, client messages, and the student reading/practice sections. Keep only real data. Cases: no Next hearing / Client columns ("Updated" instead), no issues framed, next-hearing panel, Research/Notes tabs or "Ask about this case"; the primary action is the real status change. No status shows in Seal (no due dates exist). |
 | Research (p. 11) | Remove the jurisdiction and court filters and the "Judgments" source type — the index is statute text only, and these filters were removed for that reason. |
 | AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. No scope / linked-case tags, "Save to case" or attach button (not built). Meta line counts statutes; "Checked against source" is derived from the backend citation check's "(unverified)" flags. |
 | Document Analysis (p. 12) | No page references on extracted values — the API has none. No "View original" (no download endpoint), no breadcrumb or document list (one document per visit). Summary's own risk section is dropped when its risks are shown as Points to review rows. |
@@ -177,7 +177,7 @@ extend these.
 - **Migrated:** `AppShell` (sidebar, page header, mobile drawer), `AuthShell`
   (ink identity panel shared by all six auth pages), Login, AI Chat
   (incl. `prose-ds` for AI output, `.ds-cite` markers, the Short answer box),
-  Documents.
+  Documents, Cases list, Case detail.
 - **Not yet migrated:** every other page's content (the auth pages other than
   Login keep old-style forms inside the new frame) still uses the previous tokens
   (`paper`, `ink-panel`, `ink-text`, `ink-muted`, `hairline`, `brick`,
