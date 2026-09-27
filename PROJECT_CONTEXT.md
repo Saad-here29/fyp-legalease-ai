@@ -209,6 +209,17 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
   through `rewrite_search_query` and compare the rewrites and retrieved
   passages with their English equivalents (offline apart from the rewrite
   calls — mind the Groq token budget).
+- **Minor polish item — document summary headings echo the prompt**
+  (observed 2026-09-27, low priority). The Document Analysis summary
+  sometimes shows the prompt's own section labels as headings, e.g.
+  "1) Summary (plain language, 4-6 sentences)", because
+  `AIClient.summarise()` asks for five numbered sections with those
+  descriptions. Fixing it means rewording the summary prompt so headings
+  are plain ("Summary", "Parties", …) while keeping the numbering that
+  `app/ai/summary_sections.py` relies on to pull out clauses and risks —
+  then re-running a few real analyses (~7k Groq tokens each) to confirm the
+  extraction still works. Deferred: not worth the token budget while pages
+  are still being redesigned.
 
 ## Reliability pass — citations, DB connections, output polish (confirmed 2026-09-26)
 Committed `cbc48ad` and `1c32ff3`, pushed to `origin/main`. Full backend
