@@ -2,295 +2,222 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  BookOpen,
-  Bookmark,
-  Loader2,
-  AlertCircle,
-  Sparkles,
-  Gavel,
-  Scale,
-  Target,
-  Lightbulb,
-  ListChecks,
-} from "lucide-react";
+import { Loader2, AlertCircle, Check } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
-import AppButton from "@/components/ui/AppButton";
-import PanelCard from "@/features/dashboard/components/PanelCard";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES, ROUTES } from "@/constants";
 import { casesApi } from "@/features/case-management/api";
 import { researchApi } from "./api";
-import { cnInput } from "@/lib/formStyles";
+
+// One statute passage from a research search — design system v1. The AI
+// analysis runs on request ("Analyse with AI"), not on every open, to spare
+// the shared Groq token budget. The analysis API's "judgment" field holds
+// "the operative rule that emerges from the passage" (research_service.py),
+// so it's labelled that way — the library holds no judgments.
+
+const FIELDS = [
+  ["issue", "Issue"],
+  ["findings", "What the statute provides"],
+  ["judgment", "Operative rule"],
+  ["legal_basis", "Legal basis"],
+  ["relevance", "Relevance to your search"],
+];
 
 export default function ResearchDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
   const isLawyer = user?.role === ROLES.LAWYER;
-
   const result = location.state?.result;
+  const back = (
+    <button onClick={() => navigate(-1)} className="ds-link font-medium">
+      Research results
+    </button>
+  );
 
   if (!result) {
     return (
-      <AppShell title="Research result">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-brick shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-ink-text">This result was opened directly.</p>
-            <p className="text-ink-muted mt-1">
-              Detail snapshots are loaded from the search list. Run a search
-              and click "Read more" again.
-            </p>
-            <Link
-              to={ROUTES.RESEARCH}
-              className="inline-flex items-center gap-1.5 text-sm text-brick hover:underline underline-offset-2 mt-3"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to research
-            </Link>
-          </div>
-        </div>
+      <AppShell eyebrow={<Link to={ROUTES.RESEARCH} className="ds-link font-medium">Research</Link>} title="Research result">
+        <p className="flex items-start gap-2 ds-body text-ds-text-2 max-w-[640px]">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
+          This passage was opened directly. Passages open from a search — run a search and choose a result.
+        </p>
       </AppShell>
     );
   }
 
+  const text = result.text || result.excerpt || "";
+
   return (
     <AppShell
+      eyebrow={back}
       title={result.title}
-      subtitle={`${result.case_type === "judgment" ? "Judgment" : "Statute"}${
-        result.year ? ` · ${result.year}` : ""
-      }${result.court ? ` · ${result.court}` : ""}`}
+      subtitle={["Statute", !/^From: .*\(LegalEase corpus\)$/.test(result.citation || "") && result.citation, result.relevance != null && `${Math.round(result.relevance * 100)}% match`]
+        .filter(Boolean)
+        .join(" · ")}
     >
-      <button
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-text mb-8"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to results
-      </button>
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+        <div className="space-y-12 min-w-0">
+          <Analysis result={result} text={text} autoStart={!!location.state?.analyse} />
 
-      <div className="mb-10">
-        <StructuredAnalysisPanel result={result} />
-      </div>
-
-      <div className="grid gap-10 lg:grid-cols-3">
-        <PanelCard className="lg:col-span-2" title="Original passage">
-          <div className="flex items-center gap-2 mb-3 text-xs text-ink-muted">
-            <BookOpen className="h-4 w-4" />
-            <span>{result.case_type === "judgment" ? "Judgment" : "Statute"}</span>
-            {result.citation && <span>{result.citation}</span>}
-            {result.relevance != null && (
-              <span className="ml-auto">{Math.round(result.relevance * 100)}% relevance</span>
-            )}
-          </div>
-
-          <div className="text-sm leading-relaxed text-ink-text whitespace-pre-wrap max-h-[60vh] overflow-y-auto pr-2">
-            {result.text || result.excerpt}
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-hairline-subtle text-xs text-ink-muted">
-            <span className="font-medium text-ink-text">
-              {(result.text || result.excerpt || "").length.toLocaleString()} characters
-            </span>{" "}
-            — This passage is one chunk from the LegalEase corpus
-            (800-char chunks with 100-char overlap). Open the original PDF
-            for the full statutory text.
-          </div>
-        </PanelCard>
-
-        <div className="space-y-10">
-          {isLawyer && <SaveToCase result={result} />}
-
-          <PanelCard title="Source">
-            <div className="text-sm">
-              <div className="font-medium text-ink-text">{result.title}</div>
-              {result.citation && <div className="text-xs text-ink-muted mt-1">{result.citation}</div>}
-              {result.court && (
-                <div className="text-xs text-ink-muted mt-2">
-                  Court: <span className="text-ink-text">{result.court}</span>
-                </div>
-              )}
-              {result.year && (
-                <div className="text-xs text-ink-muted mt-0.5">
-                  Year: <span className="text-ink-text">{result.year}</span>
-                </div>
-              )}
+          <section>
+            <h2 className="ds-h3 pb-3 border-b-2 border-ds-ink">Passage</h2>
+            <div className="mt-5 bg-ds-sheet border border-ds-rule rounded-ds p-6 ds-body text-[17px] leading-[28px] whitespace-pre-wrap">
+              {text}
             </div>
-          </PanelCard>
+            <p className="ds-meta mt-3">
+              {text.length.toLocaleString()} characters · one excerpt of about 800 characters from the statute as indexed
+              by LegalEase, not the whole Act.
+            </p>
+          </section>
         </div>
+
+        {isLawyer && <SaveToCase result={result} />}
       </div>
     </AppShell>
   );
 }
 
-function StructuredAnalysisPanel({ result }) {
-  const analyzeMutation = useMutation({
-    mutationFn: () =>
-      researchApi.analyze({
-        text: result.text || result.excerpt || "",
-        source: result.title,
-        user_query: result.user_query || null,
-      }),
-    onError: (e) => {
-      toast.error(e?.response?.data?.error?.message || "Could not generate analysis.", {
-        description: e?.response?.data?.error?.hint,
-      });
-    },
+function Analysis({ result, text, autoStart }) {
+  // A query enabled on request (not a mutation fired from an effect): it
+  // survives React StrictMode's mount/unmount/remount in development, and
+  // reopening the same passage reuses the result instead of spending tokens.
+  const [requested, setRequested] = useState(autoStart);
+  const analyse = useQuery({
+    queryKey: ["research-analysis", result.id, result.user_query || ""],
+    queryFn: () => researchApi.analyze({ text, source: result.title, user_query: result.user_query || null }),
+    enabled: requested,
+    staleTime: Infinity,
+    retry: false,
   });
-
   useEffect(() => {
-    if (!analyzeMutation.isPending && !analyzeMutation.data && !analyzeMutation.isError) {
-      analyzeMutation.mutate();
+    if (analyse.isError) {
+      toast.error(analyse.error?.response?.data?.error?.message || "Could not generate analysis.", {
+        description: analyse.error?.response?.data?.error?.hint,
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [analyse.isError, analyse.error]);
 
-  const a = analyzeMutation.data;
+  const a = analyse.data;
+  const busy = analyse.isFetching;
+  const run = () => (requested ? analyse.refetch() : setRequested(true));
 
   return (
-    <PanelCard
-      title="Structured legal analysis"
-      description="AI-generated breakdown grounded in the passage below."
-      action={
-        <button
-          onClick={() => analyzeMutation.mutate()}
-          disabled={analyzeMutation.isPending}
-          className="text-xs text-brick hover:underline underline-offset-2 disabled:text-ink-muted disabled:no-underline flex items-center gap-1"
-        >
-          {analyzeMutation.isPending ? (
-            "Analysing…"
-          ) : a ? (
-            <>
-              <Sparkles className="h-3 w-3" /> Regenerate
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-3 w-3" /> Generate analysis
-            </>
-          )}
-        </button>
-      }
-    >
-      {analyzeMutation.isPending && (
-        <div className="flex flex-col items-center gap-3 py-8 text-sm text-ink-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <div className="text-center">
-            <p className="font-medium text-ink-text">Analysing this passage…</p>
-            <p className="text-xs mt-1">
-              The AI is structuring the Issue, Findings, Judgment,
-              Legal Basis and Relevance. Usually 2–4 seconds.
-            </p>
-          </div>
-        </div>
-      )}
+    <section>
+      <div className="flex flex-wrap items-end justify-between gap-3 pb-3 border-b-2 border-ds-ink">
+        <h2 className="ds-h3">AI analysis</h2>
+        {a ? (
+          <span className="ds-tag-neutral">AI-generated · read with the passage</span>
+        ) : null}
+      </div>
 
-      {!a && !analyzeMutation.isPending && analyzeMutation.isError && (
-        <p className="text-sm text-brick">
-          Could not generate the analysis. Click <strong>Regenerate</strong> to retry.
+      {busy && (
+        <p className="flex items-center gap-3 ds-body text-ds-text-2 py-6">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+          Analysing this passage…
         </p>
       )}
 
-      {a && (
-        <div className="grid gap-5 sm:grid-cols-2">
-          <AnalysisField icon={Target} label="Issue" value={a.issue} />
-          <AnalysisField icon={ListChecks} label="Findings" value={a.findings} />
-          <AnalysisField icon={Gavel} label="Judgment" value={a.judgment} />
-          <AnalysisField icon={Scale} label="Legal basis" value={a.legal_basis} />
-          <AnalysisField
-            icon={Lightbulb}
-            label="Relevance"
-            value={a.relevance}
-            className="sm:col-span-2"
-          />
+      {!a && !busy && (
+        <div className="py-6">
+          <p className="ds-body text-ds-text-2 max-w-[600px]">
+            {analyse.isError
+              ? "The analysis couldn't be generated. Try again in a minute."
+              : "Get a plain-language breakdown of this passage: the issue, what the statute provides, the operative rule, its legal basis and how it bears on your search."}
+          </p>
+          <button className="ds-btn-primary mt-5" onClick={run}>
+            {analyse.isError ? "Try again" : "Analyse with AI"}
+          </button>
         </div>
       )}
-    </PanelCard>
-  );
-}
 
-function AnalysisField({ icon: Icon, label, value, className = "" }) {
-  return (
-    <div className={`pb-4 border-b border-hairline-subtle ${className}`}>
-      <div className="flex items-center gap-2 mb-1.5">
-        <Icon className="h-3.5 w-3.5 text-ink-muted" />
-        <span className="text-xs text-ink-muted">{label}</span>
-      </div>
-      <p className="text-sm leading-relaxed text-ink-text whitespace-pre-wrap">{value || "—"}</p>
-    </div>
+      {a && !busy && FIELDS.slice(1).every(([k]) => !a[k] || a[k] === "—") && (
+        // The model declined (e.g. the passage doesn't bear on the search):
+        // the parser then has only the "Issue" line, so show it as a note.
+        <div className="py-6">
+          <p className="ds-body text-ds-text-2 max-w-[640px]">
+            The AI didn&apos;t produce an analysis of this passage: <span className="text-ds-text">{a.issue}</span>
+          </p>
+          <button className="ds-btn-secondary mt-5" onClick={run}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {a && !busy && !FIELDS.slice(1).every(([k]) => !a[k] || a[k] === "—") && (
+        <>
+          <dl>
+            {FIELDS.map(([key, label]) => (
+              <div key={key} className="grid sm:grid-cols-[200px_1fr] gap-x-6 gap-y-1 py-4 border-b border-ds-rule">
+                <dt className="font-ds-sans font-semibold text-[15px] leading-[26px] text-ds-text-2">{label}</dt>
+                <dd className="ds-body whitespace-pre-wrap">{a[key] || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+          <button className="ds-btn-secondary mt-5" onClick={run}>
+            Regenerate
+          </button>
+        </>
+      )}
+    </section>
   );
 }
 
 function SaveToCase({ result }) {
-  const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [caseId, setCaseId] = useState("");
+  const [savedTo, setSavedTo] = useState(null);
+  const { data: cases } = useQuery({ queryKey: ["cases"], queryFn: casesApi.list });
 
-  const { data: cases } = useQuery({
-    queryKey: ["cases"],
-    queryFn: casesApi.list,
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: (caseId) =>
-      casesApi.saveResearch(caseId, {
+  const save = useMutation({
+    mutationFn: (id) =>
+      casesApi.saveResearch(id, {
         title: result.title,
         citation: result.citation || null,
         excerpt: result.excerpt || null,
         source_id: result.id,
       }),
-    onSuccess: () => {
-      toast.success("Saved to case.", {
-        description: "It will appear on the case timeline as a research note.",
-      });
+    onSuccess: (_, id) => {
+      setSavedTo((cases || []).find((c) => c.id === id)?.title || "the case");
+      toast.success("Saved to case.", { description: "It appears on the case timeline as a research note." });
     },
-    onError: (e) => {
+    onError: (e) =>
       toast.error(e?.response?.data?.error?.message || "Could not save to case.", {
         description: e?.response?.data?.error?.hint,
-      });
-    },
+      }),
   });
 
-  const activeCases = (cases || []).filter((c) => c.status !== "closed");
+  const open = (cases || []).filter((c) => c.status !== "closed");
 
   return (
-    <PanelCard
-      title="Save to a case"
-      description="Attach this authority to one of your open cases — appears on the case timeline."
-    >
-      {activeCases.length === 0 ? (
-        <p className="text-xs text-ink-muted">
-          You don't have any open cases. Create one first.
-        </p>
+    <aside className="bg-ds-sheet border border-ds-rule rounded-ds p-6">
+      <h2 className="ds-h4">Save to a case</h2>
+      <p className="ds-meta mt-1">Adds this passage to the case timeline as a research note.</p>
+      {open.length === 0 ? (
+        <p className="ds-body text-ds-text-2 mt-4">You have no open cases. Create one from the Cases page first.</p>
       ) : (
-        <>
-          <select
-            value={selectedCaseId}
-            onChange={(e) => setSelectedCaseId(e.target.value)}
-            className={cnInput(false)}
-          >
-            <option value="">Select a case...</option>
-            {activeCases.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title} · {c.status.replace("_", " ")}
-              </option>
+        <div className="mt-4 space-y-3">
+          <label htmlFor="save-case" className="sr-only">Case</label>
+          <select id="save-case" value={caseId} onChange={(e) => setCaseId(e.target.value)} className="ds-input">
+            <option value="">Select a case…</option>
+            {open.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
             ))}
           </select>
-          <AppButton
-            disabled={!selectedCaseId || saveMutation.isPending}
-            onClick={() => saveMutation.mutate(selectedCaseId)}
-            className="w-full mt-3"
+          <button
+            className="ds-btn-secondary w-full min-h-[48px]"
+            disabled={!caseId || save.isPending}
+            onClick={() => save.mutate(caseId)}
           >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Bookmark className="h-4 w-4" />
-                Save to case
-              </>
-            )}
-          </AppButton>
-        </>
+            {save.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Saving" /> : "Save to case"}
+          </button>
+          {savedTo && (
+            <p className="flex items-center gap-1.5 font-ds-sans font-semibold text-[14px] text-ds-pass">
+              <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+              Saved to {savedTo}
+            </p>
+          )}
+        </div>
       )}
-    </PanelCard>
+    </aside>
   );
 }

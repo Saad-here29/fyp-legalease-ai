@@ -209,6 +209,19 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
   through `rewrite_search_query` and compare the rewrites and retrieved
   passages with their English equivalents (offline apart from the rewrite
   calls — mind the Groq token budget).
+- **Known issue — research passage analysis can refuse on relevant text**
+  (observed 2026-09-27, future work). `/research/analyze`
+  (`ResearchService.analyze`) calls `ai.chat()` without its own system
+  prompt, so it inherits the chat assistant's `SYSTEM_PROMPT_LEGAL_CHAT`,
+  which demands the fixed line "This question is outside the scope of
+  Pakistani law I can answer on." whenever the material doesn't answer the
+  question. Seen on a Muslim Family Laws Ordinance passage (dower) opened
+  from the search "khula procedure": the model refused, and the parser put
+  the refusal under "Issue" with the other four fields empty. The Research
+  page now shows such output as a single note with "Try again". Fix: give
+  the analysis a short system prompt of its own ("analyse this statute
+  passage; relate it to the user's search only where it bears on it"),
+  then check a few real passages (~3k Groq tokens each).
 - **Minor polish item — document summary headings echo the prompt**
   (observed 2026-09-27, low priority). The Document Analysis summary
   sometimes shows the prompt's own section labels as headings, e.g.

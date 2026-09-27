@@ -158,7 +158,7 @@ function Sidebar({ user, onNavigate, onSignOut }) {
   );
 }
 
-export default function AppShell({ title, subtitle, eyebrow, headerActions, bare = false, children }) {
+export default function AppShell({ title, subtitle, eyebrow, headerActions, band, bare = false, children }) {
   const { user, clear } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -212,10 +212,21 @@ export default function AppShell({ title, subtitle, eyebrow, headerActions, bare
         // viewport below the mobile bar (h-16) or beside the sidebar.
         <main className="flex-1 min-w-0 flex flex-col h-[calc(100dvh-4rem)] lg:h-screen">{children}</main>
       ) : (
-        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-14">
+        <main className="flex-1 min-w-0">
+          {/* Optional ink band across the top of the content (Research mockup,
+              p. 11): the page title in Paper plus whatever the page puts in it. */}
+          {band && (
+            <section className="bg-ds-ink text-ds-paper px-4 sm:px-6 lg:px-14">
+              <div className="max-w-ds-content pt-10 lg:pt-12 pb-8">
+                {title && <h1 className="ds-h1 text-ds-paper">{title}</h1>}
+                {band}
+              </div>
+            </section>
+          )}
+          <div className="px-4 sm:px-6 lg:px-14">
           {/* Left-aligned column, 56px from the sidebar, max 1064px (mockups pp. 4, 8). */}
           <div className="max-w-ds-content pt-10 lg:pt-12 pb-24">
-            {(title || headerActions) && (
+            {!band && (title || headerActions) && (
               <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-10 lg:mb-12">
                 {/* Grows and wraps its title, so actions stay at the right (mockups pp. 8-9). */}
                 <div className="min-w-0 flex-1 basis-[420px]">
@@ -227,6 +238,7 @@ export default function AppShell({ title, subtitle, eyebrow, headerActions, bare
               </header>
             )}
             {children}
+          </div>
           </div>
         </main>
       )}
