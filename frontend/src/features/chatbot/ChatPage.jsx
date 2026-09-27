@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Check, List, Loader2, X } from "lucide-react";
@@ -68,7 +69,10 @@ export default function ChatPage() {
   const qc = useQueryClient();
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const location = useLocation();
+  // A question handed over from elsewhere (the student dashboard's "Ask
+  // about a concept") is pre-filled, not sent — the user presses Ask.
+  const [input, setInput] = useState(location.state?.question || "");
   const [listOpen, setListOpen] = useState(false); // conversations, below lg
   const scrollRef = useRef(null);
 

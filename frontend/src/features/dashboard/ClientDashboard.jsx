@@ -1,155 +1,193 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, MessageSquare, ScanLine, Search, ArrowUpRight, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTES } from "@/constants";
 import { casesApi } from "@/features/case-management/api";
-import { chatApi } from "@/features/chatbot/api";
+import StatusTag from "@/features/case-management/StatusTag";
+import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry } from "@/features/case-management/caseMeta";
+import { RuledSection, ViewAll, Today } from "./components/DashParts";
 
-const STATUS_META = {
-  created: { dot: "bg-status-pending", label: "Created" },
-  assigned: { dot: "bg-status-pending", label: "Assigned" },
-  in_progress: { dot: "bg-status-active", label: "In progress" },
-  hearing_scheduled: { dot: "bg-status-active", label: "Hearing scheduled" },
-  closed: { dot: "bg-ink-muted", label: "Closed" },
-};
+// Client dashboard — design system v1, per docs/design_reference page 5.
+// Adapted to what exists: no hearing dates, messages or requested-document
+// checklist (none are built). "Where your case stands" follows the case's
+// real status; the stage notes below are fixed text, not AI output.
 
-const STATUS_PROGRESS = {
-  created: 15,
-  assigned: 35,
-  in_progress: 55,
-  hearing_scheduled: 80,
-  closed: 100,
+const STAGES = ["created", "assigned", "in_progress", "hearing_scheduled", "closed"];
+
+const STAGE_NOTE = {
+  created: "Your lawyer has opened this case in LegalEase. Nothing is needed from you yet.",
+  assigned: "Your lawyer is assigned to the case and preparing it. They may ask you for documents.",
+  in_progress:
+    "Your lawyer is working on the case — preparing and filing papers and dealing with the other side. They will contact you if they need anything from you.",
+  hearing_scheduled:
+    "The case has reached the hearing stage. Your lawyer will tell you the date and whether you need to attend.",
+  closed: "Your lawyer has marked this case as closed in LegalEase.",
 };
 
 export default function ClientDashboard() {
   const { user } = useAuthStore();
   const firstName = (user?.full_name || "there").split(" ")[0];
 
-  const { data: stats } = useQuery({ queryKey: ["case-stats"], queryFn: casesApi.stats });
-  const { data: cases, isLoading: loadingCases } = useQuery({
-    queryKey: ["cases"],
-    queryFn: casesApi.list,
-  });
-  const { data: sessions } = useQuery({ queryKey: ["chat-sessions"], queryFn: chatApi.listSessions });
+  const { data: cases, isLoading } = useQuery({ queryKey: ["cases"], queryFn: casesApi.list });
+  // The most recently updated case is "your case"; others are listed below it.
+  const sorted = [...(cases || [])].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  const main = sorted[0];
+
+  const detail = useQuery({ queryKey: ["case", main?.id], queryFn: () => casesApi.get(main.id), enabled: !!main });
+  const timeline = useQuery({ queryKey: ["case-timeline", main?.id], queryFn: () => casesApi.timeline(main.id), enabled: !!main });
+  const docs = useQuery({ queryKey: ["case-documents", main?.id], queryFn: () => casesApi.listDocuments(main.id), enabled: !!main });
+
+  const lawyer = detail.data?.lawyer_name;
 
   return (
     <AppShell
-      title={`Welcome back, ${firstName}`}
-      subtitle="Track your cases, talk to your lawyer, and ask the AI assistant"
+      eyebrow={<Today />}
+      title={`Assalam-o-alaikum, ${firstName}.`}
+      subtitle={lawyer && <>Represented by <span className="font-semibold text-ds-text">{lawyer}</span></>}
+      headerActions={
+        <Link to={ROUTES.DOCUMENTS} className="ds-btn-primary">
+          Upload a document
+        </Link>
+      }
     >
-      <div className="flex flex-wrap">
-        <Stat label="My cases" value={stats?.total ?? 0} helper={`${stats?.active ?? 0} active`} />
-        <Stat label="In hearing" value={stats?.in_hearing ?? 0} helper="scheduled" />
-        <Stat label="AI sessions" value={sessions?.length ?? 0} helper="conversations" />
-        <Stat label="Closed" value={stats?.closed ?? 0} helper="all-time" last />
-      </div>
+      {isLoading ? (
+        <p className="flex items-center gap-3 ds-body text-ds-text-2">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Loading your case…
+        </p>
+      ) : !main ? (
+        <section className="ds-section">
+          <h2 className="ds-h3">No case shared with you yet</h2>
+          <p className="ds-body text-ds-text-2 mt-2 max-w-[640px]">
+            When your lawyer opens your case in LegalEase and links it to this account, it appears here. Meanwhile you
+            can ask the AI about Pakistani law or upload documents for a plain-language summary.
+          </p>
+        </section>
+      ) : (
+        <>
+          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] border-t-2 border-ds-ink border-b border-b-ds-rule">
+            <div className="py-7 min-w-0">
+              <p className="ds-eyebrow">Your case</p>
+              <Link
+                to={`/cases/${main.id}`}
+                className="block mt-2 font-ds-serif font-medium text-[32px] leading-[40px] text-ds-text hover:underline decoration-ds-underline decoration-2 underline-offset-4"
+              >
+                {main.title}
+              </Link>
+              <p className="ds-body text-ds-text-2 mt-2">
+                {[TYPE_LABEL[main.case_type] || main.case_type, main.court_code, main.filing_date && `filed ${fmtDate(main.filing_date)}`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+            <div className="py-7 lg:pl-8 lg:border-l border-ds-rule">
+              <p className="ds-body text-ds-text-2">Current stage</p>
+              <p className="font-ds-serif font-medium text-[32px] leading-[40px] mt-1">{STATUS[main.status]?.label}</p>
+              <p className="ds-body text-ds-text-2 mt-1">Updated {fmtDate(main.updated_at)}</p>
+            </div>
+          </section>
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-3">
-        <section className="lg:col-span-2">
-          <div className="flex items-start justify-between gap-4 mb-1">
-            <h2 className="font-editorial text-xl text-ink-text">My cases</h2>
-            <Link
-              to={ROUTES.CASES}
-              className="inline-flex items-center gap-1 text-xs text-brick hover:underline underline-offset-2"
+          <section className="mt-12">
+            <h2 className="ds-h3">Where your case stands</h2>
+            <Stepper status={main.status} />
+            <div className="mt-6 bg-ds-sheet border border-ds-rule rounded-ds px-6 py-5 max-w-[860px]">
+              <p className="ds-eyebrow">About this stage</p>
+              <p className="ds-body mt-2 text-[17px] leading-[28px]">{STAGE_NOTE[main.status]}</p>
+            </div>
+          </section>
+
+          <div className="mt-12 grid gap-12 lg:grid-cols-2">
+            <RuledSection
+              title="Documents on your case"
+              action={docs.data?.length > 0 && <ViewAll to={`/cases/${main.id}`}>Open case</ViewAll>}
             >
-              View all <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <p className="text-sm text-ink-muted mb-2">Status updates from your counsel</p>
-
-          <div className="border-t border-hairline pt-1 mt-3">
-            {loadingCases ? (
-              <div className="flex items-center justify-center py-8 gap-2 text-ink-muted">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading...</span>
-              </div>
-            ) : !cases || cases.length === 0 ? (
-              <div className="text-center py-8">
-                <Briefcase className="h-8 w-8 text-ink-muted/50 mx-auto mb-3" />
-                <p className="text-sm font-medium text-ink-text">No cases yet</p>
-                <p className="text-sm text-ink-muted mt-1">
-                  Your lawyer will share cases with you here.
-                </p>
-              </div>
-            ) : (
-              <ul>
-                {cases.slice(0, 4).map((c) => {
-                  const progress = STATUS_PROGRESS[c.status] ?? 0;
-                  const meta = STATUS_META[c.status] || {};
-                  return (
-                    <li key={c.id} className="py-4 border-b border-hairline-subtle last:border-0">
-                      <Link
-                        to={ROUTES.CASE_DETAIL.replace(":id", c.id)}
-                        className="block group py-1 px-2 -mx-2 hover:bg-hairline-subtle/40 transition-colors"
-                      >
-                        <div className="flex items-baseline justify-between gap-3">
-                          <span className="text-sm font-medium text-ink-text truncate">
-                            {c.title}
-                          </span>
-                          <span className="text-xs text-ink-muted shrink-0 inline-flex items-center gap-1.5">
-                            <span className={`h-1.5 w-1.5 rounded-full ${meta.dot || "bg-ink-muted"}`} />
-                            {meta.label || c.status}
-                          </span>
-                        </div>
-                        <div className="mt-2.5">
-                          <div className="flex items-center justify-between text-xs text-ink-muted mb-1">
-                            <span>Progress</span>
-                            <span>{progress}%</span>
-                          </div>
-                          <div className="h-1 bg-hairline-subtle overflow-hidden">
-                            <div
-                              className="h-full bg-ink-panel transition-all"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </Link>
+              {!docs.data || docs.data.length === 0 ? (
+                <p className="ds-body text-ds-text-2 py-5">No documents on this case yet.</p>
+              ) : (
+                <ul>
+                  {docs.data.slice(0, 5).map((d) => (
+                    <li key={d.id} className="flex items-center justify-between gap-4 min-h-[56px] border-b border-ds-rule">
+                      <span className="ds-body truncate">{d.filename}</span>
+                      {d.summary ? (
+                        <span className="ds-tag-pass h-7 shrink-0">
+                          <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+                          Analysed
+                        </span>
+                      ) : (
+                        <span className="ds-meta shrink-0">Uploaded {fmtDate(d.created_at)}</span>
+                      )}
                     </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </section>
+                  ))}
+                </ul>
+              )}
+            </RuledSection>
 
-        <section>
-          <h2 className="font-editorial text-xl text-ink-text mb-1">Quick actions</h2>
-          <div className="border-t border-hairline pt-1 mt-3">
-            <ul>
-              <QuickAction to={ROUTES.CHATBOT} icon={MessageSquare} label="Ask AI legal assistant" />
-              <QuickAction to={ROUTES.DOCUMENTS} icon={ScanLine} label="Upload document" />
-              <QuickAction to={ROUTES.RESEARCH} icon={Search} label="Search Pakistani law" />
-              <QuickAction to={ROUTES.CASES} icon={Briefcase} label="View my cases" last />
-            </ul>
+            <RuledSection title="Recent activity">
+              {!timeline.data || timeline.data.length === 0 ? (
+                <p className="ds-body text-ds-text-2 py-5">No activity yet.</p>
+              ) : (
+                <ul>
+                  {timeline.data
+                    .map(readableTimelineEntry)
+                    .slice(-4)
+                    .reverse()
+                    .map((e, i) => (
+                      <li key={i} className="py-4 border-b border-ds-rule">
+                        <p className="flex justify-between gap-4">
+                          <span className="font-ds-sans font-semibold text-[16px]">{e.title}</span>
+                          <span className="ds-meta shrink-0">{fmtDate(e.timestamp)}</span>
+                        </p>
+                        {e.description && <p className="ds-body text-ds-text-2 mt-0.5">{e.description}</p>}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </RuledSection>
           </div>
-        </section>
-      </div>
+
+          {sorted.length > 1 && (
+            <RuledSection title="Your other cases" className="mt-12">
+              <ul>
+                {sorted.slice(1).map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-4 py-4 border-b border-ds-rule">
+                    <Link to={`/cases/${c.id}`} className="font-ds-sans font-semibold text-[17px] hover:underline decoration-ds-underline decoration-2 underline-offset-4">
+                      {c.title}
+                    </Link>
+                    <StatusTag status={c.status} />
+                  </li>
+                ))}
+              </ul>
+            </RuledSection>
+          )}
+        </>
+      )}
     </AppShell>
   );
 }
 
-function Stat({ label, value, helper, last = false }) {
+// Five stages from the case's real status: done in ink, current in Seal
+// (the active step), later ones in rule.
+function Stepper({ status }) {
+  const current = STAGES.indexOf(status);
   return (
-    <div className={`flex-1 min-w-[140px] px-6 first:pl-0 py-1 ${last ? "" : "border-r border-hairline"}`}>
-      <div className="text-sm text-ink-muted">{label}</div>
-      <div className="mt-2 text-3xl font-semibold text-ink-text leading-none">{value}</div>
-      <div className="mt-2 text-xs text-ink-muted">{helper}</div>
-    </div>
-  );
-}
-
-function QuickAction({ to, icon: Icon, label, last = false }) {
-  return (
-    <li className={last ? "" : "border-b border-hairline-subtle"}>
-      <Link
-        to={to}
-        className="flex items-center gap-3 py-3.5 px-2 -mx-2 text-sm text-ink-text hover:bg-hairline-subtle/40 transition-colors"
-      >
-        <Icon className="h-4 w-4 text-ink-muted" />
-        {label}
-      </Link>
-    </li>
+    <ol className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-x-3 gap-y-5">
+      {STAGES.map((s, i) => {
+        const state = i < current ? "done" : i === current ? "now" : "later";
+        return (
+          <li key={s} aria-current={state === "now" ? "step" : undefined}>
+            <span
+              className={`block h-1.5 rounded-ds-sm ${
+                state === "done" ? "bg-ds-ink" : state === "now" ? "bg-ds-seal" : "bg-ds-rule"
+              }`}
+            />
+            <span className={`block mt-3 font-ds-sans font-semibold text-[16px] ${state === "later" ? "text-ds-text-2" : "text-ds-text"}`}>
+              {STATUS[s].label}
+            </span>
+            <span className="ds-meta">{state === "now" ? "Now" : state === "done" ? "Done" : ""}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

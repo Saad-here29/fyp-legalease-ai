@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, AlertCircle, Search } from "lucide-react";
@@ -27,7 +27,9 @@ const TABS = [
 export default function CasesPage() {
   const { user } = useAuthStore();
   const isLawyer = user?.role === ROLES.LAWYER;
-  const [showCreate, setShowCreate] = useState(false);
+  const location = useLocation();
+  // The dashboard's "New case" button arrives with { create: true }.
+  const [showCreate, setShowCreate] = useState(!!location.state?.create);
   const [tab, setTab] = useState("open");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
