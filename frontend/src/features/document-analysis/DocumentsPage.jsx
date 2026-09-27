@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, ScanLine, AlertCircle, Bookmark, CheckCircle2, Sparkles } from "lucide-react";
+import { Upload, FileText, Loader2, ScanLine, AlertCircle, Check, ChevronRight } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
-import AppButton from "@/components/ui/AppButton";
-import PanelCard from "@/features/dashboard/components/PanelCard";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES } from "@/constants";
 import { documentsApi } from "./api";
 import AnalysisResults from "./AnalysisResults";
 import { casesApi } from "@/features/case-management/api";
-import { cnInput } from "@/lib/formStyles";
+
+// Documents — design system v1, per the Document Analysis mockup
+// (docs/design_reference page 12): upload strip, document header with its
+// status and one primary action, then AI summary | extracted data.
+// Adapted to what exists: no "View original" (no download endpoint), no
+// breadcrumb or document list (one document per visit), no page references.
+
+const ACCEPT = ".pdf,.docx,.txt,.png,.jpg,.jpeg";
 
 export default function DocumentsPage() {
   const { user } = useAuthStore();
@@ -53,166 +58,181 @@ export default function DocumentsPage() {
     },
   });
 
-  const onFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    uploadMutation.mutate(file);
-    e.target.value = "";
-  };
+  const analysed = !!analysis && analysis.document_id === doc?.id;
 
   return (
     <AppShell
-      title="Documents & OCR"
+      title="Documents"
       subtitle={
         isLawyer
-          ? "Upload, extract text via OCR, and attach to one of your cases"
-          : "Upload your case-related documents — your counsel will see them"
+          ? "Upload a document to extract its text, analyse it and attach it to a case"
+          : "Upload your case-related documents and get a plain-language summary"
       }
     >
-      <div className="grid gap-10 lg:grid-cols-2">
-        <PanelCard title="Upload" description="Supports PDF, DOCX, TXT, PNG, JPG. Up to 20 MB.">
-          <label
-            htmlFor="doc-upload"
-            className="block cursor-pointer border border-hairline hover:border-ink-text hover:bg-ink-text/[0.02] p-10 text-center transition-colors"
-          >
-            <input
-              id="doc-upload"
-              type="file"
-              accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-              className="hidden"
-              onChange={onFile}
-              disabled={uploadMutation.isPending}
-            />
-            {uploadMutation.isPending ? (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-ink-muted" />
-                <p className="text-sm text-ink-muted">Uploading and running OCR…</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <Upload className="h-6 w-6 text-ink-muted" />
-                <p className="text-sm text-ink-text">Click to upload</p>
-                <p className="text-xs text-ink-muted">or drag and drop your legal document</p>
-              </div>
-            )}
-          </label>
+      <UploadStrip
+        busy={uploadMutation.isPending}
+        onFile={(file) => uploadMutation.mutate(file)}
+        again={!!doc}
+      />
+      {uploadMutation.isError && (
+        <ErrorLine>
+          {uploadMutation.error?.response?.data?.error?.message || "Upload failed. Check file size and type."}
+        </ErrorLine>
+      )}
 
-          {uploadMutation.isError && (
-            <div className="mt-4 flex items-start gap-2 text-sm">
-              <AlertCircle className="h-4 w-4 text-brick shrink-0 mt-0.5" />
-              <p className="text-brick">
-                {uploadMutation.error?.response?.data?.error?.message ||
-                  "Upload failed. Check file size and type."}
+      {doc && (
+        <section className="mt-12">
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+            <div className="min-w-0">
+              <h2 className="ds-h2 break-words">{doc.filename}</h2>
+              <p className="ds-meta mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <FileText className="h-4 w-4" aria-hidden="true" />
+                <span>{String(doc.file_type).toUpperCase()}</span>·<span>{formatBytes(doc.size_bytes)}</span>·
+                <span>{(doc.extracted_text?.length || 0).toLocaleString()} characters extracted</span>·
+                <span>Uploaded {new Date(doc.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                {analysed ? (
+                  <span className="ds-tag-pass h-7 ml-2">
+                    <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+                    Analysed
+                  </span>
+                ) : (
+                  <span className="ds-tag-neutral h-7 ml-2">Not analysed</span>
+                )}
               </p>
             </div>
-          )}
-        </PanelCard>
+            <button
+              onClick={() => analyzeMutation.mutate(doc.id)}
+              disabled={!doc.extracted_text || analyzeMutation.isPending}
+              title={doc.extracted_text ? undefined : "No text to analyse in this file"}
+              // One primary per view: Analyse until done, then Save to case takes over.
+              className={analysed ? "ds-btn-secondary" : "ds-btn-primary"}
+            >
+              {analyzeMutation.isPending ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                  Analysing…
+                </>
+              ) : analysed ? (
+                "Re-analyse"
+              ) : (
+                "Analyse document"
+              )}
+            </button>
+          </div>
 
-        {doc && (
-          <PanelCard
-            title="Extracted document"
-            description={doc.filename}
-            action={
-              <AppButton
-                disabled={!doc.extracted_text || analyzeMutation.isPending}
-                onClick={() => analyzeMutation.mutate(doc.id)}
-                className="shrink-0"
-                title={doc.extracted_text ? undefined : "No text to analyse in this file"}
-              >
-                {analyzeMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Analysing…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    {analysis ? "Re-analyse" : "Analyse"}
-                  </>
-                )}
-              </AppButton>
-            }
-          >
-            <div className="grid grid-cols-3 mb-4">
-              <Stat label="Type" value={doc.document_type} />
-              <Stat label="Size" value={formatBytes(doc.size_bytes)} />
-              <Stat
-                label="Text"
-                value={`${(doc.extracted_text?.length || 0).toLocaleString()} chars`}
-                last
-              />
-            </div>
+          {isLawyer && <SaveToCase doc={doc} onAttached={setDoc} primary={analysed} />}
 
-            <div className="border border-hairline-subtle p-4 max-h-96 overflow-y-auto">
+          <details className="group mt-8 border-t border-ds-rule">
+            <summary
+              className="cursor-pointer list-none min-h-[48px] flex items-center gap-2 font-ds-sans font-semibold text-[16px] text-ds-text
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink [&::-webkit-details-marker]:hidden"
+            >
+              <ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" aria-hidden="true" />
+              Extracted text
+            </summary>
+            <div className="bg-ds-sheet border border-ds-rule rounded-ds p-5 max-h-96 overflow-y-auto">
               {doc.extracted_text ? (
-                <pre className="text-xs whitespace-pre-wrap text-ink-muted">
+                <pre className="font-ds-sans text-[14px] leading-[22px] whitespace-pre-wrap text-ds-text-2">
                   {doc.extracted_text}
                 </pre>
               ) : (
-                <div className="flex items-start gap-2 text-sm text-ink-muted">
-                  <ScanLine className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 ds-body text-ds-text-2">
+                  <ScanLine className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <p>No text extracted from this file.</p>
-                    <p className="text-xs mt-1">
-                      Likely a scanned/image-only PDF. To enable OCR for these,
-                      install Tesseract OCR + Poppler on the server.
+                    <p className="ds-meta mt-1">
+                      Likely a scanned or image-only PDF. OCR for these needs Tesseract OCR and Poppler installed on
+                      the server.
                     </p>
                   </div>
                 </div>
               )}
             </div>
-          </PanelCard>
-        )}
-      </div>
+          </details>
+        </section>
+      )}
 
       {analyzeMutation.isPending && (
-        <div className="mt-10 flex items-center gap-2 text-sm text-ink-muted">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <p className="mt-12 flex items-center gap-3 ds-body text-ds-text-2">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
           Summarising and extracting entities — this usually takes 10–20 seconds…
-        </div>
+        </p>
       )}
-
       {analyzeMutation.isError && !analyzeMutation.isPending && (
-        <div className="mt-10 flex items-start gap-2 text-sm">
-          <AlertCircle className="h-4 w-4 text-brick shrink-0 mt-0.5" />
-          <p className="text-brick">
-            {analyzeMutation.error?.response?.data?.error?.message ||
-              "Analysis failed. Please try again in a minute."}
-          </p>
-        </div>
+        <ErrorLine>
+          {analyzeMutation.error?.response?.data?.error?.message || "Analysis failed. Please try again in a minute."}
+        </ErrorLine>
       )}
 
-      {analysis && analysis.document_id === doc?.id && !analyzeMutation.isPending && (
-        <AnalysisResults analysis={analysis} />
-      )}
-
-      {doc && isLawyer && <SaveToCasePanel doc={doc} onAttached={setDoc} />}
-
-      {!doc && (
-        <div className="mt-10 text-center py-8 text-sm text-ink-muted">
-          <FileText className="h-7 w-7 mx-auto mb-3 text-ink-muted/50" />
-          Upload a document to extract its text via OCR
-        </div>
-      )}
+      {analysed && !analyzeMutation.isPending && <AnalysisResults analysis={analysis} />}
     </AppShell>
   );
 }
 
-function SaveToCasePanel({ doc, onAttached }) {
+function UploadStrip({ busy, onFile, again }) {
+  const [over, setOver] = useState(false);
+  const take = (file) => file && !busy && onFile(file);
+
+  return (
+    <label
+      htmlFor="doc-upload"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        take(e.dataTransfer.files?.[0]);
+      }}
+      className={`flex flex-wrap items-center justify-between gap-x-6 gap-y-2 min-h-[72px] px-6 py-4 border border-dashed rounded-ds
+        cursor-pointer transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-ds-ink ${
+        over ? "border-ds-ink bg-ds-sheet" : "border-[#C7BBA5] hover:bg-ds-sheet/60"
+      }`}
+    >
+      <input
+        id="doc-upload"
+        type="file"
+        accept={ACCEPT}
+        className="sr-only"
+        disabled={busy}
+        onChange={(e) => {
+          take(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      <span className="flex items-center gap-4 ds-body">
+        {busy ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin text-ds-text-2" aria-hidden="true" />
+            Uploading and extracting text…
+          </>
+        ) : (
+          <>
+            <Upload className="h-5 w-5 text-ds-text-2" aria-hidden="true" />
+            <span>
+              {again ? "Drop another file to analyse, or " : "Drop a document to analyse, or "}
+              <span className="ds-link">browse</span>
+            </span>
+          </>
+        )}
+      </span>
+      <span className="ds-meta">PDF, DOCX, TXT, PNG, JPG · up to 20 MB</span>
+    </label>
+  );
+}
+
+function SaveToCase({ doc, onAttached, primary }) {
   const [selectedCaseId, setSelectedCaseId] = useState("");
 
-  const { data: cases } = useQuery({
-    queryKey: ["cases"],
-    queryFn: casesApi.list,
-  });
+  const { data: cases } = useQuery({ queryKey: ["cases"], queryFn: casesApi.list });
 
   const attachMutation = useMutation({
     mutationFn: (caseId) => documentsApi.attachToCase(doc.id, caseId),
     onSuccess: (updated) => {
       onAttached(updated);
-      toast.success("Attached to case.", {
-        description: "This document now appears on the case timeline.",
-      });
+      toast.success("Attached to case.", { description: "This document now appears on the case timeline." });
     },
     onError: (e) => {
       toast.error(e?.response?.data?.error?.message || "Could not attach to case.", {
@@ -222,70 +242,59 @@ function SaveToCasePanel({ doc, onAttached }) {
   });
 
   const openCases = (cases || []).filter((c) => c.status !== "closed");
-  const alreadyAttached = !!doc.case_id;
+  const attachedTo = doc.case_id && (cases || []).find((c) => c.id === doc.case_id);
 
   return (
-    <div className="mt-10">
-      <PanelCard
-        title="Save to a case"
-        description={
-          alreadyAttached
-            ? "This document is already attached to a case."
-            : "Attach this OCR extraction to one of your open cases — it appears on the case timeline."
-        }
-      >
-        {alreadyAttached ? (
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="h-4 w-4 text-status-active" />
-            <span className="text-ink-text">Linked to case</span>
-            <span className="text-xs text-ink-muted">{doc.case_id?.slice(0, 8)}</span>
-          </div>
-        ) : openCases.length === 0 ? (
-          <p className="text-sm text-ink-muted">
-            You don't have any open cases. Create one first from the Cases tab,
-            then come back to attach this document.
-          </p>
-        ) : (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 max-w-2xl">
+    <div className="mt-6 pt-6 border-t border-ds-rule">
+      {doc.case_id ? (
+        <p className="flex items-center gap-2 ds-body">
+          <span className="ds-tag-pass h-7">
+            <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+            Saved to case
+          </span>
+          <span className="font-semibold">{attachedTo?.title || doc.case_id.slice(0, 8)}</span>
+        </p>
+      ) : openCases.length === 0 ? (
+        <p className="ds-body text-ds-text-2">
+          To save this document to a case, first create one from the Cases page.
+        </p>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-2xl">
+          <div className="flex-1">
+            <label htmlFor="attach-case" className="ds-label">Save to a case</label>
             <select
+              id="attach-case"
               value={selectedCaseId}
               onChange={(e) => setSelectedCaseId(e.target.value)}
-              className={cnInput(false, "flex-1")}
+              className="ds-input"
             >
-              <option value="">Select a case...</option>
+              <option value="">Select a case…</option>
               {openCases.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title} · {c.status.replace("_", " ")}
                 </option>
               ))}
             </select>
-            <AppButton
-              disabled={!selectedCaseId || attachMutation.isPending}
-              onClick={() => attachMutation.mutate(selectedCaseId)}
-              className="shrink-0"
-            >
-              {attachMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Bookmark className="h-4 w-4" />
-                  Save to case
-                </>
-              )}
-            </AppButton>
           </div>
-        )}
-      </PanelCard>
+          <button
+            disabled={!selectedCaseId || attachMutation.isPending}
+            onClick={() => attachMutation.mutate(selectedCaseId)}
+            className={`${primary ? "ds-btn-primary" : "ds-btn-secondary"} min-h-[48px] shrink-0`}
+          >
+            {attachMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Saving" /> : "Save to case"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function Stat({ label, value, last = false }) {
+function ErrorLine({ children }) {
   return (
-    <div className={`px-4 first:pl-0 py-1 ${last ? "" : "border-r border-hairline"}`}>
-      <div className="text-xs text-ink-muted">{label}</div>
-      <div className="text-sm font-medium text-ink-text mt-1 truncate">{value}</div>
-    </div>
+    <p className="mt-4 flex items-start gap-2 ds-body text-ds-seal" role="alert">
+      <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
+      {children}
+    </p>
   );
 }
 
