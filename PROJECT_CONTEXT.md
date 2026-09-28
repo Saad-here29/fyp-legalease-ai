@@ -357,6 +357,8 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
   contract 403. Contract text renders through the shared
   `lib/MarkdownBlocks.jsx` (current drafts use headings, rules and
   numbered clauses, which the old inline renderer showed as raw symbols).
+  Since 2026-09-27 contracts (like all AI output) render through
+  `lib/Markdown.jsx`; `MarkdownBlocks.jsx` and `markdownLite.js` were removed.
 
 ## UI accuracy sweep — every claim matches the system (confirmed 2026-09-26)
 Commits `60e81d2`, `4cede9f`, `2a5745f`, `dee2bf0` (plus the chat welcome

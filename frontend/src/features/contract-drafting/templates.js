@@ -7,6 +7,8 @@ import { CONTRACT_TYPES } from "@/constants";
 export const CONTRACT_TEMPLATES = {
   [CONTRACT_TYPES.NDA]: {
     label: "Non-Disclosure Agreement",
+    // One-line card summaries describe what the template actually asks for.
+    summary: "One-way · disclosing and receiving party",
     fields: [
       { key: "disclosing_party", label: "Disclosing party" },
       { key: "receiving_party", label: "Receiving party" },
@@ -16,6 +18,7 @@ export const CONTRACT_TEMPLATES = {
   },
   [CONTRACT_TYPES.EMPLOYMENT]: {
     label: "Employment Agreement",
+    summary: "Employer, employee, role and pay",
     fields: [
       { key: "employer_name", label: "Employer name" },
       { key: "employee_name", label: "Employee name" },
@@ -26,6 +29,7 @@ export const CONTRACT_TEMPLATES = {
   },
   [CONTRACT_TYPES.SERVICE_AGREEMENT]: {
     label: "Service Agreement",
+    summary: "Provider, client, scope and fee",
     fields: [
       { key: "service_provider", label: "Service provider" },
       { key: "client_name", label: "Client" },

@@ -1,222 +1,200 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Loader2,
-  AlertCircle,
-  ShieldCheck,
-  Check,
-  X,
-  History,
-} from "lucide-react";
+import { Loader2, AlertCircle, Check, X } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
-import AppButton from "@/components/ui/AppButton";
 import { useAuthStore } from "@/store/authStore";
 import { ROLES, ROUTES } from "@/constants";
-import MarkdownBlocks from "@/lib/MarkdownBlocks";
+import Markdown from "@/lib/Markdown";
 import { contractsApi } from "./api";
 import { CONTRACT_TEMPLATES } from "./templates";
+
+// One drafted contract — design system v1, per the Contracts mockup
+// (docs/design_reference page 13): the contract as a document on Sheet, the
+// compliance check beside it, then version history. Adapted: no "Export
+// .docx" and no "Fix failing item" (neither exists); the compliance check is
+// the backend's deterministic keyword check — pass or fail per required
+// clause, no "review" state.
+
+const fmtDateTime = (v) =>
+  new Date(v).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export default function ContractDetailPage() {
   const { id } = useParams();
   const { user } = useAuthStore();
   const isLawyer = user?.role === ROLES.LAWYER;
   const qc = useQueryClient();
+  const [selected, setSelected] = useState(null);
+  const [fresh, setFresh] = useState(null);
 
-  const contractQuery = useQuery({
-    queryKey: ["contract", id],
-    queryFn: () => contractsApi.get(id),
-  });
+  const contractQuery = useQuery({ queryKey: ["contract", id], queryFn: () => contractsApi.get(id) });
   const versionsQuery = useQuery({
     queryKey: ["contract-versions", id],
     queryFn: () => contractsApi.versions(id),
     enabled: !!contractQuery.data,
   });
 
-  const [selectedVersionNumber, setSelectedVersionNumber] = useState(null);
-  const [complianceResult, setComplianceResult] = useState(null);
-
-  const checkCompliance = useMutation({
-    mutationFn: (versionNumber) =>
-      contractsApi.checkCompliance(id, versionNumber),
+  const check = useMutation({
+    mutationFn: (v) => contractsApi.checkCompliance(id, v),
     onSuccess: (result) => {
-      setComplianceResult(result);
+      setFresh(result);
       qc.invalidateQueries({ queryKey: ["contract-versions", id] });
-      toast.success(
-        result.all_passed
-          ? "All required clauses found."
-          : "Some required clauses are missing."
-      );
+      toast.success(result.all_passed ? "All required clauses found." : "Some required clauses are missing.");
     },
-    onError: (e) => {
-      toast.error(
-        e?.response?.data?.error?.message || "Could not run compliance check.",
-        { description: e?.response?.data?.error?.hint }
-      );
-    },
+    onError: (e) =>
+      toast.error(e?.response?.data?.error?.message || "Could not run the compliance check.", {
+        description: e?.response?.data?.error?.hint,
+      }),
   });
 
-  if (contractQuery.isLoading) {
-    return (
-      <AppShell title="Contract">
-        <div className="flex items-center justify-center gap-2 py-12 text-ink-muted">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading contract…
-        </div>
-      </AppShell>
-    );
-  }
+  const back = <Link to={ROUTES.CONTRACTS} className="ds-link font-medium">Contracts</Link>;
 
-  if (contractQuery.isError) {
+  if (contractQuery.isLoading || contractQuery.isError) {
     return (
-      <AppShell title="Contract">
-        <div className="max-w-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-brick shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-ink-text">
-                {contractQuery.error?.response?.data?.error?.message ||
-                  "Could not load this contract."}
-              </p>
-              <Link
-                to={ROUTES.CONTRACTS}
-                className="text-sm text-brick hover:underline underline-offset-2 mt-2 inline-block"
-              >
-                ← Back to all contracts
-              </Link>
-            </div>
-          </div>
-        </div>
+      <AppShell eyebrow={back} title="Contract">
+        {contractQuery.isLoading ? (
+          <p className="flex items-center gap-3 ds-body text-ds-text-2">
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Loading contract…
+          </p>
+        ) : (
+          <p className="flex items-start gap-2 ds-body text-ds-seal" role="alert">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
+            {contractQuery.error?.response?.data?.error?.message || "Could not load this contract."}
+          </p>
+        )}
       </AppShell>
     );
   }
 
   const contract = contractQuery.data;
-  const versions = versionsQuery.data || [];
+  const versions = versionsQuery.data?.length ? versionsQuery.data : [contract.latest_version];
   const label = CONTRACT_TEMPLATES[contract.contract_type]?.label || contract.contract_type;
-
-  const activeVersion =
-    versions.find((v) => v.version_number === selectedVersionNumber) ||
-    contract.latest_version;
-
-  // A fresh check-compliance result (local state) takes priority over
-  // whatever was already stored on the version from a previous check.
-  const displayedCompliance =
-    complianceResult && complianceResult.version_number === activeVersion.version_number
-      ? complianceResult
-      : activeVersion.compliance_result;
+  const active = versions.find((v) => v.version_number === selected) || contract.latest_version;
+  // A fresh check (local state) wins over the result stored on the version.
+  const compliance = fresh && fresh.version_number === active.version_number ? fresh : active.compliance_result;
 
   return (
-    <AppShell title={contract.title || label} subtitle={`${label} · v${activeVersion.version_number}`}>
-      <Link
-        to={ROUTES.CONTRACTS}
-        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-text mb-6"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        All contracts
-      </Link>
+    <AppShell
+      eyebrow={back}
+      title={contract.title || label}
+      subtitle={`${label} · version ${active.version_number} · ${fmtDateTime(active.created_at)}`}
+      headerActions={
+        isLawyer && (
+          <button
+            className={compliance ? "ds-btn-secondary" : "ds-btn-primary"}
+            disabled={check.isPending}
+            onClick={() => check.mutate(active.version_number)}
+          >
+            {check.isPending ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Checking…
+              </>
+            ) : compliance ? (
+              "Re-run compliance check"
+            ) : (
+              "Check compliance"
+            )}
+          </button>
+        )
+      }
+    >
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
+        <article className="bg-ds-sheet border border-ds-rule rounded-ds px-6 sm:px-12 py-10 min-w-0">
+          <Markdown
+            variant="ds"
+            className="font-ds-serif text-[18px] leading-[30px] prose-headings:font-ds-serif prose-headings:font-medium
+              prose-h1:text-center prose-h1:uppercase prose-h1:tracking-[0.12em] prose-h1:text-[22px]"
+          >
+            {active.content}
+          </Markdown>
+        </article>
 
-      <div className="grid gap-10 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
+        <aside className="space-y-10">
+          <Compliance result={compliance} isLawyer={isLawyer} />
+
           <section>
-            <div className="flex items-center justify-between gap-4 mb-3">
-              <h2 className="font-editorial text-xl text-ink-text">Contract text</h2>
-              {isLawyer && (
-                <AppButton
-                  variant="secondary"
-                  disabled={checkCompliance.isPending}
-                  onClick={() => checkCompliance.mutate(activeVersion.version_number)}
-                  className="shrink-0"
-                >
-                  {checkCompliance.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Checking…
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="h-4 w-4" />
-                      Check compliance
-                    </>
-                  )}
-                </AppButton>
-              )}
-            </div>
-            <div className="border-t border-hairline pt-5">
-              <MarkdownBlocks text={activeVersion.content} />
-            </div>
+            <h2 className="ds-h4 pb-3 border-b-2 border-ds-ink">Version history</h2>
+            <ul>
+              {versions
+                .slice()
+                .reverse()
+                .map((v) => {
+                  const on = v.version_number === active.version_number;
+                  return (
+                    <li key={v.id} className="border-b border-ds-rule">
+                      <button
+                        onClick={() => setSelected(v.version_number)}
+                        aria-current={on ? "true" : undefined}
+                        className={`relative w-full text-left py-3 pl-4 pr-2 min-h-[56px] ${on ? "bg-ds-sheet" : "hover:bg-ds-sheet/60"}
+                          focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink`}
+                      >
+                        {on && <span className="absolute left-0 inset-y-0 w-1 bg-ds-seal" aria-hidden="true" />}
+                        <span className={`block font-ds-sans text-[16px] ${on ? "font-semibold" : ""}`}>Version {v.version_number}</span>
+                        <span className="ds-meta">{fmtDateTime(v.created_at)}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
           </section>
-
-          {displayedCompliance && (
-            <section>
-              <h2 className="font-editorial text-xl text-ink-text mb-1">
-                Compliance check
-              </h2>
-              <p className="text-sm text-ink-muted mb-3">
-                {displayedCompliance.all_passed
-                  ? "All required clauses were found in this version."
-                  : "One or more required clauses were not found — deterministic keyword check, not another AI call."}
-              </p>
-              <ul className="border-t border-hairline">
-                {displayedCompliance.results.map((r) => (
-                  <li
-                    key={r.name}
-                    className="py-3 border-b border-hairline-subtle flex items-start gap-3"
-                  >
-                    {r.passed ? (
-                      <Check className="h-4 w-4 text-status-active shrink-0 mt-0.5" />
-                    ) : (
-                      <X className="h-4 w-4 text-brick shrink-0 mt-0.5" />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-sm text-ink-text">{r.name}</div>
-                      {r.matched_snippet && (
-                        <div className="text-xs text-ink-muted mt-0.5 italic">
-                          "…{r.matched_snippet}…"
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </div>
-
-        <div>
-          <h2 className="font-editorial text-xl text-ink-text mb-1">Version history</h2>
-          <p className="text-sm text-ink-muted mb-3">
-            {versions.length} version{versions.length === 1 ? "" : "s"}
-          </p>
-          <ul className="border-t border-hairline">
-            {(versions.length ? versions : [contract.latest_version])
-              .slice()
-              .reverse()
-              .map((v) => (
-                <li key={v.id} className="border-b border-hairline-subtle last:border-0">
-                  <button
-                    onClick={() => setSelectedVersionNumber(v.version_number)}
-                    className={`w-full text-left py-3 px-2 -mx-2 flex items-center gap-2.5 transition-colors ${
-                      v.version_number === activeVersion.version_number
-                        ? "bg-hairline-subtle/60"
-                        : "hover:bg-hairline-subtle/40"
-                    }`}
-                  >
-                    <History className="h-3.5 w-3.5 text-ink-muted shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm text-ink-text">Version {v.version_number}</div>
-                      <div className="text-xs text-ink-muted">
-                        {new Date(v.created_at).toLocaleString()}
-                      </div>
-                    </div>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </div>
+        </aside>
       </div>
     </AppShell>
+  );
+}
+
+// Snippets are cut from the markdown contract text; drop the markup.
+const plain = (s) => s.replace(/\*\*|__|`|^#+\s*/gm, "").replace(/\s+/g, " ").trim();
+
+function Compliance({ result, isLawyer }) {
+  if (!result) {
+    return (
+      <section>
+        <h2 className="ds-h3">Compliance check</h2>
+        <p className="ds-body text-ds-text-2 mt-2">
+          {isLawyer
+            ? "Not run on this version yet. The check looks for each clause this template requires — a keyword check, not another AI call."
+            : "Your lawyer hasn't run the compliance check on this version."}
+        </p>
+      </section>
+    );
+  }
+  const passed = result.results.filter((r) => r.passed).length;
+  const failed = result.results.length - passed;
+  return (
+    <section>
+      <h2 className="ds-h3">Compliance check</h2>
+      <p className="font-ds-sans font-semibold text-[17px] mt-2">
+        <span className="text-ds-pass">{passed} pass</span>
+        {failed > 0 && <span className="text-ds-seal"> · {failed} fail{failed === 1 ? "s" : ""}</span>}
+      </p>
+      <div className="flex h-1.5 gap-0.5 mt-3" aria-hidden="true">
+        {result.results.map((r) => (
+          <span key={r.name} className={`flex-1 rounded-ds-sm ${r.passed ? "bg-ds-pass" : "bg-ds-seal"}`} />
+        ))}
+      </div>
+      <ul className="mt-4 border-t-2 border-ds-ink">
+        {result.results.map((r) => (
+          <li key={r.name} className="grid grid-cols-[32px_1fr] gap-x-3 py-4 border-b border-ds-rule">
+            <span
+              className={`h-7 w-7 rounded-ds flex items-center justify-center ${
+                r.passed ? "bg-ds-pass-tint text-ds-pass" : "bg-ds-seal-tint text-ds-seal"
+              }`}
+            >
+              {r.passed ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <X className="h-4 w-4" strokeWidth={2.5} />}
+              <span className="sr-only">{r.passed ? "Passes" : "Fails"}</span>
+            </span>
+            <span className="min-w-0">
+              <span className="block font-ds-sans font-semibold text-[16px] leading-[24px]">{r.name}</span>
+              <span className="ds-meta block mt-0.5">
+                {r.passed ? (r.matched_snippet ? `“…${plain(r.matched_snippet)}…”` : "Found") : "Not found in this version"}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {result.checked_at && <p className="ds-meta mt-3">Checked {fmtDateTime(result.checked_at)}</p>}
+    </section>
   );
 }
