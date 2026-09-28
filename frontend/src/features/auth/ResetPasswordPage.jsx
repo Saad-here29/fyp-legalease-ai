@@ -121,11 +121,12 @@ export default function ResetPasswordPage() {
         </div>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
-        <Link to={ROUTES.LOGIN} className="text-sm text-brick hover:underline underline-offset-2">
-          Back to sign in
+      <p className="mt-8 text-center text-[16px] text-ds-text-2">
+        Remembered your password?{" "}
+        <Link to={ROUTES.LOGIN} className="ds-link-seal">
+          Sign in
         </Link>
-      </div>
+      </p>
     </AuthShell>
   );
 }

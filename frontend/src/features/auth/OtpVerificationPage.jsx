@@ -167,14 +167,16 @@ export default function OtpVerificationPage() {
         <p className="text-xs text-ink-muted leading-relaxed">
           Didn&apos;t receive a code? Check your spam folder, or use Resend above.
         </p>
-        <p className="text-sm text-ink-muted">
+        <p className="text-[16px] text-ds-text-2">
           Wrong email?{" "}
-          <Link to={ROUTES.SIGNUP} className="font-medium text-brick hover:underline underline-offset-2">
+          <Link to={ROUTES.WELCOME} className="ds-link-seal">
             Start over
-          </Link>{" "}
-          ·{" "}
-          <Link to={ROUTES.LOGIN} className="font-medium text-brick hover:underline underline-offset-2">
-            Back to sign in
+          </Link>
+        </p>
+        <p className="text-[16px] text-ds-text-2">
+          Already verified?{" "}
+          <Link to={ROUTES.LOGIN} className="ds-link-seal">
+            Sign in
           </Link>
         </p>
       </div>

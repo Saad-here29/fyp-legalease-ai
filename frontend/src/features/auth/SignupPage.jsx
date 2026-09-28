@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,10 +36,10 @@ export default function SignupPage() {
   const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
 
-  const initialRole =
-    [ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT].find(
-      (r) => r === searchParams.get("role")
-    ) || ROLES.CLIENT;
+  // The role is chosen on Welcome and passed as ?role=. Without a valid one
+  // the page redirects to Welcome (below) rather than defaulting to client.
+  const chosenRole = [ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT].find((r) => r === searchParams.get("role"));
+  const initialRole = chosenRole || ROLES.CLIENT;
 
   const {
     register,
@@ -83,6 +83,8 @@ export default function SignupPage() {
     const { confirm_password, ...payload } = values;
     signupMutation.mutate(payload);
   };
+
+  if (!chosenRole) return <Navigate to={ROUTES.WELCOME} replace />;
 
   return (
     <AuthShell heroAlign="center" heroTitle="Create your account." heroSubtitle={`Setting up as a ${role}.`}>
