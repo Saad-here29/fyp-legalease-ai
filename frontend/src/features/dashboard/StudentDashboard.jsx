@@ -101,9 +101,9 @@ export default function StudentDashboard() {
             </button>
           </form>
           <p className="ds-body text-ds-text-2 mt-4">
-            Semantic search over Pakistani statute text — Acts, Ordinances, Codes and Orders
-            {stats?.documents ? `: ${stats.documents.toLocaleString()} statutes` : ""}, including the PPC, Cr.P.C.,
-            Contract Act and family laws. The library holds no court judgments or case law.
+            Semantic search over{stats?.documents ? ` about ${stats.documents.toLocaleString()}` : ""} Pakistani legal
+            documents — mostly Acts, Ordinances, Codes and Orders, including the PPC, Cr.P.C., Contract Act and family
+            laws. The library holds no court judgments or case law.
           </p>
         </section>
       </div>

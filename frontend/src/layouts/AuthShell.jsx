@@ -11,8 +11,8 @@ import { ROUTES } from "@/constants";
 // points; the form on Paper on the right.
 //
 // Copy here must stay true to the product: the AI answers from Pakistani
-// statute text only (no judgments), and the library is the federal
-// Pakistan Code.
+// statute text only (no judgments). Don't name a source for the library
+// (its provenance isn't recorded — see docs/corpus_statute_list.md).
 // `heroAlign`: "end" (default) sits the headline low, as on the approved Login
 // mockup; "center" centres it vertically (Welcome, Signup).
 export default function AuthShell({ heroTitle, heroSubtitle, heroPoints = [], heroAlign = "end", children }) {

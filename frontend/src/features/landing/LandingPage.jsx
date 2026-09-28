@@ -184,7 +184,7 @@ function Promises({ statutes }) {
     ],
     [
       "Pakistani law first.",
-      `${statutes} federal statutes from the Pakistan Code — Acts, Ordinances, Codes and Orders — searched by meaning. Questions outside Pakistani law are refused.`,
+      `About ${statutes} Pakistani legal documents — mostly Acts, Ordinances, Codes and Orders — searched by meaning. Questions outside Pakistani law are refused.`,
     ],
     [
       "Your files stay yours.",

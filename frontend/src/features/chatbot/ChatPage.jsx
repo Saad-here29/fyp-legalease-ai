@@ -8,6 +8,7 @@ import { ArchMark } from "@/components/common/Wordmark";
 import Markdown from "@/lib/Markdown";
 import { citeAnchor, normalizeMarkers } from "@/lib/citations";
 import { chatApi } from "./api";
+import { researchApi } from "@/features/legal-research/api";
 
 // AI Chat — design system v1, per the AI Chat mockup (docs/design_reference
 // page 10): conversations column, then the thread with a ruled answer, a
@@ -419,14 +420,17 @@ function Thinking() {
 }
 
 function EmptyState({ onPick }) {
+  // Live library size, so the number can't go stale after a rebuild.
+  const { data: stats } = useQuery({ queryKey: ["research-stats"], queryFn: researchApi.stats, staleTime: Infinity });
   return (
     <div>
       <p className="ds-eyebrow">Pakistani statute law</p>
       <h2 className="ds-h2 mt-3">Ask a legal question.</h2>
       <p className="ds-body text-ds-text-2 mt-4 max-w-[640px]">
-        Answers are grounded in LegalEase&apos;s library of Pakistani statute text (Acts, Ordinances, Codes and
-        Orders) and cite the passages they rely on. The library holds no court judgments or case law, and questions
-        outside Pakistani law are refused.
+        Answers are grounded in LegalEase&apos;s library of
+        {stats?.documents ? ` about ${stats.documents.toLocaleString()}` : ""} Pakistani legal documents — mostly Acts,
+        Ordinances, Codes and Orders — and cite the passages they rely on. The library holds no court judgments or case
+        law, and questions outside Pakistani law are refused.
       </p>
 
       <p className="ds-meta mt-10 mb-3">Try one of these</p>

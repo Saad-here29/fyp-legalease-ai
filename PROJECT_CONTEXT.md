@@ -441,7 +441,7 @@ during the audit except the ones approved (commit `8a02485`).
 - **AI Chat:** family (MFLO talaq) and criminal (PPC s. 379 theft) answers
   open with the short answer, valid `[n]` citations, no unverified flags or
   case law; out-of-scope ("cricket bat") refused without a model answer.
-- **Research:** `/research/stats` public (53,739 passages / 900 statutes);
+- **Research:** `/research/stats` public (53,739 passages / 900 documents);
   searches ~3 s.
 - **Document Analysis:** digital PDF (Crl.P. 187-P/2026) → 6,856 chars,
   analysis in 8.4 s with summary, clauses, risks and NER entities.
@@ -484,6 +484,14 @@ during the audit except the ones approved (commit `8a02485`).
   ESTACODE (a civil-service manual, not a statute) is the largest item at
   3,424 chunks (6.4%); 2 titles are page boilerplate ("Updated till
   19.04.2023"); **the provenance of the two raw datasets is not recorded.**
+  - **Future work — ESTACODE:** it is a civil-service manual (Establishment
+    Division, 2021 edition), not a statute, yet it holds 6.4% of the index
+    and can crowd statute passages out of results. Candidate for removal at
+    the next corpus rebuild, or for filtering at query time. Deliberately
+    not changed now (retrieval and the index are frozen before the demo).
+  - The UI no longer claims "900 statutes" or a source such as "the Pakistan
+    Code": it says "about N Pakistani legal documents" (N live from
+    `/research/stats`) — see STYLE_GUIDE "Corpus wording".
 
 **Demo script (only features that work; ~20k Groq tokens):**
 1. Landing → **Sign in** with a pre-verified lawyer (or a live signup if SMTP

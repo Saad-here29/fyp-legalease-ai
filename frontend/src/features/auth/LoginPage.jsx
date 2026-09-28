@@ -70,7 +70,7 @@ export default function LoginPage() {
       heroSubtitle="Cases, research, documents and contract drafts for Pakistani practice — with every AI answer tied to the statute it came from."
       heroPoints={[
         "Citations checked against the statute text",
-        "Federal statutes of the Pakistan Code, in one search",
+        "Pakistani Acts, Ordinances and Codes, in one search",
       ]}
     >
       <p className="ds-eyebrow">Welcome back</p>

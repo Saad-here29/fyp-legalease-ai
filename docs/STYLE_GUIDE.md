@@ -160,7 +160,14 @@ for them** — adapt each page to what exists (decided 2026-09-27):
 | AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. No scope / linked-case tags, "Save to case" or attach button (not built). Meta line counts statutes; "Checked against source" is derived from the backend citation check's "(unverified)" flags. |
 | Document Analysis (p. 12) | No page references on extracted values — the API has none. No "View original" (no download endpoint), no breadcrumb or document list (one document per visit). Summary's own risk section is dropped when its risks are shown as Points to review rows. |
 | Contracts (p. 13) | Only the 3 real templates (NDA, Employment, Service Agreement); no "Export .docx" — no export exists. No "Fix failing item"; the compliance check is the backend's keyword check — pass/fail only, no review state. |
-| Login (p. 2) | No "I am a" role picker (login is email + password; the account holds the role) and no English / اردو switch (the interface isn't translated). Hero copy made true: "tied to the statute it came from", "Citations checked against the statute text", "Federal statutes of the Pakistan Code, in one search" (the index has only three provincial Acts). |
+| Login (p. 2) | No "I am a" role picker (login is email + password; the account holds the role) and no English / اردو switch (the interface isn't translated). Hero copy made true: "tied to the statute it came from", "Citations checked against the statute text", "Pakistani Acts, Ordinances and Codes, in one search". |
+
+**Corpus wording (2026-09-28):** describe the library as "about N Pakistani
+legal documents" (N live from `/research/stats`), "mostly Acts, Ordinances,
+Codes and Orders" where more detail helps. Never name a source for it (e.g.
+"the Pakistan Code") — the raw datasets' provenance isn't recorded — and
+don't call all of it "statutes": it includes ESTACODE, a civil-service manual
+(see `docs/corpus_statute_list.md`).
 | Landing (p. 3) | No Pricing, free trial or "Start your free trial" copy. |
 
 **Copy must stay statute-only.** The mockups say "tied to the statute or

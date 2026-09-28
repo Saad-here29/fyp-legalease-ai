@@ -43,6 +43,10 @@ Not caught by this rule: OCR glitches inside a title that has no second copy (e.
 
 **Not a statute: ESTACODE (Edition 2021)** — `i For Official Use ESTACODE (EDITION -2021` is the Establishment Division's civil-service manual, "prepared & published by Pakistan Public Administration Research Centre, Establishment Division, Cabinet Secretariat, Islamabad 2021" (its own chunk 0). It is the largest item in the index: 3,424 chunks (6.4% of all chunks). It contains rules and notifications, but it is not an Act, Ordinance, Code or Order.
 
+> **Future work:** ESTACODE (6.4% of the index) is a civil-service manual and a
+> candidate for removal at the next corpus rebuild, or for filtering at query
+> time. Not changed now — retrieval and the index are frozen before the demo.
+
 **Other titles without a statute word** (no Act / Ordinance / Order / Code / Rules / Regulations / Constitution / Law in the name) — 22 titles, listed for review; many are OCR-damaged or abbreviated names of real statutes, not necessarily wrong content:
 
 | Title (as indexed) | Chunks |

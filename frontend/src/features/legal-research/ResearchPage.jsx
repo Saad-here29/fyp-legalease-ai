@@ -105,8 +105,8 @@ export default function ResearchPage() {
         ))}
       </div>
       <p className="mt-5 font-ds-sans text-[14px] text-ds-paper/65">
-        Semantic search over Pakistani statute text — Acts, Ordinances, Codes and Orders
-        {stats?.chunks ? ` · ${stats.chunks.toLocaleString()} passages from ${stats.documents.toLocaleString()} statutes` : ""}.
+        Semantic search over Pakistani legal text — mostly Acts, Ordinances, Codes and Orders
+        {stats?.chunks ? ` · ${stats.chunks.toLocaleString()} passages from about ${stats.documents.toLocaleString()} Pakistani legal documents` : ""}.
         No court judgments or case law.
       </p>
     </>
