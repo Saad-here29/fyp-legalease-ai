@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
     >
       <h2 className="font-editorial text-2xl text-ink-text mb-1">Forgot password</h2>
       <p className="text-sm text-ink-muted mb-6">
-        We'll email you a 6-digit code to reset it.
+        We&apos;ll email you a 6-digit code to reset it.
       </p>
 
       <div className="border-b border-hairline-subtle mb-8" />
@@ -75,14 +75,12 @@ export default function ForgotPasswordPage() {
         </AppButton>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
-        <p className="text-sm text-ink-muted">
-          Remembered it?{" "}
-          <Link to={ROUTES.LOGIN} className="text-brick hover:underline underline-offset-2">
-            Sign in
-          </Link>
-        </p>
-      </div>
+      <p className="mt-8 text-center text-[16px] text-ds-text-2">
+        Remembered your password?{" "}
+        <Link to={ROUTES.LOGIN} className="ds-link-seal">
+          Sign in
+        </Link>
+      </p>
     </AuthShell>
   );
 }

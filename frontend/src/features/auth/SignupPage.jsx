@@ -7,7 +7,6 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import AuthShell from "@/layouts/AuthShell";
-import AppButton from "@/components/ui/AppButton";
 import { authApi, extractAuthError } from "./api";
 import { ROLES, ROUTES } from "@/constants";
 import { cnInput } from "@/lib/formStyles";
@@ -79,13 +78,15 @@ export default function SignupPage() {
   });
 
   const onSubmit = (values) => {
+    // confirm_password is checked by the form only; the API doesn't take it.
+    // eslint-disable-next-line no-unused-vars
     const { confirm_password, ...payload } = values;
     signupMutation.mutate(payload);
   };
 
   return (
-    <AuthShell heroTitle="Create your account." heroSubtitle={`Setting up as a ${role}.`}>
-      <h2 className="font-editorial text-2xl text-ink-text mb-1">Sign up</h2>
+    <AuthShell heroAlign="center" heroTitle="Create your account." heroSubtitle={`Setting up as a ${role}.`}>
+      <h2 className="font-editorial text-2xl text-ink-text mb-1">Create an account</h2>
       <p className="text-sm text-ink-muted mb-6">Tell us a bit about yourself.</p>
 
       <div className="border-b border-hairline-subtle mb-8" />
@@ -171,19 +172,17 @@ export default function SignupPage() {
           />
         </Field>
 
-        <AppButton type="submit" disabled={signupMutation.isPending} className="w-full mt-2">
-          {signupMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
-        </AppButton>
+        <button type="submit" disabled={signupMutation.isPending} className="ds-btn-primary w-full min-h-[48px] mt-2">
+          {signupMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Creating your account" /> : "Create an account"}
+        </button>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center">
-        <p className="text-sm text-ink-muted">
-          Already have an account?{" "}
-          <Link to={ROUTES.LOGIN} className="text-brick hover:underline underline-offset-2">
-            Sign in
-          </Link>
-        </p>
-      </div>
+      <p className="mt-8 text-center text-[16px] text-ds-text-2">
+        Already have an account?{" "}
+        <Link to={ROUTES.LOGIN} className="ds-link-seal">
+          Sign in
+        </Link>
+      </p>
     </AuthShell>
   );
 }

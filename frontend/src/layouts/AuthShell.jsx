@@ -13,7 +13,9 @@ import { ROUTES } from "@/constants";
 // Copy here must stay true to the product: the AI answers from Pakistani
 // statute text only (no judgments), and the library is the federal
 // Pakistan Code.
-export default function AuthShell({ heroTitle, heroSubtitle, heroPoints = [], children }) {
+// `heroAlign`: "end" (default) sits the headline low, as on the approved Login
+// mockup; "center" centres it vertically (Welcome, Signup).
+export default function AuthShell({ heroTitle, heroSubtitle, heroPoints = [], heroAlign = "end", children }) {
   return (
     <div className="min-h-screen grid grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-1 lg:grid-cols-[43fr_57fr] bg-ds-paper font-ds-sans text-ds-text">
       {/* Left — identity panel */}
@@ -24,7 +26,7 @@ export default function AuthShell({ heroTitle, heroSubtitle, heroPoints = [], ch
           <Wordmark onInk />
         </Link>
 
-        <div className="relative hidden lg:flex flex-1 flex-col justify-end pt-24">
+        <div className={`relative hidden lg:flex flex-1 flex-col ${heroAlign === "center" ? "justify-center py-12" : "justify-end pt-24"}`}>
           {heroTitle && (
             <h1 className="font-ds-serif font-medium text-[clamp(48px,4.8vw,72px)] leading-[1.06] tracking-tight text-ds-paper">
               {heroTitle}

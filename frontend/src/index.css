@@ -112,6 +112,11 @@
   }
   .ds-btn-primary   { @apply ds-btn bg-ds-seal text-white hover:bg-[#86241A] disabled:bg-ds-disabled disabled:text-ds-text-2; }
   .ds-btn-secondary { @apply ds-btn border border-ds-ink text-ds-text bg-transparent hover:bg-ds-sheet disabled:border-ds-rule disabled:text-ds-text-2; }
+  /* Secondary on an ink background (Landing nav "Sign in"). */
+  .ds-btn-secondary-on-ink {
+    @apply ds-btn border border-ds-paper/70 text-ds-paper bg-transparent hover:bg-ds-ink-2 hover:border-ds-paper
+      focus-visible:outline-ds-paper;
+  }
   .ds-btn-disabled  { @apply ds-btn bg-ds-disabled text-ds-text-2 cursor-not-allowed; }
   .ds-link {
     @apply font-ds-sans font-semibold text-ds-text underline decoration-ds-underline decoration-2 underline-offset-[5px]

@@ -165,7 +165,7 @@ export default function OtpVerificationPage() {
 
       <div className="mt-8 pt-6 border-t border-hairline-subtle text-center space-y-4">
         <p className="text-xs text-ink-muted leading-relaxed">
-          Didn't receive a code? Check your spam folder, or use Resend above.
+          Didn&apos;t receive a code? Check your spam folder, or use Resend above.
         </p>
         <p className="text-sm text-ink-muted">
           Wrong email?{" "}

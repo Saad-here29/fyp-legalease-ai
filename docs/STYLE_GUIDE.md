@@ -124,7 +124,23 @@ mockups on pages 2–13 draw them, and are marked *(derived)* below.
 | **Everywhere else** — citations and source links, in-content links, secondary navigation ("View all", "Back to cases"), AI answer text | `.ds-link` | Ink text, tan underline (page 1 base rule) |
 
 Seal links are an auth-screen exception: in the app, Seal stays reserved for
-the uses listed in §01. Never use `.ds-link-seal` inside `AppShell`.
+the uses listed in §01. Never use `.ds-link-seal` inside `AppShell`. The
+Landing page's closing "Already have an account? Sign in" uses it too, so the
+sign-in link looks the same wherever a signed-out visitor meets it.
+
+**Sign in / sign up wording — decided 2026-09-28.** Across Landing, Login,
+Welcome, Signup and Forgot password the two actions are always worded
+exactly **"Sign in"** and **"Create an account"**:
+
+| Where | Element |
+|---|---|
+| Landing nav | "Sign in" — outlined secondary button on ink (`.ds-btn-secondary-on-ink`) |
+| Landing hero and closing | "Create an account" — the view's one Seal primary button, to the Welcome role choice |
+| Prompts under forms and on Landing's close | "Already have an account? / Remembered your password? **Sign in**", "New to LegalEase? **Create an account**" — `.ds-link-seal` |
+| Welcome heading, Signup heading and submit | "Create an account" |
+
+Every "Create an account" goes to Welcome (`/welcome`): Signup reads the role
+chosen there (`?role=`) and would otherwise default to client.
 
 Recurring patterns in the mockups: the ink sidebar with a Seal marker on the
 active item and the arch motif at its foot (page 7); ink hero bands with the
