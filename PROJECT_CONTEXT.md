@@ -28,8 +28,12 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
   current priority)**. Notifications backend work still deferred past it
   (de-scoped, see above). Legal NER is trained and integrated into
   Document Analysis (2026-09-26) — see "Legal NER status" below.
-- UI redesign done (every page on the design system) and accuracy-swept
-  2026-09-26 — see "UI accuracy sweep" below.
+- **UI redesign to design system v1 — complete (2026-09-28)**: every page
+  now uses the Newsreader / IBM Plex Sans / Seal system from
+  `docs/design_reference/` — see "UI redesign v1" below. The earlier
+  2026-09-26 accuracy sweep still applies — see "UI accuracy sweep".
+- **Pre-demo readiness audit done (2026-09-28)** — see "Pre-demo readiness
+  audit" below for what works, known gaps and the demo script.
 
 ## ⚠️ Known constraint — Groq free-tier limits (CRITICAL for demo day)
 Every AI feature — chat (query rewrite + answer), Research analysis,
@@ -384,6 +388,122 @@ actual system behaviour, not just reworded:
 - Backend suite **91/91 passing**; frontend lint clean on changed files;
   production build clean.
 
+## UI redesign v1 — complete (confirmed 2026-09-28)
+Every page moved to design system v1 (`docs/design_reference/LegalEase AI
+Design System.pdf`, rules in `docs/STYLE_GUIDE.md`): Newsreader for titles,
+IBM Plex Sans for everything else, Seal `#9E2B1D` only for the one primary
+action per view / active item / failing checks. Each page was built from its
+mockup, checked in headless Edge at desktop and phone width with real test
+accounts, and approved before the next one. Commits (all pushed to
+`origin/main`):
+- `cadfeb9` tokens, `ds-` component classes, STYLE_GUIDE rewrite
+- `491998d` app shell + sidebar — **also a security fix: sign-out now calls
+  `/auth/logout`** (the session cookies used to survive sign-out)
+- `c880929` Login + auth frame; link-colour rule (Seal links on auth screens only)
+- `d36a3d0` AI Chat; "Short answer:" opening (prompt + highlighted box);
+  `【n】` → `[n]` citation normalisation before the citation check
+- `5050f33` Documents · `d368af9` Cases list + Case detail (readable timeline
+  wording) · `d766eed` Research (query in the URL; analysis on request) ·
+  `d19e0ff` Dashboards (lawyer / client / student) · `6da663e` Contracts
+  (old markdown renderer removed)
+- `0734d2c` Landing; one wording for "Sign in" / "Create an account";
+  Welcome/Signup panel centred · `bb1d5f0` `/signup` without a role redirects
+  to Welcome · `d92597e` all auth forms (end-to-end flow verified 12/12)
+- `8a02485` pre-demo fixes (below): text-less documents refused before any
+  model call, 29 dead frontend files removed, "Example" labels on Landing
+- Docs: `975a5b1` and the known-issue notes in this file.
+
+**Mockup features left out on purpose** (not built — no fake UI; the full
+per-page list is in STYLE_GUIDE "What the mockups show that we don't build"):
+- Calendar, cause list, deadlines, hearing dates and the "Next hearing" panel
+  (cases carry no hearing dates).
+- Client–lawyer messages and document-request checklists.
+- Page references on extracted document values (the analysis API has none);
+  "View original" (no download endpoint).
+- "Export .docx" and "Fix failing item" on contracts; only the 3 real
+  templates (NDA, Employment, Service Agreement), not the mockup's 5.
+- Judgment, jurisdiction and court filters in Research (the index is federal
+  statute text only), and "Summarise top results with AI".
+- Also: pricing / free trial, English–Urdu interface switch, login role
+  picker, chat scope / linked-case tags, "Save to case" from chat, reading
+  progress / practice / moot folders for students.
+
+## Pre-demo readiness audit (2026-09-28)
+Real HTTP calls and fresh test accounts (all deleted afterwards), no fixes
+during the audit except the ones approved (commit `8a02485`).
+
+**Works (verified):**
+- **Auth:** signup → OTP → verify → login; forgot → reset (old password
+  rejected, new works). OTP never appears in API responses.
+- **Cases:** create, assign client by email (auto → Assigned), status
+  changes, illegal transition 409; client sees the case read-only (403 on
+  status change, assigning, creating).
+- **AI Chat:** family (MFLO talaq) and criminal (PPC s. 379 theft) answers
+  open with the short answer, valid `[n]` citations, no unverified flags or
+  case law; out-of-scope ("cricket bat") refused without a model answer.
+- **Research:** `/research/stats` public (53,739 passages / 900 statutes);
+  searches ~3 s.
+- **Document Analysis:** digital PDF (Crl.P. 187-P/2026) → 6,856 chars,
+  analysis in 8.4 s with summary, clauses, risks and NER entities.
+  `/documents/{id}/analyze` now returns **422 "no extractable text"** for
+  text-less documents, verified live with **0 Groq requests** spent.
+- **Contracts:** NDA drafted in 6.6 s (Pakistani governing law, no
+  placeholders), compliance 4/4, version stored; client 403 on draft/open.
+- **Environment:** NER weights (517 MB) load; FAISS index (83 MB + 49 MB
+  meta) serves; Supabase reachable.
+
+**Known gaps:**
+- **OTP email needs SMTP.** `backend/.env` has `SMTP_HOST=smtp.gmail.com`,
+  port 587, TLS, but `SMTP_USERNAME` / `SMTP_PASSWORD` are empty, so codes
+  are only logged server-side (`[DEV OTP] email -> code`). Fix: a Gmail App
+  Password (needs 2-Step Verification) in those two variables, `SMTP_FROM`
+  = the same Gmail address, restart; the log then shows `Email sent to …`.
+- **Scanned files need Tesseract and Poppler.** `TESSERACT_CMD` points to
+  `C:\Program Files\Tesseract-OCR\tesseract.exe`, which doesn't exist, and
+  `pdftoppm` isn't installed; scanned PDFs / images extract 0 characters (the
+  UI says so and disables Analyse; the API now refuses with 422).
+- **Research quality is uneven on some queries.** Strong: "bail in a
+  non-bailable offence" (Cr.P.C. s. 497 first, 0.81). Weak: "khula
+  procedure" (dower / short-title chunks and a "Page 4 of 5" junk chunk;
+  misses MFLO s. 8 and the Dissolution of Muslim Marriages Act). Poor:
+  "share of a daughter in inheritance" (Companies Act *share*-transfer
+  clauses). Root causes are in "Future work — statute corpus and retrieval"
+  (`data/README.md`) and the corpus list below.
+- **Groq's limits:** 200k tokens/day, 1,000 requests/day, **8,000
+  tokens/minute** — two chat answers in the same minute can hit the
+  per-minute cap; pace demo questions about a minute apart. Daily token use
+  isn't in Groq's response headers — check the Groq console.
+- **Slow database connections:** 0.5–2.6 s per new Supabase connection
+  (Singapore region), so logins sometimes take 4–6 s.
+- **Backend stability:** the uvicorn process exited silently twice during
+  2026-09-27/28 (exit code 4, nothing logged; possibly memory — the NER model
+  once failed to load with "paging file is too small"). Run it in a visible
+  terminal on demo day.
+- **Corpus contents:** `docs/corpus_statute_list.md` lists every indexed
+  title. Notable: 5 statutes indexed twice under OCR-variant titles;
+  ESTACODE (a civil-service manual, not a statute) is the largest item at
+  3,424 chunks (6.4%); 2 titles are page boilerplate ("Updated till
+  19.04.2023"); **the provenance of the two raw datasets is not recorded.**
+
+**Demo script (only features that work; ~20k Groq tokens):**
+1. Landing → **Sign in** with a pre-verified lawyer (or a live signup if SMTP
+   is configured).
+2. Lawyer dashboard → **Cases** → **New case** "Khan v. Khan — Custody" →
+   open it → assign the client by email (→ Assigned) → **Mark as in progress**.
+3. **Documents** → upload `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`
+   → **Analyse document** (~8 s) → summary beside parties / dates /
+   references → **Save to case**.
+4. **AI Chat**, about a minute apart: "What is the procedure for talaq under
+   the Muslim Family Laws Ordinance?" · "What is the punishment for theft
+   under the Pakistan Penal Code?" · "Can you recommend a good cricket bat?"
+   (refusal).
+5. **Research** → "bail in a non-bailable offence" → open the Cr.P.C. s. 497
+   result → **Analyse with AI**. (Avoid khula / inheritance queries.)
+6. **Contracts** → NDA (Indus Legal Tech (Pvt) Ltd, Lahore → Ahmed Raza,
+   1 October 2026, 3 years) → **Check compliance** (4/4) → version history.
+7. Sign out → sign in as the client → dashboard ("Where your case stands",
+   documents, activity) → the case is read-only.
+
 ## Folder structure
 ```
 FYP Project/
@@ -461,7 +581,8 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
    open, deliberately deferred to their own session.
 3. ~~UI redesign~~ — done: every page converted to the design system (see
    `docs/STYLE_GUIDE.md`), followed by the 2026-09-26 accuracy sweep (see
-   "UI accuracy sweep" above).
+   "UI accuracy sweep" above), then redone on design system v1 and
+   completed 2026-09-28 (see "UI redesign v1" above).
 4. ~~Build Contract Drafting & Compliance module~~ — done (2026-09-21),
    built + fully verified end-to-end. See "Contract Drafting & Compliance
    status" above.
@@ -477,6 +598,10 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
    d. **Before the demo: secure LLM capacity** — paid Groq tier or an
       unused demo-day key; see "⚠️ Known constraint — Groq free-tier
       limits" above.
+   e. **Before the demo (from the 2026-09-28 audit):** configure SMTP (or
+      pre-verify the demo accounts), create two verified demo accounts,
+      and install Tesseract + Poppler only if scanned files will be shown.
+      See "Pre-demo readiness audit" above.
 6. Add missing security pieces: rate limiting, file upload sanitization,
    basic prompt-injection input handling.
 7. Add test coverage for RAG acceptance criteria (MRR, recall@5, refusal rate).
