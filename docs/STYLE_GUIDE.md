@@ -171,15 +171,15 @@ judgments or case law."*
 
 ## Shared components — use these, don't rebuild per page
 
-Being migrated to the tokens above page by page:
-
-- **`frontend/src/components/layout/AppShell.jsx`** — every internal page (sidebar + header + content). Role-aware nav.
-- **`frontend/src/layouts/AuthShell.jsx`** — every public auth page (two-pane ink / paper).
-- **`frontend/src/components/ui/AppButton.jsx`** — every button and button-styled link.
-- **`frontend/src/features/dashboard/components/PanelCard.jsx`** — titled panel.
-- **`frontend/src/lib/formStyles.js`** (`cnInput`) — input styling.
-- **`frontend/src/lib/Markdown.jsx`** — the single renderer for AI-generated text (`prose prose-ink`).
-- **`frontend/src/components/common/ArchPattern.jsx`** — the arch motif (sidebar foot, ink hero bands).
+- **`frontend/src/components/layout/AppShell.jsx`** — every internal page (sidebar, page header, optional ink `band`, full-height `bare` mode). Role-aware nav.
+- **`frontend/src/layouts/AuthShell.jsx`** — every public auth page (two-pane ink / paper; `heroAlign`).
+- **Buttons, inputs, tags, links** — the `ds-` classes in `frontend/src/index.css` (`.ds-btn-primary`, `.ds-btn-secondary`, `.ds-btn-secondary-on-ink`, `.ds-input`, `.ds-label`, `.ds-tag-*`, `.ds-link`, `.ds-link-seal`). There is no button or input component — use the classes.
+- **`frontend/src/lib/Markdown.jsx`** — the single renderer for AI-generated text (`variant="ds"` → `prose prose-ds`, `.ds-cite` markers).
+- **`frontend/src/components/common/Wordmark.jsx`** — the arch mark + "LegalEase AI" wordmark.
+- **`frontend/src/components/common/ArchPattern.jsx`** — `ArchOutlines` (auth panel, Landing hero).
+- **`frontend/src/features/dashboard/components/DashParts.jsx`** — figure row, ruled sections, AI-chat list for dashboards.
+- **`frontend/src/features/document-analysis/UploadStrip.jsx`** — the dashed drag-and-drop upload strip.
+- **`frontend/src/features/case-management/StatusTag.jsx`** + `caseMeta.js` — case status tags, type labels, readable timeline wording.
 
 Do not create a second sidebar / header / panel / input / button style —
 extend these.
@@ -188,23 +188,23 @@ extend these.
 
 - **Done:** tokens (`ds-` colours, `font-ds-serif` / `font-ds-sans`,
   `rounded-ds`, `max-w-ds-content`), type classes and component classes in
-  `frontend/tailwind.config.js` and `frontend/src/index.css`; token test page
-  at `/design-system` (not linked from the app).
+  `frontend/tailwind.config.js` and `frontend/src/index.css`. (The
+  `/design-system` token test page was removed before the demo, 2026-09-28.)
 - **Migrated:** `AppShell` (sidebar, page header, mobile drawer), `AuthShell`
   (ink identity panel shared by all six auth pages), Login, AI Chat
   (incl. `prose-ds` for AI output, `.ds-cite` markers, the Short answer box),
   Documents, Cases list, Case detail, Research (search + passage), Dashboards (lawyer, client, student), Contracts (list, drafting, contract page), Landing, and the forms inside all six auth screens.
-- **Not yet migrated:** every other page's content (the auth pages other than
-  Login keep old-style forms inside the new frame) still uses the previous tokens
-  (`paper`, `ink-panel`, `ink-text`, `ink-muted`, `hairline`, `brick`,
-  `font-editorial`, `.type-*`). Those tokens are **deprecated** — don't use
-  them in new work; they are removed once the last page has moved.
+- **Not yet migrated:** only `ComingSoonPage.jsx` (the unlinked placeholder
+  routes) still uses the previous tokens (`paper`, `ink-panel`, `ink-text`,
+  `ink-muted`, `hairline`, `brick`, `font-editorial`, `.type-*`), which are
+  still defined in the Tailwind config. Those tokens are **deprecated** — don't
+  use them in new work; remove them once that page moves.
 - The `ds-` prefix exists only because the old `paper` (`#F6F1E7`) differs
   from the new Paper (`#F4EFE4`); it can be dropped after migration.
 
-### Orphaned old files (unused; not deleted)
-`frontend/src/layouts/DashboardLayout.jsx`, `frontend/src/layouts/AuthLayout.jsx`,
-`frontend/src/components/layout/Sidebar.jsx`, `frontend/src/components/layout/DashboardHeader.jsx`,
-`frontend/src/features/dashboard/components/DashboardStat.jsx`,
-`frontend/src/components/common/GradientBackground.jsx`, `frontend/src/components/common/AnimatedCard.jsx`,
-and the shadcn `frontend/src/components/ui/{button,input,label,badge}.jsx` primitives are not imported by any page.
+### Old files removed (2026-09-28)
+The pre-v1 components no page imported any more — old layouts, sidebar,
+header, navbar/footer, stat/feature cards, `AppButton`, `PanelCard`,
+`formStyles` (`cnInput`), the shadcn `ui/*` primitives and `lib/utils` —
+were deleted, along with the unused mock research data
+(`legal-research/data.js`, fabricated judgment citations).

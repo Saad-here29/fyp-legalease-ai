@@ -27,6 +27,7 @@ from app.core.exceptions import (
     NotAuthorized,
     NotFound,
     UnsupportedMediaType,
+    ValidationFailed,
 )
 from app.db.session import SessionLocal, get_db
 from app.middlewares.auth import CurrentUser
@@ -243,6 +244,15 @@ def analyze_document(
             text = get_ocr_service().extract(Path(doc.storage_path)) or ""
             doc.extracted_text = text
             db.commit()
+        # Nothing to analyse (e.g. a scanned file with OCR unavailable):
+        # refuse before any model call, rather than have the LLM "summarise"
+        # an empty document and spend tokens on a meaningless reply.
+        if not text.strip():
+            raise ValidationFailed(
+                message="This document has no extractable text to analyse.",
+                hint="It may be a scanned or image-only file; OCR needs Tesseract and "
+                "Poppler installed on the server. Upload a text-based PDF, DOCX or TXT.",
+            )
         document_type = doc.document_type
 
     # Phase 2 — the slow part. No DB session held while this runs. The NER

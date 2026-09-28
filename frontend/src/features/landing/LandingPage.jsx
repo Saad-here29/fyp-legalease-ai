@@ -143,6 +143,7 @@ function HeroAnswer() {
       <span className="absolute -top-3.5 right-6 rotate-[3deg] border-2 border-ds-pass text-ds-pass bg-ds-sheet px-2.5 py-1 font-ds-sans font-semibold text-[12px] uppercase tracking-[0.12em] rounded-ds-sm">
         Checked against source
       </span>
+      <p className="ds-eyebrow mb-3">Example</p>
       <p className="ds-meta">You asked</p>
       <p className="font-ds-sans font-semibold text-[17px] leading-[24px] mt-1">
         What is the procedure for talaq under Section 7?
@@ -304,7 +305,11 @@ function Modules() {
                 {r.note}
               </p>
             </div>
-            <div className="bg-ds-sheet border border-ds-rule rounded-ds p-6 self-start">{r.visual}</div>
+            <div className="bg-ds-sheet border border-ds-rule rounded-ds p-6 self-start">
+              {/* Illustrations reproduce real app output but are static, so they're labelled. */}
+              <p className="ds-eyebrow mb-3">Example</p>
+              {r.visual}
+            </div>
           </div>
         ))}
       </div>
