@@ -9,7 +9,6 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import AuthShell from "@/layouts/AuthShell";
 import { authApi, extractAuthError } from "./api";
 import { ROLES, ROUTES } from "@/constants";
-import { cnInput } from "@/lib/formStyles";
 
 // Simplified to exactly 6 fields for every role — no bar license, CNIC,
 // university fields, etc., since no verification system exists for those
@@ -86,95 +85,76 @@ export default function SignupPage() {
 
   if (!chosenRole) return <Navigate to={ROUTES.WELCOME} replace />;
 
+  const roleLabel = { [ROLES.LAWYER]: "Lawyer", [ROLES.CLIENT]: "Client", [ROLES.STUDENT]: "Law student" };
+
   return (
-    <AuthShell heroAlign="center" heroTitle="Create your account." heroSubtitle={`Setting up as a ${role}.`}>
-      <h2 className="font-editorial text-2xl text-ink-text mb-1">Create an account</h2>
-      <p className="text-sm text-ink-muted mb-6">Tell us a bit about yourself.</p>
+    <AuthShell heroAlign="center" heroTitle="Create your account." heroSubtitle={`Setting up as a ${roleLabel[role].toLowerCase()}.`}>
+      <p className="ds-eyebrow">Step 2 of 2</p>
+      <h1 className="font-ds-serif font-medium text-[40px] leading-[48px] sm:text-[48px] sm:leading-[56px] tracking-tight text-ds-text mt-3">
+        Create an account
+      </h1>
+      <p className="ds-body text-ds-text-2 mt-2">Tell us a bit about yourself.</p>
 
-      <div className="border-b border-hairline-subtle mb-8" />
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6" noValidate>
         <div>
-          <span className="block text-sm text-ink-muted mb-2">I am a</span>
-          <div className="flex border border-hairline rounded-md overflow-hidden">
-            {[ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT].map((r, i) => (
+          <p className="ds-label mb-2.5" id="role-label">I am a</p>
+          <div role="radiogroup" aria-labelledby="role-label" className="grid grid-cols-3 gap-2">
+            {[ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT].map((r) => (
               <button
                 type="button"
+                role="radio"
+                aria-checked={role === r}
                 key={r}
                 onClick={() => setValue("role", r)}
-                className={`flex-1 text-sm py-2 transition-colors ${
-                  i > 0 ? "border-l border-hairline" : ""
-                } ${
-                  role === r
-                    ? "bg-ink-panel text-paper"
-                    : "text-ink-muted hover:text-ink-text hover:bg-hairline-subtle/50"
+                className={`min-h-[48px] px-2 rounded-ds border-2 font-ds-sans font-semibold text-[15px] transition-colors
+                  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-ink ${
+                  role === r ? "border-ds-seal bg-ds-seal-tint text-ds-seal" : "border-ds-rule bg-ds-sheet text-ds-text hover:border-ds-text-2"
                 }`}
               >
-                {r === ROLES.LAWYER ? "Lawyer" : r === ROLES.CLIENT ? "Client" : "Student"}
+                {roleLabel[r]}
               </button>
             ))}
           </div>
         </div>
 
-        <Field label="Full name" error={errors.full_name?.message}>
-          <input
-            placeholder="John Doe"
-            autoComplete="name"
-            className={cnInput(errors.full_name)}
-            {...register("full_name")}
-          />
+        <Field id="su-name" label="Full name" error={errors.full_name?.message}>
+          <input id="su-name" placeholder="Ayesha Khan" autoComplete="name" aria-invalid={!!errors.full_name}
+            className={inputClass(errors.full_name)} {...register("full_name")} />
         </Field>
 
-        <Field label="Email" error={errors.email?.message}>
-          <input
-            type="email"
-            placeholder="you@example.com"
-            autoComplete="email"
-            className={cnInput(errors.email)}
-            {...register("email")}
-          />
+        <Field id="su-email" label="Email" error={errors.email?.message}>
+          <input id="su-email" type="email" placeholder="you@example.com" autoComplete="email" aria-invalid={!!errors.email}
+            className={inputClass(errors.email)} {...register("email")} />
         </Field>
 
-        <Field label="Phone number" error={errors.phone?.message}>
-          <input
-            placeholder="+92 300 1234567"
-            autoComplete="tel"
-            className={cnInput(errors.phone)}
-            {...register("phone")}
-          />
+        <Field id="su-phone" label="Phone number" error={errors.phone?.message}>
+          <input id="su-phone" placeholder="+92 300 1234567" autoComplete="tel" aria-invalid={!!errors.phone}
+            className={inputClass(errors.phone)} {...register("phone")} />
         </Field>
 
-        <Field label="Password" error={errors.password?.message}>
+        <Field id="su-password" label="Password" error={errors.password?.message}>
           <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="At least 8 characters"
-              autoComplete="new-password"
-              className={cnInput(errors.password, "pr-8")}
-              {...register("password")}
-            />
+            <input id="su-password" type={showPassword ? "text" : "password"} placeholder="At least 8 characters"
+              autoComplete="new-password" aria-invalid={!!errors.password}
+              className={`${inputClass(errors.password)} pr-12`} {...register("password")} />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-text"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center text-ds-text-2 hover:text-ds-text rounded-ds"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
         </Field>
 
-        <Field label="Confirm password" error={errors.confirm_password?.message}>
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Re-enter your password"
-            autoComplete="new-password"
-            className={cnInput(errors.confirm_password)}
-            {...register("confirm_password")}
-          />
+        <Field id="su-confirm" label="Confirm password" error={errors.confirm_password?.message}>
+          <input id="su-confirm" type={showPassword ? "text" : "password"} placeholder="Re-enter your password"
+            autoComplete="new-password" aria-invalid={!!errors.confirm_password}
+            className={inputClass(errors.confirm_password)} {...register("confirm_password")} />
         </Field>
 
-        <button type="submit" disabled={signupMutation.isPending} className="ds-btn-primary w-full min-h-[48px] mt-2">
+        <button type="submit" disabled={signupMutation.isPending} className="ds-btn-primary w-full min-h-[48px]">
           {signupMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Creating your account" /> : "Create an account"}
         </button>
       </form>
@@ -189,12 +169,14 @@ export default function SignupPage() {
   );
 }
 
-function Field({ label, error, children }) {
+const inputClass = (error) => `ds-input ${error ? "border-ds-seal" : ""}`;
+
+function Field({ id, label, error, children }) {
   return (
     <div>
-      <label className="block text-sm text-ink-muted mb-1.5">{label}</label>
+      <label htmlFor={id} className="ds-label mb-2.5">{label}</label>
       {children}
-      {error && <p className="mt-1.5 text-xs text-brick">{error}</p>}
+      {error && <p className="mt-2 text-[14px] leading-[20px] text-ds-seal" role="alert">{error}</p>}
     </div>
   );
 }

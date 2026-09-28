@@ -4,10 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import AuthShell from "@/layouts/AuthShell";
-import AppButton from "@/components/ui/AppButton";
 import { authApi, extractAuthError } from "./api";
 import { ROUTES } from "@/constants";
-import { cnInput } from "@/lib/formStyles";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -55,32 +53,34 @@ export default function ResetPasswordPage() {
           : "Enter the reset code and a new password."
       }
     >
-      <h2 className="font-editorial text-2xl text-ink-text mb-1">Reset password</h2>
-      <p className="text-sm text-ink-muted mb-6">
-        Check your inbox for the 6-digit code.
-      </p>
+      <p className="ds-eyebrow">Reset password</p>
+      <h1 className="font-ds-serif font-medium text-[40px] leading-[48px] sm:text-[48px] sm:leading-[56px] tracking-tight text-ds-text mt-3">
+        Set a new password
+      </h1>
+      <p className="ds-body text-ds-text-2 mt-2">Check your inbox for the 6-digit code.</p>
 
-      <div className="border-b border-hairline-subtle mb-8" />
-
-      <form onSubmit={submit} className="space-y-6">
+      <form onSubmit={submit} className="mt-8 space-y-6">
         <div>
-          <label className="block text-sm text-ink-muted mb-1.5">6-digit code</label>
+          <label htmlFor="rp-code" className="ds-label mb-2.5">6-digit code</label>
           <input
+            id="rp-code"
             inputMode="numeric"
+            autoComplete="one-time-code"
             maxLength={6}
             placeholder="••••••"
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
             required
             minLength={4}
-            className={cnInput(false)}
+            className="ds-input tracking-[0.3em]"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-ink-muted mb-1.5">New password</label>
+          <label htmlFor="rp-password" className="ds-label mb-2.5">New password</label>
           <div className="relative">
             <input
+              id="rp-password"
               type={showPassword ? "text" : "password"}
               placeholder="At least 8 characters"
               autoComplete="new-password"
@@ -88,37 +88,40 @@ export default function ResetPasswordPage() {
               onChange={(e) => setNewPassword(e.target.value)}
               required
               minLength={8}
-              className={cnInput(false, "pr-8")}
+              className="ds-input pr-12"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-text"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center text-ds-text-2 hover:text-ds-text rounded-ds"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
+          {newPassword.length > 0 && newPassword.length < 8 && (
+            <p className="mt-2 text-[14px] leading-[20px] text-ds-text-2">At least 8 characters.</p>
+          )}
         </div>
 
-        <AppButton
+        <button
           type="submit"
           disabled={mutation.isPending || otp.length < 4 || newPassword.length < 8}
-          className="w-full"
+          className="ds-btn-primary w-full min-h-[48px]"
         >
-          {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset password"}
-        </AppButton>
+          {mutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Resetting" /> : "Reset password"}
+        </button>
 
-        <div className="text-center">
+        <p className="text-center">
           <button
             type="button"
             onClick={() => resendMutation.mutate()}
             disabled={resendMutation.isPending}
-            className="text-xs text-brick hover:underline underline-offset-2 disabled:text-ink-muted"
+            className="ds-link-seal text-[15px] disabled:text-ds-text-2 disabled:no-underline"
           >
             {resendMutation.isPending ? "Sending…" : "Resend reset code"}
           </button>
-        </div>
+        </p>
       </form>
 
       <p className="mt-8 text-center text-[16px] text-ds-text-2">

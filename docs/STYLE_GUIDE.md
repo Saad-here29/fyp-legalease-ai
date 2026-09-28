@@ -193,7 +193,7 @@ extend these.
 - **Migrated:** `AppShell` (sidebar, page header, mobile drawer), `AuthShell`
   (ink identity panel shared by all six auth pages), Login, AI Chat
   (incl. `prose-ds` for AI output, `.ds-cite` markers, the Short answer box),
-  Documents, Cases list, Case detail, Research (search + passage), Dashboards (lawyer, client, student), Contracts (list, drafting, contract page).
+  Documents, Cases list, Case detail, Research (search + passage), Dashboards (lawyer, client, student), Contracts (list, drafting, contract page), Landing, and the forms inside all six auth screens.
 - **Not yet migrated:** every other page's content (the auth pages other than
   Login keep old-style forms inside the new frame) still uses the previous tokens
   (`paper`, `ink-panel`, `ink-text`, `ink-muted`, `hairline`, `brick`,

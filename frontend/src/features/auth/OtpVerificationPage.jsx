@@ -4,7 +4,6 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, RotateCcw } from "lucide-react";
 import AuthShell from "@/layouts/AuthShell";
-import AppButton from "@/components/ui/AppButton";
 import { authApi, extractAuthError } from "./api";
 import { ROUTES } from "@/constants";
 
@@ -109,62 +108,62 @@ export default function OtpVerificationPage() {
         email ? `We sent a 6-digit code to ${email}.` : "Enter the 6-digit code we sent."
       }
     >
-      <h2 className="font-editorial text-2xl text-ink-text mb-1">Enter code</h2>
-      <p className="text-sm text-ink-muted mb-6">
-        Check your inbox for the verification code.
-      </p>
+      <p className="ds-eyebrow">Verify your email</p>
+      <h1 className="font-ds-serif font-medium text-[40px] leading-[48px] sm:text-[48px] sm:leading-[56px] tracking-tight text-ds-text mt-3">
+        Enter your code
+      </h1>
+      <p className="ds-body text-ds-text-2 mt-2">Check your inbox for the 6-digit verification code.</p>
 
-      <div className="border-b border-hairline-subtle mb-8" />
+      <div className="mt-8 space-y-6">
+        <fieldset>
+          <legend className="ds-label mb-2.5">6-digit code</legend>
+          <div className="flex justify-between gap-2" onPaste={handlePaste}>
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={(el) => (inputsRef.current[i] = el)}
+                value={d}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                maxLength={1}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label={`Digit ${i + 1}`}
+                disabled={expired}
+                className="h-14 w-full max-w-[56px] text-center font-ds-sans font-semibold text-[22px] text-ds-text bg-ds-sheet border border-ds-rule rounded-ds
+                  focus:outline-none focus:border-ds-ink focus:ring-2 focus:ring-ds-ink/10 disabled:opacity-50"
+              />
+            ))}
+          </div>
+        </fieldset>
 
-      <div className="space-y-6">
-        <div className="flex justify-between gap-2" onPaste={handlePaste}>
-          {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={(el) => (inputsRef.current[i] = el)}
-              value={d}
-              onChange={(e) => handleChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              maxLength={1}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              disabled={expired}
-              className="h-12 w-10 text-center text-lg text-ink-text bg-transparent border-0 border-b border-hairline focus:border-ink-text focus:bg-ink-text/[0.03] outline-none transition-colors disabled:opacity-40"
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between text-xs">
-          <span className={expired ? "text-brick" : "text-ink-muted"}>
-            {expired ? "Code expired" : `Expires in ${formatMMSS(secondsLeft)}`}
+        <div className="flex items-center justify-between gap-4">
+          <span className={`text-[15px] ${expired ? "text-ds-seal font-semibold" : "text-ds-text-2"}`} role={expired ? "alert" : undefined}>
+            {expired ? "Code expired — request a new one" : `Expires in ${formatMMSS(secondsLeft)}`}
           </span>
           <button
             type="button"
             onClick={() => resendMutation.mutate()}
             disabled={resendMutation.isPending || resendCooldown > 0}
-            className="inline-flex items-center gap-1 font-medium text-brick hover:underline underline-offset-2 disabled:text-ink-muted disabled:font-normal disabled:no-underline disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 min-h-[44px] ds-link-seal text-[15px] disabled:text-ds-text-2 disabled:no-underline disabled:font-normal disabled:cursor-not-allowed"
           >
-            <RotateCcw className="h-3 w-3" />
-            {resendMutation.isPending
-              ? "Sending…"
-              : resendCooldown > 0
-              ? `Resend in ${resendCooldown}s`
-              : "Resend code"}
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            {resendMutation.isPending ? "Sending…" : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
           </button>
         </div>
 
-        <AppButton
+        <button
           type="button"
           disabled={otp.length !== OTP_LENGTH || verifyMutation.isPending || expired}
           onClick={() => verifyMutation.mutate()}
-          className="w-full"
+          className="ds-btn-primary w-full min-h-[48px]"
         >
-          {verifyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify email"}
-        </AppButton>
+          {verifyMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Verifying" /> : "Verify email"}
+        </button>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-hairline-subtle text-center space-y-4">
-        <p className="text-xs text-ink-muted leading-relaxed">
+      <div className="mt-8 text-center space-y-3">
+        <p className="ds-meta">
           Didn&apos;t receive a code? Check your spam folder, or use Resend above.
         </p>
         <p className="text-[16px] text-ds-text-2">
