@@ -34,8 +34,8 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
-    token_is_current,
     hash_password,
+    token_is_current,
     verify_password,
 )
 from app.models.client import Client

@@ -46,7 +46,7 @@ RETRY_DELAY_SECONDS = 0.5
 def is_connection_error(exc: BaseException) -> bool:
     """A lost or refused database connection, as opposed to a bad query or
     a constraint violation."""
-    return isinstance(exc, (OperationalError, InterfaceError)) or (
+    return isinstance(exc, OperationalError | InterfaceError) or (
         isinstance(exc, DBAPIError) and exc.connection_invalidated
     )
 
