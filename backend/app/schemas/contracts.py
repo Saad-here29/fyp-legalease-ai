@@ -56,4 +56,6 @@ class ComplianceCheckResponse(APIModel):
     version_number: int
     all_passed: bool
     results: list[ComplianceClauseResult]
+    # None on results stored before this check existed.
+    unfilled_placeholders: list[str] | None = None
     checked_at: datetime

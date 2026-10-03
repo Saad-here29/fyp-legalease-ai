@@ -103,5 +103,6 @@ def check_compliance(
         version_number=version.version_number,
         all_passed=result["all_passed"],
         results=result["results"],
+        unfilled_placeholders=result.get("unfilled_placeholders"),
         checked_at=result["checked_at"],
     )

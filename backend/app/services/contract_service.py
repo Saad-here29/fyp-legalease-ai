@@ -4,9 +4,9 @@ Two distinct operations, deliberately kept separate:
     - draft(): the only step that touches the LLM. Builds the full contract
       text from a template + filled fields.
     - check_compliance(): pure deterministic keyword/section-presence
-      matching against already-generated text. No AI client call — a
-      required clause either has one of its keywords in the text or it
-      doesn't.
+      matching against already-generated text, plus a scan for unfilled
+      placeholders ("[address]", "[date]"). No AI client call — a required
+      clause either has one of its keywords in the text or it doesn't.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from app.models.contract import Contract, ContractVersion
 from app.models.enums import ContractType, UserRole
 from app.models.user import User
 from app.schemas.contracts import ContractDraftRequest
+from app.utils.placeholders import find_unfilled_placeholders
 
 _SNIPPET_RADIUS = 60
 
@@ -119,9 +120,11 @@ class ContractService:
                 {"name": clause["name"], "passed": match is not None, "matched_snippet": match}
             )
 
+        placeholders = find_unfilled_placeholders(version.content)
         version.compliance_result = {
-            "all_passed": all(r["passed"] for r in results),
+            "all_passed": all(r["passed"] for r in results) and not placeholders,
             "results": results,
+            "unfilled_placeholders": placeholders,
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }
         self.db.commit()

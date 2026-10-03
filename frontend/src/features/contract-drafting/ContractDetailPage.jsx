@@ -40,7 +40,12 @@ export default function ContractDetailPage() {
     onSuccess: (result) => {
       setFresh(result);
       qc.invalidateQueries({ queryKey: ["contract-versions", id] });
-      toast.success(result.all_passed ? "All required clauses found." : "Some required clauses are missing.");
+      const missing = result.results.some((r) => !r.passed);
+      const blanks = result.unfilled_placeholders?.length > 0;
+      if (result.all_passed) toast.success("All required clauses found, no unfilled placeholders.");
+      else if (missing && blanks) toast.warning("Some required clauses are missing, and placeholders are unfilled.");
+      else if (missing) toast.warning("Some required clauses are missing.");
+      else toast.warning("All clauses found, but the draft has unfilled placeholders.");
     },
     onError: (e) =>
       toast.error(e?.response?.data?.error?.message || "Could not run the compliance check.", {
@@ -160,8 +165,25 @@ function Compliance({ result, isLawyer }) {
       </section>
     );
   }
-  const passed = result.results.filter((r) => r.passed).length;
-  const failed = result.results.length - passed;
+  // Unfilled placeholders are one more row; results saved before that check
+  // existed (unfilled_placeholders missing) simply don't show it.
+  const blanks = result.unfilled_placeholders;
+  const rows = [
+    ...result.results.map((r) => ({
+      name: r.name,
+      passed: r.passed,
+      detail: r.passed ? (r.matched_snippet ? `“…${plain(r.matched_snippet)}…”` : "Found") : "Not found in this version",
+    })),
+    ...(blanks
+      ? [{
+          name: blanks.length ? "Unfilled placeholders" : "No unfilled placeholders",
+          passed: blanks.length === 0,
+          detail: blanks.length ? `Fill in before use: ${blanks.join(", ")}` : "No [address]-style blanks left",
+        }]
+      : []),
+  ];
+  const passed = rows.filter((r) => r.passed).length;
+  const failed = rows.length - passed;
   return (
     <section>
       <h2 className="ds-h3">Compliance check</h2>
@@ -170,12 +192,12 @@ function Compliance({ result, isLawyer }) {
         {failed > 0 && <span className="text-ds-seal"> · {failed} fail{failed === 1 ? "s" : ""}</span>}
       </p>
       <div className="flex h-1.5 gap-0.5 mt-3" aria-hidden="true">
-        {result.results.map((r) => (
+        {rows.map((r) => (
           <span key={r.name} className={`flex-1 rounded-ds-sm ${r.passed ? "bg-ds-pass" : "bg-ds-seal"}`} />
         ))}
       </div>
       <ul className="mt-4 border-t-2 border-ds-ink">
-        {result.results.map((r) => (
+        {rows.map((r) => (
           <li key={r.name} className="grid grid-cols-[32px_1fr] gap-x-3 py-4 border-b border-ds-rule">
             <span
               className={`h-7 w-7 rounded-ds flex items-center justify-center ${
@@ -187,9 +209,7 @@ function Compliance({ result, isLawyer }) {
             </span>
             <span className="min-w-0">
               <span className="block font-ds-sans font-semibold text-[16px] leading-[24px]">{r.name}</span>
-              <span className="ds-meta block mt-0.5">
-                {r.passed ? (r.matched_snippet ? `“…${plain(r.matched_snippet)}…”` : "Found") : "Not found in this version"}
-              </span>
+              <span className="ds-meta block mt-0.5 break-words">{r.detail}</span>
             </span>
           </li>
         ))}
