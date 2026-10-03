@@ -34,6 +34,7 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    token_is_current,
     hash_password,
     verify_password,
 )
@@ -279,8 +280,17 @@ class AuthService(BaseService):
         user = self.users.get(user_id) if user_id else None
         if user is None or not user.is_active:
             raise NotAuthenticated("Account not found or inactive.")
+        if not token_is_current(payload, user.token_version):
+            raise NotAuthenticated("Session has ended. Please sign in again.")
 
         return self._issue_tokens(user)
+
+    # ===== LOGOUT =====
+    def logout(self, user: User) -> None:
+        """Revoke every token issued to the user so far, on every device."""
+        user.token_version = (user.token_version or 0) + 1
+        self.audit("LOGOUT_OK", user_id=user.id)
+        self.commit()
 
     # ===== FORGOT PASSWORD =====
     def forgot_password(self, email: str) -> dict:
@@ -421,8 +431,8 @@ class AuthService(BaseService):
         )
 
     def _issue_tokens(self, user: User) -> TokenPair:
-        access = create_access_token(subject=user.id, role=user.role.value)
-        refresh = create_refresh_token(subject=user.id)
+        access = create_access_token(subject=user.id, role=user.role.value, token_version=user.token_version)
+        refresh = create_refresh_token(subject=user.id, token_version=user.token_version)
         logger.debug(f"Issued token pair for {user.email}")
         return TokenPair(
             access_token=access,

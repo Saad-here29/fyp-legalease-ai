@@ -152,7 +152,7 @@ def refresh(
 @router.post(
     "/logout",
     response_model=MessageResponse,
-    summary="Logout — clear auth cookies",
+    summary="Logout — revoke all tokens and clear auth cookies",
 )
 def logout(
     user: CurrentUser,
@@ -160,8 +160,7 @@ def logout(
     response: Response,
     db: Session = Depends(get_db),
 ):
-    AuthService(db, request).audit("LOGOUT_OK", user_id=user.id)
-    db.commit()
+    AuthService(db, request).logout(user)
     clear_auth_cookies(response)
     return MessageResponse(message="Logged out successfully.")
 

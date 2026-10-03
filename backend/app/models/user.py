@@ -34,5 +34,8 @@ class User(Base, TimestampMixin):
     otp: Mapped[str | None] = mapped_column(String(6), nullable=True)
     otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_login_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Carried in every token as "tv"; bumping it (at logout) revokes all of
+    # the user's outstanding access and refresh tokens.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
 

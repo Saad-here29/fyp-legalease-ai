@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.cookies import ACCESS_COOKIE
 from app.core.exceptions import NotAuthenticated
-from app.core.security import decode_token
+from app.core.security import decode_token, token_is_current
 from app.db.session import get_db
 from app.models.user import User
 
@@ -72,6 +72,8 @@ def get_current_user(
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise NotAuthenticated("Account not found or inactive.")
+    if not token_is_current(payload, user.token_version):
+        raise NotAuthenticated("Session has ended. Please sign in again.")
 
     # Stash request metadata for downstream audit logging
     request.state.user_id = user.id
