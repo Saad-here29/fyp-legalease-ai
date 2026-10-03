@@ -1,7 +1,37 @@
 # Retrieval redesign: section-based statute chunks
 
-Status: **design only. No code changed, no Groq tokens used.** Written
+Status: **approved with conditions (2026-10-04); revised to meet them.
+Nothing built, no rewrites recorded, no Groq tokens used.** First written
 2026-10-03.
+
+Companion files:
+- [`retrieval_statute_chunking.md`](retrieval_statute_chunking.md):
+  every statute by chunking decision (condition 3);
+- [`retrieval_gold_set_draft.md`](retrieval_gold_set_draft.md): the draft
+  gold set, **waiting for your check** (condition 5).
+
+## Conditions of approval: where each is met
+
+| # | Condition | Where | Short answer |
+|---|---|---|---|
+| 1 | Recalibrate the threshold on the new index with out-of-scope questions; write the value down | §7.6 | A fixed procedure on merged scores with 15 off-topic/foreign questions. The value is recorded in `config.py`, `.env.example`, the index manifest and §7.6's table. The value itself only exists once the index is built. |
+| 2 | State the raw + rewrite merge rule; "no obviously off-topic question becomes answerable" as acceptance | §4.2, §7.7 | Per section, **max** of the two scores. The threshold is calibrated on merged scores. Acceptance: all 15 off-topic/foreign questions refused. |
+| 3 | List the "260" fallback statutes; confirm the core statutes; fix any that don't | §1.4, §1.6, companion list | **Correction:** 260 counted statutes with fewer than 10 headings. With better rules only **49 fall back**, 75 are flagged for review and 183 short Acts split normally. **All 9 core statutes have clear headings** (90–100% coverage). Four heading-detection rules were added for the gaps found. |
+| 4 | Collapse duplicates, keeping the cleaner copy (CSV for the seven) | §1.5 | CSV first for the 7 CSV statutes. **But the CSVs are incomplete** (PPC 78%, CrPC 64%, MFLO 85%), so missing sections are filled from the PDF copy, reaching 96–100%. |
+| 5 | Draft a ~25-question gold set | companion file | 26 questions (4 failures, 1 known working, 21 more) plus 15 off-topic/foreign. All gold sections confirmed in the corpus. |
+| 6 | Colab: checkpoint, corpus from Drive, index back to Drive | §6 | Drive folder layout, resumable parts, manifest-checked resume, results written to Drive. |
+| 7 | Largest realistic chat prompt | §2.3 | About 2,200 tokens for a first question. **Long sessions are the real risk:** about 7,100 tokens by the 6th turn, already over the 8,000-per-minute cap with the reply reserve. A **history budget** is added. |
+
+**New blocker (2026-10-04):**
+- Windows Application Control now blocks PyTorch (`torch\lib\shm.dll`) and
+  FAISS (`_swigfaiss`) on this machine.
+- The embedding model and the backend's search can't load locally, and the
+  backend is not running.
+- That doesn't affect the Colab build. It does block:
+  - the local A0 baseline replay;
+  - the 200-vector parity check;
+  - running the app.
+- It needs allowing (or the policy changing) before evaluation.
 
 Every number here was measured offline:
 - with the local embedding model (`paraphrase-multilingual-MiniLM-L12-v2`);
@@ -152,6 +182,10 @@ characters.
 | Letter-spacing | `1 0 . W h a t` | fixed by the reflow (section 1.1) |
 | A word split by a stray space | `7. Tala q.—`, `pronoun ced` | Match the heading against the contents inventory (section 3) with a space-insensitive comparison. **Display the contents spelling** ("Talaq"). Body text is not auto-corrected (README: a dictionary fix risks legal terms). The build report counts split words per statute. |
 | Number damage | `1O.` (letter O), `l1.`, a missing dot | Accept only if the corrected number is the next expected entry in the contents inventory. Otherwise not a heading. |
+| Page header glued to the heading (found on core statutes) | `Page12of591[16. "Undue influence" defined.` (Contract Act) | Strip a leading `Page N of M`, then an amendment bracket `1[`, before matching. |
+| Footnote marker before the number | `*273. Sale of noxious food` (PPC) | Allow leading `*` / `†`. |
+| Page number before the heading | `107 199. Jurisdiction of High Court` (Constitution) | Allow one leading number, **only if** the number after it is in the contents inventory. |
+| Omitted sections | `38. 4* * *` (CrPC), `325. 2[* * *]` (PPC) | Recorded as **omitted** (not missing, not embedded). |
 | Heading missing from the body | an inventory entry with no body match | The text stays with the previous section, and the gap is listed in the build report (no guessing). |
 | Unreadable gazette scans | 3 documents with mojibake titles | fallback (section 1.4), flagged |
 
@@ -165,7 +199,24 @@ characters.
 
 ### 1.4 Statutes without clear section headings
 
-Covered here:
+**Measured with the rules above** (analysis-only survey, 2026-10-04):
+
+| Decision | Statutes |
+|---|---|
+| Split into sections | 770 (including 183 short Acts with 3–9 headings) |
+| Split into sections, **flagged for review** (coverage below 90%) | 75 |
+| **Fixed-size fallback** (2 or fewer headings) | **49** |
+
+The full lists, with heading counts, contents entries, coverage and missing
+numbers, are in
+[`retrieval_statute_chunking.md`](retrieval_statute_chunking.md). The
+fallback statutes are almost all one- or two-clause Acts (validation Acts,
+short repeal Acts), where a fixed window is the whole statute anyway.
+
+The earlier "260" was the number of statutes with **fewer than 10**
+headings. It was never a fallback count.
+
+Fixed windows are used for:
 - the 49 documents with 2 or fewer headings;
 - the 56 with no contents list, when their headings fail order checks;
 - schedules and preambles of every statute.
@@ -179,16 +230,61 @@ They get **fixed windows:**
 They remain searchable. Citations to them can't be section-grounded, so
 the checker treats them as today.
 
-### 1.5 One copy per statute
+### 1.5 One copy per statute: the CSV copy first (condition 4)
 
-Where a statute exists twice (PPC, CrPC, QSO and MFLO as CSV and PDF, plus
-OCR-titled duplicates), **index one copy per section number**:
-- choose the copy with the higher inventory coverage and fewer OCR splits;
-- fill sections missing from it from the other copy;
-- record each choice in the build report.
+**Rule:** for the seven statutes with a CSV section table (PPC, CrPC, QSO,
+Transfer of Property Act, Limitation Act, MFLO, Police Order), **the CSV
+copy is kept**. It is the cleaner text, with no OCR splits and its own
+section/heading columns. The PDF copy is used only to **fill sections the
+CSV doesn't have**. Each section is indexed exactly once, and every filled
+section is listed in the build report.
 
-The PPC is the clear test. Its CSV has 502 rows, and the PDF copy holds
-lettered sections the CSV may lack.
+The fill is necessary. Measured against each statute's own contents list:
+
+| Statute | Contents entries | CSV covers | PDF body covers | CSV + PDF fill | Sections filled from PDF | Still missing (for review) |
+|---|---|---|---|---|---|---|
+| PPC | 636 | 78% | 98% | **99%** | 132 | 294B, 362N, 366, 371A, 372, 373, 376B, 462I |
+| CrPC | 509 | **64%** | 90% | **96%** | 159 | 34A, 53A, 93A, 93B, 112, 114, 116, 117, 119, 355, 417, 562… |
+| QSO | 168 | 98% | 99% | 99% | 1 | 46A, 78A |
+| Transfer of Property Act | 126 | 94% | 90% | 99% | 7 | 107 |
+| Limitation Act | 30 | 93% | 93% | 97% | 1 | 30 |
+| MFLO | 13 | 85% | 100% | **100%** | 2 (ss. 12, 13) | — |
+| Police Order | — | CSV only | — | — | — | — |
+
+- **Why "CSV only" isn't enough:** it would drop 22% of the PPC and 36% of
+  the CrPC, including sections a lawyer would expect.
+- **"Still missing":** sections whose headings neither copy yields. They
+  are reviewed by hand, and some may be omitted or repealed.
+- **CSV cleaning:** CSV text is also stripped of footnote residue (e.g.
+  `113[:] 113 114[` in s. 302), with fixture tests.
+- **Other duplicates:** PDF copies that duplicate another PDF statute under
+  an OCR title are collapsed to the copy with higher coverage.
+
+### 1.6 Core statutes: confirmed (condition 3)
+
+Measured with the §1.3 rules on the PDF copy of each statute. For statutes
+with a CSV copy, §1.5's CSV + PDF figure is what gets indexed.
+
+| Statute | Copy indexed | Contents entries | Headings found | Coverage | Status |
+|---|---|---|---|---|---|
+| Pakistan Penal Code | CSV + PDF fill | 636 | 629 | 98% (99% with CSV) | clear |
+| Code of Criminal Procedure, 1898 | CSV + PDF fill | 509 | 476 | 90% (96% with CSV) | clear; 12 sections listed for review (§1.5) |
+| Contract Act, 1872 | PDF (only copy) | 185 | 179+ | 91–95% | clear; letter-spaced, needs the §1.1 reflow fix; s. 12 listed for review |
+| Muslim Family Laws Ordinance, 1961 | CSV + PDF fill | 13 | 13 | 100% | clear |
+| Constitution of Pakistan | PDF (only copy) | 303 | 310 | **100%** after the page-number rule (98% before; Arts. 88, 144, 154, 161, **199**, 245 were missed) | clear |
+| Qanun-e-Shahadat Order, 1984 | CSV + PDF fill | 168 | 166 | 99% | clear |
+| West Pakistan Family Courts Act, 1964 | PDF (only copy) | 32 | 32 | 100% | clear |
+| Guardians and Wards Act, 1890 | PDF (only copy) | 55 | 55 | 100% | clear; title is OCR-damaged ("WAR DS"), fixed by the registry alias |
+| Dissolution of Muslim Marriages Act, 1939 | PDF (only copy) | none (no contents list) | 6 | all 6 sections (s. 6 is a repeal note) | clear |
+
+The "fixes" were the four heading rules added to §1.3 (page headers,
+footnote markers, page numbers, omitted sections), plus the Guardians and
+Wards Act alias. No core statute falls back to fixed windows.
+
+The Contract Act's contents-list count fell to 20 in one survey run, when
+page numbers confused the "numbering restarts at 1" rule. The builder must
+read the contents region (§1.2), not infer it from numbering. A fixture
+test on the Contract Act pins this.
 
 ---
 
@@ -203,6 +299,11 @@ All agreements are contracts if they are made by the free consent of …
 
 `{canonical statute title} — s. {number}. {heading}.`, then a newline, then
 the body.
+
+The Constitution and the Qanun-e-Shahadat Order number **Articles**, so
+their headers read `— Art. 199. Jurisdiction of High Court.`. The registry
+stores the provision label per statute, and the citation checker accepts
+"Article" / "Art." for them.
 
 - **Canonical title:** from the statute registry (section 4.1), never the
   OCR title.
@@ -248,6 +349,42 @@ the chat model gets the section:
 **Context budget:** the total is capped at **7,200 characters**, today's
 maximum (5 chunks × 800 plus up to 4 lookup chunks × 800). That keeps each
 request inside Groq's 8,000 tokens per minute with the 2,000-token reply.
+
+### 2.3 Largest realistic chat prompt (condition 7)
+
+**How it was measured:**
+- Tokenizer: `o200k_base` (the gpt-oss family); no model calls.
+- Parts: the chat's system prompt and language instruction from
+  `legal_chat_service.py`; a **full 7,200-character context** of real PPC
+  and CrPC text with v2 headers and source lines; the 78 eval questions
+  (median 61 tokens, max 159).
+- Real chat requests also carry the **last 10 messages of history,
+  verbatim** (`_recent_history(limit=10)`, no trimming).
+- Groq's per-minute check counts the prompt **plus** `max_tokens` (2,000).
+
+| Scenario | System + context | History | Question | **Prompt** | Prompt + 2,000 reserved |
+|---|---|---|---|---|---|
+| First question, typical | 2,127 | 0 | 61 | **2,192** | 4,192 |
+| First question, longest eval question | 2,127 | 0 | 159 | **2,290** | 4,290 |
+| 6th turn: 5 long questions + 5 answers of 312 tokens (the audit's longest) | 2,127 | 2,395 | 159 | **4,685** | 6,685 |
+| 6th turn: 5 long questions + 5 detailed answers of ~800 tokens | 2,127 | ~4,835 | 159 | **~7,120** | **~9,120: over the cap** |
+| Limit: 5 × 4,000-character messages + 5 answers at the 2,000-token cap | 2,127 | 20,045 | 801 | 22,977 | 24,977 |
+
+- **Context:** 7,200 characters of statute text is about 1,570 tokens
+  (0.218 tokens per character), about 1,830 with headers and source lines.
+  v2 keeps the same 7,200-character budget, so **the redesign doesn't make
+  prompts larger.**
+- **History:** this is the pre-existing risk. A long session already
+  overflows the 8,000-per-minute cap, and the rewrite call (~600 reserved)
+  lands in the same minute.
+- **Added to the design: a history budget.**
+  - Send history newest first until it reaches **2,000 tokens** (counted
+    with `o200k_base`); drop older messages.
+  - That bounds the worst realistic request at about 2,130 + 2,000 + 900
+    (a 4,000-character question) ≈ **5,030 prompt tokens**, or 7,030 with
+    the reply reserve.
+  - Adding the rewrite's ~600 gives about 7,630, under 8,000.
+  - This is independent of v2 and could ship first.
 
 ---
 
@@ -307,12 +444,45 @@ request inside Groq's 8,000 tokens per minute with the 2,000-token reply.
 - Return section-level records: `statute`, `section`, `heading`,
   `relevance` and passage text (section 2.2).
 
-**Dual query (the fix for rewrite failures):**
-- Embed both the user's raw question and the rewrite, search both, and keep
-  the max score per section.
-- It costs one extra local embedding (tens of milliseconds) and no Groq
-  tokens.
-- It would have kept DMMA s. 2 (0.822 raw) for the dissolution question.
+**Dual query: the merge rule (condition 2).** This is the fix for rewrite
+failures.
+
+1. **Two searches.**
+   - `q_raw`: the user's message exactly as typed.
+   - `q_rw`: the rewrite (live), or the recorded rewrite (evaluation).
+   - Each retrieves its top **20 windows**. If the rewrite failed and fell
+     back to the question, only one search runs.
+2. **Per query, windows become sections:** a section's score for that
+   query is its best window's score.
+3. **Merge by maximum:**
+   `merged(section) = max(score_raw(section), score_rw(section))`, where a
+   section missing from one list counts as 0 for that query.
+4. **Rank** by merged score. Ties go to the higher rewrite score, then to
+   the earlier section number.
+5. **One threshold, on merged scores.** A section reaches the model only if
+   `merged ≥ T`. **T is calibrated on merged scores** (§7.6), never on
+   single-query scores: taking a maximum can only raise scores, so a
+   threshold tuned on rewrite-only scores would let more through.
+6. **Refusal:** if no section has `merged ≥ T`, the chat refuses as today
+   (no LLM call).
+7. **Explicit references** ("s. 302 PPC", "Article 199"):
+   - fetched from the registry when the statute alias **and** the number
+     both appear in the user's own text;
+   - added after the ranked sections, inside the context budget;
+   - they don't by themselves make an otherwise off-topic question
+     answerable: "Indian Penal Code" is not a PPC alias, and a bare
+     "section 302" with no statute is not fetched.
+
+**Why the maximum and not an average:**
+- Averaging would let a drifting rewrite pull the right section below the
+  threshold. That is exactly the DMMA miss (raw 0.822; the live rewrite
+  went elsewhere).
+- The risk of the maximum is the reverse: an off-topic raw question
+  scoring high. The off-topic set and recalibration (§7.6) and the
+  acceptance criterion (§7.7) are there for that.
+
+**Cost:** one extra local embedding (tens of milliseconds) and no Groq
+tokens.
 
 **Explicit references:**
 - A question naming a section ("s. 7 MFLO", "section 302 of the PPC") is
@@ -397,24 +567,61 @@ parity check in step 5.
    - run the parser fixture tests;
    - review the build report by hand: coverage, de-duplication choices,
      fallbacks, header lengths.
-2. **Upload** `windows.jsonl` (statute text only, about 50–70 MB) to Google
-   Drive.
-   - No `.env`, keys or user data go up.
-   - The raw datasets aren't published anywhere (see `data/README.md`), so
-     they stay in the user's own Drive.
-3. **Notebook on a T4 GPU runtime:**
-   - pin the backend's versions:
-     `sentence-transformers==3.1.1 transformers==4.57.6 faiss-cpu==1.15.0
-     numpy==2.4.6`;
-   - `encode(batch_size=256, normalize_embeddings=True)`, fp32;
-   - checkpoint `vectors_part_*.npy` to Drive every ~10k vectors (Colab
-     disconnects);
-   - print the measured throughput and ETA after the first 2k vectors;
-   - build `IndexFlatIP`;
-   - write the index, the per-vector metadata and `manifest.json`.
-   - Arm B is the same notebook with the model name and window size
-     changed, written to its own folder.
-4. **Download** to `backend/storage/faiss_v2/` (and `faiss_v2b/` for arm B).
+2. **Upload the corpus to Drive** (by hand, once per corpus version):
+   - `windows.jsonl` (statute text only, about 50–70 MB) and
+     `corpus_manifest.json`, which holds its SHA-256, window count, chunker
+     version and model name;
+   - into `MyDrive/legalease/corpus/<corpus_sha8>/`.
+   - No `.env`, keys or user data go up. The raw datasets aren't published
+     anywhere (see `data/README.md`), so they stay in the user's own Drive.
+3. **Notebook on a T4 GPU runtime (condition 6):** it reads the corpus
+   from Drive, checkpoints to Drive and saves the index back to Drive.
+
+   Drive layout:
+   ```
+   MyDrive/legalease/
+     corpus/<corpus_sha8>/windows.jsonl, corpus_manifest.json
+     runs/<corpus_sha8>__<model_slug>/
+       run_manifest.json        model, dim, max_seq_length, batch size, part size, versions, status
+       parts/part_00000.npy …   10,000 vectors each, float32, L2-normalised
+       parts/part_00000.done    written only after its .npy is fully saved
+       index/legal_corpus.faiss, legal_corpus_meta.json, manifest.json   (final)
+   ```
+
+   Cells:
+   1. **Mount Drive.** Pin
+      `sentence-transformers==3.1.1 transformers==4.57.6 faiss-cpu==1.15.0
+      numpy==2.4.6`, and check that the GPU is a T4 or better.
+   2. **Read the corpus from Drive.** Verify `windows.jsonl` against
+      `corpus_manifest.json` (SHA-256 and count); stop on a mismatch.
+   3. **Resume check.**
+      - If `run_manifest.json` exists, it must match this corpus hash,
+        model and part size. If it doesn't, stop rather than mix vectors.
+      - Parts with a `.done` marker are skipped. A `.npy` without one (the
+        session died mid-write) is re-done.
+   4. **Embed** part by part:
+      - `encode(batch_size=256, normalize_embeddings=True)`, fp32;
+      - save `part_k.npy` to Drive, then write `part_k.done`;
+      - print the throughput and ETA after the first part.
+
+      A disconnect loses at most one part (about 10k vectors, under a
+      minute on a T4). Re-running the notebook continues from the next
+      unfinished part.
+   5. **Assemble:**
+      - load the parts in order;
+      - check the count equals `corpus_manifest.json`;
+      - check every vector has norm ≈ 1;
+      - build `IndexFlatIP`;
+      - write `index/` **to Drive**, with `manifest.json` (corpus hash,
+        model, dim, `max_seq_length`, counts, the versions used, build
+        time);
+      - set `run_manifest.status = "complete"`.
+   6. **Arm B:** the same notebook with `MODEL_NAME` and the corpus folder
+      changed (larger windows mean a different corpus hash). It writes to
+      its own `runs/` folder.
+4. **Download** `runs/…/index/` from Drive to `backend/storage/faiss_v2/`
+   (and `faiss_v2b/` for arm B). The Drive copy stays as the archived
+   build.
 5. **Parity checks, local:**
    - re-embed 200 random windows on the CPU, requiring cosine ≥ 0.999
      against the Colab vectors;
@@ -484,11 +691,15 @@ logged. Both indexes must be fed the **same** rewrites.
 - System prompt 265 tokens; questions median 61 and max 159 tokens.
 - Per call: prompt about 344 tokens (median), 444 (max). With the 150
   `max_tokens` that Groq's per-minute check also reserves, at most 594.
-- 83 calls: about 28,600 prompt tokens plus about 5,000 output, so **about
-  34k tokens**, roughly 17% of the 200k daily budget.
+- **What is recorded:** the 78 eval questions, the 26 gold questions
+  (G01–G04 are the audit's A1, A2, A3 and A5) and the 15 off-topic/foreign
+  questions (O01 is A4). That is **119 calls**.
+- **Cost:** gold and off-topic questions are short (about 300 prompt tokens
+  each). The total is about **48k tokens**, roughly a quarter of the 200k
+  daily budget. (The earlier 83-call estimate was about 34k.)
 
 **Pacing:** stay under about 6,500 reserved tokens per minute, which is 10
-calls a minute at worst. The 83 calls take **about 8–10 minutes**. The
+calls a minute at worst. The 119 calls take **about 12–15 minutes**. The
 recorder sleeps between calls and stops on HTTP 429.
 
 **Approval:** runs once, with your go-ahead, on a day with enough budget
@@ -556,26 +767,78 @@ For every question and every arm, one row:
   (A3), and DMMA s. 2 / MFLO s. 7(5) as the rewrite-failure pair. Each shows
   rank and score under raw and frozen-rewrite queries for every arm.
 
-### 7.6 Threshold recalibration
+### 7.6 Threshold recalibration on the new index (condition 1)
 
-Headers raise scores (s. 302 went from 0.741 to 0.871), so 0.65 means
-something different on v2.
+Headers raise scores (s. 302 went from 0.741 to 0.871), and the merge rule
+takes a maximum. So 0.65 means something different on v2. The threshold is
+**recalibrated on v2, on merged scores (§4.2), before any other acceptance
+check.**
 
-- **Sweep:** 0.55 to 0.80 on v2.
-- **Plot:** in-library gold hit@5 against out-of-scope false answers.
-- **Pick:** the highest threshold with zero false answers on the labelled
-  out-of-scope set.
-- **Why it matters:** s. 10 under a rewrite-style query scores 0.633.
+**Inputs:**
+- the **off-topic / foreign set** (O01–O15 in the gold-set file, plus the
+  foreign questions among the 78 once labelled);
+- the **gold set** (G01–G26).
 
-### 7.7 Acceptance (proposed)
+Both are run under the raw and the recorded-rewrite query, merged by
+maximum.
 
-- s. 302 and s. 10 reach the model for A2 and A3 under the frozen rewrite.
-- DMMA s. 2 and MFLO s. 7 reach it for A1 and A5.
-- A4 is refused.
-- No question in the "lost" list without an explanation the developer
-  accepts.
-- No new false answers; no contents windows in the top 5.
-- Context within 7,200 characters.
+**Procedure:**
+1. For each off-topic or foreign question, take its **highest merged
+   section score** `m_o`. Let `M = max(m_o)`, and note which question set
+   it.
+2. **`T = M + 0.02`**, rounded **up** to two decimals. That is the lowest
+   threshold at which every off-topic question is refused, plus a margin.
+3. At `T`, compute gold hit@5 and list every gold question whose gold
+   section's merged score is below `T`.
+4. If any of G01–G04 (the four failures) falls below `T`, **don't lower `T`
+   to rescue it.** Report the conflict (which off-topic question sets `M`,
+   and how close the failure is) for a decision.
+5. Also report the sweep from 0.55 to 0.85 in steps of 0.01 (gold hit@5
+   against off-topic false answers), and the same procedure on the v1 index
+   (A0), for comparison.
+
+**Recorded value.** It is written in four places:
+- `RAG_SIMILARITY_THRESHOLD` in `backend/app/core/config.py` (the default)
+  and `.env.example`;
+- `similarity_threshold` in the index's `manifest.json`, so the threshold
+  travels with the index it was calibrated on;
+- the table below.
+
+| Index | Date | Model | Threshold `T` | Highest off-topic score `M` (question) | Gold hit@5 at `T` | Calibration sets |
+|---|---|---|---|---|---|---|
+| v1 (current) | Sept 2026 | MiniLM-L12, 800-char chunks | **0.65** | not measured this way (set from the 78-question score distribution) | — | — |
+| v2 | *to be filled by the calibration run* | | | | | gold set v1 (after your review) + O01–O15 |
+
+The v2 value can't be written down before the v2 index exists. It is the
+first number the evaluation produces, and the build isn't accepted without
+it.
+
+### 7.7 Acceptance (as approved)
+
+All four must hold on the chosen arm, at the recalibrated threshold `T`,
+under **both** the raw and the recorded-rewrite query:
+
+1. **The four failures are fixed.** The gold section reaches the model
+   (top 5 after merging, at or above `T`) for:
+   - G01: DMMA s. 2;
+   - G02: PPC s. 302;
+   - G03: Contract Act s. 10;
+   - G04: MFLO s. 7. For s. 9, see question 1 in the gold-set file.
+2. **No regression on the gold set.** Every gold question whose gold
+   section reaches the model on A0 (the current index and pipeline) also
+   reaches it on the chosen arm. Any loss fails acceptance unless you accept
+   the explanation in the per-question report.
+3. **Off-topic still refused.** None of O01–O15, nor the 78-question set's
+   foreign questions, has any section at or above `T`. Every one is
+   refused.
+4. **Threshold recalibrated and recorded,** per §7.6, with the table
+   filled in.
+
+Also reported, but not blocking:
+- contents windows in the top 5 (expected 0);
+- duplicate-statute slots (expected 0);
+- context within 7,200 characters;
+- `mentioned`-only citation groundings.
 
 **Only then:** one live check of the five audit questions (about 25k Groq
 tokens, with approval) before switching `.env` to v2.
@@ -605,6 +868,22 @@ tokens, with approval) before switching `.env` to v2.
 
 ## 9. Risks
 
+- **Local environment (new, 2026-10-04).** Windows Application Control
+  blocks PyTorch and FAISS DLLs on the development machine. Until they're
+  allowed:
+  - the A0 baseline replay, the off-topic calibration on v1, the 200-vector
+    parity check and the app itself can't run locally;
+  - the Colab build is unaffected.
+- **Incomplete CSV copies.** CSV-first needs the PDF fill (§1.5). A CSV
+  section and a PDF fill for the same statute can differ in wording style.
+  Filled sections are labelled in the build report.
+- **The maximum merge raises off-topic scores too.** That is guarded by
+  calibrating on merged scores and by acceptance criterion 3, but a new
+  off-topic phrasing outside O01–O15 could still score high. The off-topic
+  set should grow whenever one is seen.
+- **Long sessions exceed Groq's per-minute cap today** (§2.3). The history
+  budget fixes it, but until it ships a long chat can fail with a 413/429
+  regardless of the index.
 - **Heading false positives** from numbered items in sections and
   schedules. Mitigated by inventory validation and order checks, and
   counted in the build report.

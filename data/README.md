@@ -92,7 +92,8 @@ Known limitations of the statute corpus, found by measurement on
    re-chunk and a full FAISS rebuild (the last rebuild took hours on the dev
    machine), then a re-run of the retrieval evaluation. **Full design,
    with measurements, Colab embedding and evaluation plans:
-   [`docs/retrieval_redesign.md`](../docs/retrieval_redesign.md)** (Oct 2026).
+   [`docs/retrieval_redesign.md`](../docs/retrieval_redesign.md)** (Oct 2026;
+   approved with conditions 2026-10-04, gold set awaiting review).
 2. **Table-of-contents chunks crowd the top 5.** 1,445 chunks (2.7%, in 745
    of the 900 documents) are contents lists — statute name plus every
    section title — and take ~8% of top-5 slots; one reaches the top 5 for
