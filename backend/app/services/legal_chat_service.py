@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from functools import lru_cache
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -68,6 +69,55 @@ SYSTEM_PROMPT = (
 # Appended per question. The detected language is stated explicitly: left
 # to infer it, the model once answered an English question in Urdu (Oct 2026
 # audit) — the prompt's only concrete label example was the Urdu one.
+# Chat history is sent verbatim, and Groq's on-demand tier caps a request
+# at 8,000 tokens per minute (prompt + the 2,000-token reply reserve, plus
+# ~600 for the query rewrite in the same minute). A first question is ~2,200
+# prompt tokens; by the 6th turn with long answers the history alone pushed
+# a request past the cap (docs/retrieval_redesign.md, section 2.3). Keep the
+# newest messages up to this budget.
+HISTORY_TOKEN_BUDGET = 2000
+
+
+@lru_cache(maxsize=1)
+def _encoder():
+    """gpt-oss uses the o200k tokenizer family. tiktoken downloads the
+    encoding file on first use; None if that isn't possible (offline)."""
+    try:
+        import tiktoken
+        return tiktoken.get_encoding("o200k_base")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"o200k tokenizer unavailable, estimating history tokens: {e}")
+        return None
+
+
+def count_tokens(text: str) -> int:
+    enc = _encoder()
+    if enc is not None:
+        return len(enc.encode(text))
+    # Conservative fallback: English legal text is ~0.22 tokens/char and
+    # Urdu runs higher, so half the character count over-estimates both.
+    return len(text) // 2 + 1
+
+
+def trim_history(history: list[dict], budget: int = HISTORY_TOKEN_BUDGET) -> list[dict]:
+    """The most recent messages whose total fits in `budget` tokens, oldest
+    first. Whole messages only, and contiguous: stops at the first message
+    (going back in time) that doesn't fit rather than skipping it, so the
+    model never sees a gap in the conversation."""
+    kept: list[dict] = []
+    used = 0
+    for msg in reversed(history):
+        cost = count_tokens(msg["content"])
+        if used + cost > budget:
+            break
+        kept.append(msg)
+        used += cost
+    if len(kept) < len(history):
+        logger.info(f"Chat history trimmed to {len(kept)} of {len(history)} messages ({used} tokens)")
+    kept.reverse()
+    return kept
+
+
 LANGUAGE_INSTRUCTION = {
     "en": (
         "LANGUAGE: The question is in English. Answer in the language of the "
@@ -163,7 +213,7 @@ class LegalChatService:
         # was asked, whatever the outcome), then commit.
         if session_id is not None:
             session = self.get_session(session_id, user)
-            history = self._recent_history(session.id, limit=10)
+            history = trim_history(self._recent_history(session.id, limit=10))
         else:
             session = ChatSession(
                 user_id=user.id,
