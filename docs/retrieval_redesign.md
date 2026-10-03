@@ -1,545 +1,657 @@
 # Retrieval redesign: section-based statute chunks
 
-Status: **design only, not implemented.** Written 2026-10-03. Every number
-below was measured offline with the local embedding model against the
-current index; no Groq tokens were used. Statute and section judgements are
-the developer's assessment, not a lawyer's.
+Status: **design only. No code changed, no Groq tokens used.** Written
+2026-10-03.
 
-Supersedes item 1 of "Future work — statute corpus and retrieval" in
-[`data/README.md`](../data/README.md), and makes the contents-list lookup
-(`backend/app/ai/section_lookup.py`) unnecessary.
+Every number here was measured offline:
+- with the local embedding model (`paraphrase-multilingual-MiniLM-L12-v2`);
+- against the current index (`backend/storage/faiss/`, 53,739 chunks from
+  901 statute documents).
+
+Statute and section judgements are the developer's assessment, not a
+lawyer's.
+
+This expands option (e), "chunk by section", in
+[`data/README.md`](../data/README.md) ("Future work — statute corpus and
+retrieval"). It also accounts for the experiments recorded there as
+rejected. Section 8 checks the design against each of them.
 
 ---
 
-## 1. Why: what goes wrong today
+## 0. Measured starting point
 
-Two test cases from the October 2026 audit:
+### 0.1 The known failures, re-measured offline
 
-| Question (audit) | Gold section | Where it ranks today |
-|---|---|---|
-| "What are the essential elements of a valid contract under the Contract Act, 1872?" | Contract Act s. 10, "What agreements are contracts" | chunk 27099: **rank 4,366**, score 0.444. Top 5 are the Futures Market Act, Capital Territory Trust Act, IMF Act, Transfer of Property Act and CDA Ordinance. The live answer was built from a Transfer of Property passage that mentions ss. 11–12. |
-| "What is the punishment for qatl-i-amd under the Pakistan Penal Code?" | PPC s. 302, "Punishment of qatl-i-amd" | CSV copy: rank 5 (0.741), right on the edge. PDF copy: rank 149 (0.641, below the 0.65 threshold). |
+"Raw" means the user's question embedded as-is. "Rewrite-style" means a
+query written by hand in the style of the live rewrite. Real rewrites aren't
+logged, which is why section 7 records them.
 
-Five causes, found in the code and the data:
-
-1. **The embedding model reads only 128 tokens.**
-   - `paraphrase-multilingual-MiniLM-L12-v2` has `max_seq_length` 128.
-   - An 800-character chunk is about 196 tokens (median), so **99% of chunks
-     are truncated** and the model sees about 65% of each one on average.
-   - Chunk 27099 is cut off at "…and are not hereby expressly". The back
-     third of every chunk is invisible to search.
-2. **Chunks ignore section boundaries.**
-   - Section 10 sits in the middle of chunk 27099, after the end of s. 9 and
-     before the start of s. 11.
-   - The section number and heading carry almost no weight in the
-     embedding.
-3. **The cleaner destroys line structure and glues words.**
-   - In `scripts/clean_statute_corpus.py`, `_fix_letter_spacing()` turns every
-     `\n` into a space and then deletes all spaces.
-   - Every line break inside the 109 letter-spaced documents (the Contract
-     Act among them) therefore joins two words: "freeconsent", "arenot",
-     "1872CONTENTSSECTIONS:".
-   - Line structure is exactly what section splitting needs. The raw text
-     has it: each body heading starts its own line ("10. What agreements are
-     contracts. All agreements…").
-4. **Contents-list chunks are under-detected.**
-   - `is_toc()` looks for `\bCONTENTS\b`, which fails on the glued
-     "CONTENTSSECTIONS".
-   - In the Contract Act, 19 of 237 chunks (8%) are contents list, and
-     `is_toc()` flags **none** of them. The README's figure of 1,445
-     contents chunks is therefore a lower bound.
-5. **Statutes are indexed twice.**
-   - The PPC has a CSV copy ("Pakistan Penal Code", 601 chunks) and a PDF
-     copy ("THE PAKISTAN PENAL CODE", 713 chunks). The MFLO likewise has a
-     CSV copy and an OCR-titled PDF copy ("…ORDINAN CE, 1961").
-   - Duplicates take top-5 slots from other statutes.
-
-### What section chunks would do (measured)
-
-The method:
-- Build a section chunk with a header.
-- Embed it with the current model.
-- Compare its score with today's index for the same query.
-
-**Caveat:** the "rewrite-style" query below was written by hand in the
-style of the live rewrite. Real rewrites aren't logged, so section 6 freezes
-them.
-
-| Query | Today | Section chunk with header | Section chunk, no header |
+| Test case | Query | Gold chunk today | Same section as a chunk with a header (proposed) |
 |---|---|---|---|
-| s. 302, raw question | rank 5 (0.741) | **0.871, rank ~1** | 0.786, rank ~1 |
-| s. 302, rewrite-style | rank 7 (0.752) | **0.873, rank ~1** | 0.813, rank ~1 |
-| s. 10, raw question | rank 4,366 (0.444) | **0.661, rank ~4** | 0.548, rank ~231 |
-| s. 10, rewrite-style | rank 8,973 (0.431) | 0.598, rank ~35 | 0.618, rank ~10 |
+| **PPC s. 302** | raw | rank 5, 0.741 (CSV copy); rank 149, 0.641 (PDF copy) | **0.871, rank ~1** |
+| | rewrite-style | rank 7, 0.752 | **0.873, rank ~1** |
+| **Contract Act s. 10** | raw | **rank 4,366**, 0.444 | 0.661, rank ~4 (header + section); **0.690, rank ~1** when the whole Act is section-chunked |
+| | rewrite-style | rank 8,973, 0.431 | 0.633, rank ~4, **but below the 0.65 threshold** |
+| **DMMA s. 2** (dissolution grounds) | raw | **rank 1, 0.822**: found today | 0.870, rank ~1 |
+| | rewrite-style | rank 2, 0.843 | 0.858, rank ~2 |
+| **MFLO s. 7(5)** (talaq during pregnancy; audit question 5) | raw | rank 2, 0.541 (best MFLO chunk 0.693) | whole s. 7 with header: **0.504**; the window holding sub-s. (5) with header: **0.751, rank ~1** |
 
-A second check section-chunked the whole Contract Act from the raw text,
-using the header format in section 3:
-- **Raw question:** s. 10 scores 0.690. That beats today's best global
-  score (0.672), so it would rank about 1st.
-- **Rewrite-style query:** s. 10 scores 0.633. That is about 4th globally,
-  but **under the 0.65 threshold**. Ranked above it are ss. 19, 23 and 11,
-  which are relevant neighbours: consent, lawful consideration,
-  competence.
+How the "proposed" column was measured:
+- Each section chunk was embedded and its score compared with today's index
+  for the same query.
+- The Contract Act row was also tested by section-chunking the whole Act
+  from the raw text (152 sections parsed).
+- These are estimates of rank. The real ranks come from the rebuilt index
+  (section 7).
 
-**Conclusion:** section chunks fix s. 302 outright and make s. 10 reachable.
-s. 10 also needs three things:
-- the raw question searched alongside the rewrite (section 5.2);
-- a threshold recalibrated on the new index (section 6.5);
-- the evaluation to confirm both.
+### 0.2 Two kinds of failure
+
+The live audit retrieved:
+
+| Audit question | Retrieved live | Outcome |
+|---|---|---|
+| Dissolution grounds | MFLO, Family Courts Act, Child Marriage Restraint Act (**no DMMA**) | "not detailed in the passages" |
+| Compound talaq / pregnancy | nothing above 0.65 | refused |
+| Qatl-i-amd punishment | PPC chapter text, CrPC, Hadd Order (no s. 302) | "library does not contain" |
+| Valid contract | Transfer of Property, Futures Market, Capital Territory Trust, CDA, IMF Acts | answered from TPA ss. 11–12 |
+
+1. **Chunking failures (s. 302, s. 10).** The right text exists but is
+   diluted in an 800-character window, or truncated out of it. Section
+   chunks with headers fix these.
+2. **Rewrite failures (DMMA s. 2, MFLO s. 7).** The raw question finds the
+   right statute today: DMMA s. 2 ranks 1st, and the MFLO scores 0.693, above
+   the threshold. The live rewrite moved the search away. **Section
+   chunking alone does not fix this.** It needs the raw question searched
+   alongside the rewrite (section 4.3).
+
+### 0.3 Root causes found in the code and data
+
+1. **The model reads 128 tokens.**
+   - `max_seq_length` is 128.
+   - An 800-character chunk is about 196 tokens (median), so **99% of chunks
+     are truncated**, and the model sees about 65% of each.
+   - Chunk 27099 (s. 10) is cut off at "…and are not hereby expressly".
+   - MFLO s. 7 as a whole scores 0.504 because sub-s. (5) is past the
+     128-token cut.
+2. **Chunks ignore section boundaries.** s. 10 sits mid-chunk between the
+   end of s. 9 and the start of s. 11.
+3. **The cleaner glues words and destroys line structure.**
+   - In `scripts/clean_statute_corpus.py`, `_fix_letter_spacing()` turns
+     `\n` into a space and then deletes all spaces.
+   - Every line break in the 109 letter-spaced documents therefore joins
+     two words: "freeconsent", "arenot", "1872CONTENTSSECTIONS:".
+   - The raw text has each section heading on its own line, which is
+     exactly what section detection needs.
+4. **Contents lists go undetected.** `is_toc()` needs `\bCONTENTS\b`, which
+   fails on glued text. 19 of the Contract Act's 237 chunks (8%) are its
+   contents list, and none are flagged. The README's 1,445 is a lower
+   bound.
+5. **Statutes are indexed twice.**
+   - PPC: a CSV copy (601 chunks) and a PDF copy (713 chunks).
+   - MFLO: a CSV copy and "…ORDINAN CE, 1961".
 
 ---
 
-## 2. Scope
+## 1. Section detection
 
-**In scope:** the 901 statute documents. That is 894 PDF-derived
-(`pakistan_code_pdf_data.json`) plus 7 CSV section tables
-(`Datatset For FAISS.csv`). All 53,739 current chunks are `statute` type;
-there are no judgments in the index.
+### 1.1 Prerequisite: fix the reflow
 
-**Not in scope:**
-- the query-rewrite prompt (its rejected change is documented in
-  `data/README.md`);
-- the chat prompt;
-- OCR word splits inside text ("pronoun ced", "effec tive"). These are
-  reported per statute but not auto-corrected.
+The letter-spaced reflow must keep `\n` as a line break, then:
+- drop intra-word spaces;
+- map `\xa0` to a space;
+- keep line breaks through all cleaning;
+- collapse them only when writing chunk text.
+
+Fixture tests: Contract Act s. 10 reads "free consent … and are not", and
+its heading starts a line.
+
+### 1.2 Two sources, two detectors
+
+**CSV section tables** (7 statutes: PPC, CrPC, QSO, Transfer of Property
+Act, Limitation Act, MFLO, Police Order):
+- Sections come straight from the `Section` / `Heading` / `Defination`
+  columns, so no parsing is needed.
+- The cleaning rules already in the script (CrPC year relabelling,
+  dropped rows) still apply.
+
+**PDF-derived text** (894 documents):
+
+1. **Regions.** Each statute has a title, a contents list, a preamble, the
+   body and schedules.
+   - Contents list: from `CONTENTS` / `SECTIONS:` (matched after squashing
+     spaces) to the first accepted body heading.
+   - Schedules: from a line `THE … SCHEDULE`.
+2. **Body headings:** line-start matches of
+   `^\s*(\d{1,3}[A-Z]{0,2})\s?\.\s+["“'‘(]?[A-Z]…`. This includes:
+   - quoted headings: `13. "Consent" defined.` (the prototype missed s. 12
+     to s. 18 by not allowing quotes);
+   - lettered sections: `19A.`, `25-A.`;
+   - amendment brackets: `3[25-A. Transfer…`.
+3. **Telling contents entries from body headings.**
+   - Contents entries carry no running text.
+   - In letter-spaced statutes they also lack the space after the dot
+     (`10.What agreements…` vs body `10. What agreements…`).
+   - The region split above is the primary rule.
+
+Coverage measured on the 894 raw PDF documents:
+
+| Line-start numbered headings per document | Documents |
+|---|---|
+| 10 or more | **634** |
+| 3 to 9 | 211 |
+| 1 to 2 | 47 |
+| none | 2 |
+
+838 of 894 have a CONTENTS or SECTIONS header in their first 3,000
+characters.
+
+### 1.3 OCR-damaged headings
+
+| Damage | Example | Handling |
+|---|---|---|
+| Letter-spacing | `1 0 . W h a t` | fixed by the reflow (section 1.1) |
+| A word split by a stray space | `7. Tala q.—`, `pronoun ced` | Match the heading against the contents inventory (section 3) with a space-insensitive comparison. **Display the contents spelling** ("Talaq"). Body text is not auto-corrected (README: a dictionary fix risks legal terms). The build report counts split words per statute. |
+| Number damage | `1O.` (letter O), `l1.`, a missing dot | Accept only if the corrected number is the next expected entry in the contents inventory. Otherwise not a heading. |
+| Heading missing from the body | an inventory entry with no body match | The text stays with the previous section, and the gap is listed in the build report (no guessing). |
+| Unreadable gazette scans | 3 documents with mojibake titles | fallback (section 1.4), flagged |
+
+**Validation:**
+- A heading is accepted only if its number appears in the statute's
+  contents inventory (when one exists).
+- Numbering may not run backwards by more than a small tolerance. This
+  rejects numbered items inside sections and schedules.
+- Per statute, the build report shows **body sections found ÷ contents
+  entries**. Below 90% means a manual look before embedding.
+
+### 1.4 Statutes without clear section headings
+
+Covered here:
+- the 49 documents with 2 or fewer headings;
+- the 56 with no contents list, when their headings fail order checks;
+- schedules and preambles of every statute.
+
+They get **fixed windows:**
+- about 100 tokens each;
+- one sentence of overlap;
+- header `{canonical title} — {region}` (e.g. "— Schedule", "— Part 3 of
+  12").
+
+They remain searchable. Citations to them can't be section-grounded, so
+the checker treats them as today.
+
+### 1.5 One copy per statute
+
+Where a statute exists twice (PPC, CrPC, QSO and MFLO as CSV and PDF, plus
+OCR-titled duplicates), **index one copy per section number**:
+- choose the copy with the higher inventory coverage and fewer OCR splits;
+- fill sections missing from it from the other copy;
+- record each choice in the build report.
+
+The PPC is the clear test. Its CSV has 502 rows, and the PDF copy holds
+lettered sections the CSV may lack.
 
 ---
 
-## 3. Section-based chunking
+## 2. Chunk header and long sections
 
-### 3.1 Pipeline (replaces `chunk_text()` for statutes)
-
-1. **Reflow without losing lines** (the cleaner fix). For letter-spaced
-   documents:
-   - keep `\n` as a line break;
-   - drop the intra-word spaces;
-   - map `\xa0` to a space.
-
-   For all documents:
-   - keep line breaks through cleaning;
-   - collapse them only when building chunk text.
-
-   Fixture test: the Contract Act's s. 10 must read "free consent" and "are
-   not".
-2. **Split each statute into regions.** A statute has a title, a contents
-   list, the body, and schedules.
-   - **Contents list:** the block from `CONTENTS`/`SECTIONS:` up to the
-     first body heading. In the Contract Act, contents entries read
-     `10.What agreements…` (no space after the dot) while body headings read
-     `10. What agreements…`, a useful extra signal.
-   - **Schedules:** start at a line `THE … SCHEDULE`.
-3. **Find body headings.** These are line-start patterns:
-   - PDF: `^\s*(\d{1,3}[A-Z]{0,2})\s?\.\s+["“'‘(]?[A-Z]…`, plus amendment
-     brackets such as `3[25-A. Transfer…`;
-   - CSV: the `Section` / `Heading` columns directly (no parsing).
-
-   Coverage today: **634 of 894 PDF documents have 10 or more line-start
-   headings** and 211 have 3 to 9. Only 49 have 2 or fewer, and those fall
-   back to windowed chunks (section 3.4).
-4. **Validate headings against the contents list** (section 4). Accept a
-   heading only if:
-   - its number appears in the statute's contents inventory, or there is no
-     inventory;
-   - numbering doesn't jump backwards by more than a small tolerance.
-
-   This rejects numbered list items inside sections and schedules.
-
-   Quoted headings must parse too: `13. "Consent" defined.` was missed by
-   the first prototype, which found 152 of the Contract Act's sections;
-   s. 12 to s. 18 were lost to quotes.
-5. **Section record:**
-   `{section_uid, statute_id, number, heading, chapter, text, char_span}`.
-   - Section text runs from its heading to the next accepted heading.
-   - Footnote and amendment markers are stripped ("1[Pakistan]" becomes
-     "Pakistan", "113[:] 113 114[" is removed), with fixture tests.
-   - Sections that only say `[Omitted]` / `Omitted by …` are kept in the
-     registry but not embedded.
-
-### 3.2 The chunk header
+### 2.1 Header
 
 ```
 The Contract Act, 1872 — s. 10. What agreements are contracts.
 All agreements are contracts if they are made by the free consent of …
 ```
 
-- **Format:** `{canonical statute title} — s. {number}. {heading}.`, then a
-  newline, then the body.
-- **Chapter:** stored in metadata, not in the header. Every header token
-  costs one of the 128 the model reads, so the header must stay at about
-  20 tokens or fewer (measured per window at build time).
-- **Canonical title:** from the statute registry (section 4.2), never the
-  OCR-damaged one, so "ORDINAN CE" never appears in a header.
+`{canonical statute title} — s. {number}. {heading}.`, then a newline, then
+the body.
 
-The header is what moved s. 10 from rank 4,366 to about 4 and s. 302 from
-0.741 to 0.871. It names the statute and the provision in the text the model
-actually reads.
+- **Canonical title:** from the statute registry (section 4.1), never the
+  OCR title.
+- **Chapter:** kept in metadata, not in the header. Each header token costs
+  one of the 128 the model reads.
+- **Budget:** the header must be **30 tokens or fewer**, and the build fails
+  if one exceeds it. A typical header is 15–20 tokens.
 
-### 3.3 Long sections: windows under one parent
+**Effect** (section 0.1):
+- s. 302: 0.786 without the header, 0.871 with it;
+- s. 10, raw question: 0.548 without, 0.661 with.
 
-- **Size of the problem:** sections are often longer than 128 tokens. In the
-  Contract Act the median is 176 tokens, p90 is 536, and 91 of 152 parsed
-  sections are over 128. Some CSV sections run to 30,118 characters.
-- **Split rule:** split the *embedded text* into windows of about 100 body
-  tokens plus the header, measured with the model's own tokenizer.
-- **Boundaries:** prefer subsection boundaries (`(1)`, `(2)`, `(a)`), then
-  sentence ends, and never mid-word.
-- **Overlap:** one sentence.
-- **Window record:** each vector stores `section_uid`, `part k/n` and its
-  character span.
-- **Small to big:** match on the window, give the model the section. If the
-  section is 1,500 characters or less, the passage is the header plus the
-  whole section. If longer, it is the header, the matched window and its
-  neighbours, up to 1,500 characters.
+One case went the other way: s. 10 with a keyword-style query scored 0.618
+without the header and 0.598 with it. The evaluation measures the header
+across all questions (arms in section 7.4).
 
-### 3.4 Fallbacks
+### 2.2 Split rule for long sections
 
-The 49 documents with 2 or fewer headings, schedules, and preambles get
-fixed windows:
-- about 100 tokens each;
-- one sentence of overlap;
-- header `{title} — {region}` (e.g. "— Schedule", "— Preamble").
+- **Size of the problem:** sections often exceed the 128-token window. In
+  the Contract Act the median is 176 tokens and p90 is 536; 91 of 152
+  sections are over 128; one CSV section is 30,118 characters.
+- **Rule:**
+  1. Measure each section with the model's own tokenizer.
+  2. If header + body is 128 tokens or fewer, it is one window.
+  3. Otherwise split the body into windows of **about 100 body tokens**,
+     each prefixed with the same header.
+  4. Split at subsection or clause boundaries first (`(1)`, `(2)`, `(a)`,
+     `Explanation.—`, `Provided that`), then sentence ends, never
+     mid-word.
+  5. Overlap is one sentence. Each window records `part k/n` and its
+     character span.
 
-They are still searchable, just not as sections.
+**Evidence:** the window holding MFLO s. 7(5) scores 0.751 (rank ~1) where
+the whole of s. 7 scores 0.504. Embedding a long section as one unit loses
+its later subsections to truncation.
 
-### 3.5 One copy per statute (de-duplication)
+**What the model sees (small to big):** the search matches a window, but
+the chat model gets the section:
+- the header plus the whole section if it is 1,500 characters or less;
+- otherwise the header plus the matched window and its neighbours, up to
+  1,500 characters.
 
-- **Keep one copy.** Where a statute exists twice (the PPC, MFLO, CrPC and
-  QSO each have a CSV copy and a PDF copy, plus OCR-variant titles), keep
-  exactly one per section number.
-- **How to choose:** pick the copy with better coverage against the
-  contents inventory and fewer OCR splits, as a per-statute decision
-  recorded in the build report.
-- **The PPC:** the CSV has 502 rows, but the PPC has many lettered sections
-  (`302`, `311`, `337-A`…). Coverage decides, and missing sections can be
-  filled from the other copy.
+**Context budget:** the total is capped at **7,200 characters**, today's
+maximum (5 chunks × 800 plus up to 4 lookup chunks × 800). That keeps each
+request inside Groq's 8,000 tokens per minute with the 2,000-token reply.
 
 ---
 
-## 4. Contents-list chunks
+## 3. Contents-list chunks
 
-**Today:** the contents list is chunked and embedded like any other text. It
-has two effects:
-- it crowds the top 5, because its section titles match many questions;
-- it makes the TOC-guided lookup necessary at all.
-
-**New handling:**
-
-1. **Not embedded.** Contents lists are removed from the vector index
-   entirely. No contents chunk can reach the top 5, so `section_lookup.py`
-   (the contents-list follower) is deleted once the evaluation confirms
-   that.
-2. **Used as an oracle.** Each statute's contents list is parsed into an
-   inventory: `(number, heading, chapter)`. It is used at build time to:
-   - validate body headings (section 3.1, step 4);
-   - recover a heading the body's OCR damaged (body "7. Tala q.—" becomes
-     contents "7. Talaq");
+1. **Removed from the vector index.** No contents window can reach the top
+   5. Demoting them was rejected before because other chunks took the slot.
+   Here the section text itself becomes retrievable, so that objection no
+   longer applies.
+2. **Used as a build-time oracle.** Each contents list is parsed into an
+   inventory of `(number, heading, chapter)` and used to:
+   - validate headings and repair OCR-damaged ones (section 1.3);
    - assign chapters;
-   - report per-statute coverage: body sections found vs. contents
-     entries. A statute below 90% coverage is listed in the build report
-     for a manual look.
-3. **Kept in the statute registry, not the index.** Each statute gets a
-   registry entry (`statutes.json`) with:
-   - canonical title, aliases and year;
-   - the source it came from;
-   - the section inventory and coverage.
-
-   "What does the MFLO cover?" style questions can be answered from the
-   registry later if wanted. Nothing in the current UI needs it.
-4. **Detection that doesn't depend on spacing.**
-   - Contents regions are found structurally: the block before the first
-     accepted body heading that matches `CONTENTS|SECTIONS:` after
-     squashing spaces.
-   - The `is_toc()` heuristic is kept only as a build-time sanity check (0
-     contents windows should survive).
+   - measure coverage per statute.
+3. **Kept in the statute registry** (`statutes.json`), not the index. That
+   leaves "what does this Act cover" answerable later without polluting
+   search.
+4. **Detection by structure**, not by `\bCONTENTS\b` on glued text. The old
+   `is_toc()` stays only as a build check: zero surviving windows may look
+   like contents.
 
 ---
 
-## 5. Index and runtime changes
+## 4. Index metadata and citation checker
 
-### 5.1 Files (a schema change, so a new directory)
+### 4.1 New files in `backend/storage/faiss_v2/`
 
-`backend/storage/faiss_v2/`:
+**The current `storage/faiss/` is not touched.**
 
 | File | Contents |
 |---|---|
-| `manifest.json` | `schema_version: 2`, model name, dim, `max_seq_length`, chunker version, SHA-256 of `sections.jsonl`, counts, build date |
-| `statutes.json` | registry: `statute_id`, canonical title, aliases (incl. OCR variants, "PPC", "MFLO", "QSO", "CrPC"), year, chosen source, inventory, coverage |
-| `sections.jsonl` | one line per section: `section_uid`, `statute_id`, number, heading, chapter, full text |
-| `legal_corpus.faiss` | `IndexFlatIP` over L2-normalised vectors, as today |
-| `legal_corpus_meta.json` | per vector: `section_uid`, `part`, `n_parts`, `char_span` (no duplicated full text) |
+| `manifest.json` | `schema_version: 2`, model, dim, `max_seq_length`, chunker version, SHA-256 of inputs, counts, build date |
+| `statutes.json` | `statute_id`, canonical title, **aliases** (OCR variants, "PPC", "MFLO", "CrPC", "QSO"…), year, chosen source, contents inventory, coverage |
+| `sections.jsonl` | `section_uid`, `statute_id`, number, heading, chapter, full text |
+| `legal_corpus.faiss` | `IndexFlatIP` over L2-normalised vectors (as today) |
+| `legal_corpus_meta.json` | per vector: `section_uid`, `part`, `n_parts`, `char_span` (no duplicated text) |
 
-Size estimates:
-- The PDF corpus is 37.7M characters, about 9.2M tokens. There are at most
-  about 54,000 line-start headings, and fewer real sections.
-- With 100-token windows that comes to **roughly 90k–110k vectors**
-  (384-dim, about 150–170 MB) with the current model.
-- With a 512-token model (section 6.3, arm B) it is about 45k–55k vectors.
+**Size:**
+- The PDF corpus is 37.7M characters, about 9.2M tokens, with at most about
+  54,000 line-start headings (fewer real sections).
+- With the current model that comes to about **90k–110k vectors**, roughly
+  150–170 MB.
+- With a 512-token model (arm B, section 7.4) it is about 45k–55k
+  vectors.
 
-The current index stays in `storage/faiss/`. It is both the baseline arm
-and the rollback.
+### 4.2 Runtime (`embeddings.py`, chat, research)
 
-### 5.2 `embeddings.py`
+**Loading:**
+- `embeddings.py` loads v2 when `manifest.schema_version == 2` and keeps v1
+  loading.
+- Switching index is a `.env` change of `FAISS_INDEX_PATH` /
+  `FAISS_METADATA_PATH`.
 
-- **Loading:** load v2 when `manifest.schema_version == 2`, and keep v1
-  loading until the switch is final. Paths come from config, so rollback is
-  a `.env` change.
-- **Search:** over-fetch (`top_k × 4`), group windows by `section_uid`, keep
-  each section's best score, and return **section-level** records:
-  - `statute`, `section`, `heading` and `relevance`;
-  - passage text built as in section 3.3.
-- **Dual query (no extra Groq):** embed both the user's raw question and the
-  rewrite, search both, and take the max score per section.
-  - Measured on s. 10: the raw question scored 0.690 against the
-    rewrite-style 0.633.
-  - It also keeps working when the rewrite drifts (the rewrite has invented
-    statutes and section numbers before; see `data/README.md`).
-  - Cost: one extra local embedding (about 20 ms).
-- **Explicit references:** a question that names a section ("section 7 of
-  the MFLO", "s. 302 PPC") is fetched directly from the registry.
-  - Only the user's own text is used, never the rewrite, which invents
-    section numbers.
-  - The statute name is matched against registry aliases.
-  - This replaces the contents-list lookup's one useful job.
-- **`index_stats()`:** documents means statutes in the registry.
+**Search:**
+- Over-fetch `top_k × 4` windows and group them by `section_uid`, keeping
+  each section's best score.
+- Return section-level records: `statute`, `section`, `heading`,
+  `relevance` and passage text (section 2.2).
 
-### 5.3 Chat and research
+**Dual query (the fix for rewrite failures):**
+- Embed both the user's raw question and the rewrite, search both, and keep
+  the max score per section.
+- It costs one extra local embedding (tens of milliseconds) and no Groq
+  tokens.
+- It would have kept DMMA s. 2 (0.822 raw) for the dissolution question.
 
-- **Context block:** `[n] Source: The Contract Act, 1872 — s. 10 (What
-  agreements are contracts)`, followed by the passage.
-- **Context budget:**
-  - The total is capped at **7,200 characters**, today's maximum (5 × 800
-    plus up to 4 × 800 from the lookup). That keeps a request within Groq's
-    8,000 tokens per minute alongside the 2,000-token reply.
-  - With longer passages that may mean 4 passages instead of 5. The
-    evaluation reports it.
-- **Citations payload:**
-  - adds `section` and `heading`;
-  - the chat's source list and the Research results show "s. 10 — What
-    agreements are contracts" instead of a raw chunk excerpt.
+**Explicit references:**
+- A question naming a section ("s. 7 MFLO", "section 302 of the PPC") is
+  fetched directly from the registry.
+- Only the **user's own text** is used, never the rewrite, which invents
+  section numbers (see README).
 
-### 5.4 Citation checker (`backend/app/ai/citation_check.py`)
+**Display:**
+- The context block reads `[n] Source: The Contract Act, 1872 — s. 10 (What
+  agreements are contracts)`.
+- The citations payload adds `section` and `heading`, and the Research
+  results show "s. 10 — What agreements are contracts".
+- `index_stats()` counts statutes from the registry.
 
-**Today:** `_passage_index()` infers which sections a passage contains by
-scanning its text ("Section N —", "N. Heading", "302 PPC"). It works, but it
-counts a mere cross-reference ("…specified in Section 304") the same as the
-section itself, and it uses the OCR title as the owner.
+### 4.3 Citation checker (`backend/app/ai/citation_check.py`)
+
+**Today:** `_passage_index()` infers which sections a passage holds by
+scanning its text ("Section N —", "N. Heading", "302 PPC"), and uses the
+passage's OCR title as the owner. A cross-reference ("…specified in
+Section 304") counts the same as the section itself.
 
 **Changes:**
 
-1. **Structured grounding first.** Passages carry
-   `(statute_id, section number)`. The index gets `(number, owner)` for
-   every passage, with the owner set to the registry's canonical title plus
-   its aliases. That makes "s. 10 of the Contract Act" grounded by
-   construction rather than by regex, and fixes owner matching for
-   OCR-titled statutes.
-2. **Cross-references stay allowed but are flagged.** Numbers found by text
-   scan inside a passage that is *another* section become "mentioned"
-   entries.
+1. **Structured grounding.**
+   - Each v2 passage contributes `(number, owner)` from its metadata.
+   - The owner is the registry's canonical title plus all its aliases, so
+     "s. 10 of the Contract Act" and "302 PPC" ground by construction.
+   - OCR titles like "ORDINAN CE" stop mattering.
+2. **"Mentioned" entries.**
+   - Text-scan matches inside a passage that is *another* section become
+     `mentioned`.
    - A citation grounded only by a mention is kept, since the passage does
-     state it, but is logged as `grounded_by_mention`.
-   - The evaluation reports how often that happens before deciding whether
-     to be stricter.
-3. **Subsections:** "s. 7(5)" is grounded when s. 7 is present (already true
-   via `_canon`). A test pins it down with the MFLO s. 7(5) pregnancy rule.
-4. **The header doesn't double count:** the header line is excluded from the
-   text scan, because the structured entry already covers it.
-5. **Tests:**
-   - the existing citation tests keep passing with the old passage shape;
-   - new fixtures use v2 passages (s. 10, s. 302, s. 7(5), and a
-     cross-reference to s. 304 that must come out as "mentioned").
+     state it, but is logged.
+   - The evaluation counts these before any decision to be stricter.
+3. **Header excluded from the text scan**, because the structured entry
+   already covers it.
+4. **Subsections:** "s. 7(5)" is grounded by s. 7 (already true via
+   `_canon`), pinned by a test.
+5. **Old shape kept working:** v1 passages (no structured fields) still use
+   the current text scan, so the old index keeps working during the
+   comparison.
+6. **Tests:** fixtures for s. 10, s. 302, s. 7(5), a s. 304 cross-reference
+   that must come out `mentioned`, and an OCR-titled owner.
 
 ---
 
-## 6. Evaluation plan
+## 5. The TOC-guided section lookup: goes, after measurement
 
-### 6.1 Questions and gold labels
+`backend/app/ai/section_lookup.py` exists only because a contents chunk
+outranks the section text it lists. With contents removed from the index
+(section 3) it can never fire on v2: it starts from a retrieved contents
+chunk.
 
-- **The 78 lawyer questions**
-  (`data/processed/qa_eval/Legal_QA_dataset_From_lawyers_clean.csv`).
-  - Only 6 lawyer responses cite a section and 10 name an Act with a year,
-    so gold labels must be added.
-  - For each question, the developer records `in_library` (yes, no or
-    foreign) and the acceptable `statute + sections`, marked as the
-    developer's assessment.
-  - Stored as `data/processed/qa_eval/gold_labels.json`.
-- **The audit's five chat questions**, with gold:
+Its one useful job, following an explicit "section N" in the question, is
+taken over by the registry fetch (section 4.2). That fetch is deterministic
+and doesn't need a contents chunk to reach the top 5.
 
-| # | Question | Gold |
+**Decision:**
+- Keep it while the v1 index is live (arm A0 in section 7 includes it).
+- Delete it when v2 is switched on, if the evaluation shows no question
+  that A0 answered **via** the lookup regresses on v2.
+
+The lookup logs `via_toc`, so those questions can be identified in the
+replay.
+
+---
+
+## 6. Colab embedding plan (no local rebuild)
+
+**Why not locally:** this machine embeds about **10 chunks per second** on
+the CPU (measured: 512 chunks in 53 s). Today's 53,739 chunks therefore
+take about 1.5 hours, and the ~110k v2 windows about 3 hours. **No
+embedding is done locally.** The only local model use is the 200-vector
+parity check in step 5.
+
+**Steps:**
+
+1. **Local, CPU, no model (minutes):**
+   - run cleaner v2 and the section builder;
+   - write `sections.jsonl`, `statutes.json`, `windows.jsonl` (the exact
+     text to embed per vector) and the build report;
+   - run the parser fixture tests;
+   - review the build report by hand: coverage, de-duplication choices,
+     fallbacks, header lengths.
+2. **Upload** `windows.jsonl` (statute text only, about 50–70 MB) to Google
+   Drive.
+   - No `.env`, keys or user data go up.
+   - The raw datasets aren't published anywhere (see `data/README.md`), so
+     they stay in the user's own Drive.
+3. **Notebook on a T4 GPU runtime:**
+   - pin the backend's versions:
+     `sentence-transformers==3.1.1 transformers==4.57.6 faiss-cpu==1.15.0
+     numpy==2.4.6`;
+   - `encode(batch_size=256, normalize_embeddings=True)`, fp32;
+   - checkpoint `vectors_part_*.npy` to Drive every ~10k vectors (Colab
+     disconnects);
+   - print the measured throughput and ETA after the first 2k vectors;
+   - build `IndexFlatIP`;
+   - write the index, the per-vector metadata and `manifest.json`.
+   - Arm B is the same notebook with the model name and window size
+     changed, written to its own folder.
+4. **Download** to `backend/storage/faiss_v2/` (and `faiss_v2b/` for arm B).
+5. **Parity checks, local:**
+   - re-embed 200 random windows on the CPU, requiring cosine ≥ 0.999
+     against the Colab vectors;
+   - vector count = window count;
+   - every `section_uid` resolves;
+   - each sampled vector's nearest neighbour is itself;
+   - manifest hash = local `sections.jsonl` hash.
+
+**Time estimates.** These are estimates: the notebook measures the real
+rate on its first batches.
+
+| Step | MiniLM, ~110k windows of ≤128 tokens | Arm B, 512-token model, ~50k windows |
 |---|---|---|
-| 1 | Grounds on which a Muslim woman can obtain a decree for dissolution | Dissolution of Muslim Marriages Act 1939, s. 2 |
-| 2 | Punishment for qatl-i-amd | PPC s. 302 (s. 300 acceptable support) |
-| 3 | Essential elements of a valid contract | Contract Act s. 10 (ss. 11, 13–14, 23 acceptable support) |
-| 4 | Capital of Australia | out of scope: must be refused |
-| 5 | Talaq pronounced while the wife is pregnant; maintenance in that period | MFLO s. 7 (sub-s. 5) and s. 9 |
+| Runtime start + `pip install` | 3–5 min | 3–5 min |
+| Upload `windows.jsonl` / model download | 2–4 min | 3–5 min |
+| Embedding on a T4 | **2–4 min** (assumes ~500–1,000 windows/s) | **5–10 min** (assumes ~100–200/s) |
+| Build index, write files | about 1 min | about 1 min |
+| Download index (~150–170 MB / ~150 MB) | 2–5 min | 2–5 min |
+| **Total session** | **about 10–20 min** | **about 15–25 min** |
+| Local parity check (200 vectors on CPU) | about 20 s | about 1 min |
 
-### 6.2 Frozen rewrites (one capture, then zero Groq)
+Compare roughly 3 hours for the same embedding on this machine's CPU.
 
-- **Why freeze them:** the live rewrite is non-deterministic and not logged,
-  so arms can't be compared fairly on fresh rewrites.
-- **The capture:** one run of the current `rewrite_search_query()` over the
-  83 questions, saved as `qa_eval/frozen_rewrites.json` with
-  `{question, rewrite, model, prompt_sha256, date}`.
-- **Cost:** about 83 calls at about 500 tokens each, so **about 40k Groq
-  tokens**, roughly 20% of the 200k daily budget.
-  - It is the only Groq spend in this plan.
-  - It runs only with the user's go-ahead, paced for the 8k tokens per
-    minute cap.
-- **Zero-Groq arm:** every arm also runs on the raw questions, which needs
-  no capture at all.
+---
 
-### 6.3 Arms
+## 7. Evaluation plan (no Groq tokens after one recording)
 
-Every arm is replayed locally on the same frozen rewrites. The harness
-imports the backend's retrieval functions directly; it does not go through
-HTTP or call the LLM.
+### 7.1 Questions
+
+- **The 78 lawyer questions** in
+  `data/processed/qa_eval/Legal_QA_dataset_From_lawyers_clean.csv`.
+- **The five chat questions from the last audit:**
+
+| # | Question | Gold (developer's assessment) |
+|---|---|---|
+| A1 | On what grounds can a Muslim woman obtain a decree for the dissolution of her marriage? | DMMA 1939 s. 2 |
+| A2 | What is the punishment for qatl-i-amd under the Pakistan Penal Code? | **PPC s. 302** (s. 300 acceptable support) |
+| A3 | What are the essential elements of a valid contract under the Contract Act, 1872? | **Contract Act s. 10** (ss. 11, 13–14, 23 acceptable support) |
+| A4 | What is the capital of Australia and how many people live there? | out of scope: must be refused |
+| A5 | If a husband pronounces talaq while his wife is pregnant… can she claim maintenance? | MFLO s. 7 (sub-s. 5) and s. 9 |
+
+**Gold labels for the 78:**
+- Only 6 lawyer answers cite a section and 10 name an Act with a year.
+- So, for each question, the developer records `in_library` (yes, no or
+  foreign) and the acceptable `statute + sections`, marked as the
+  developer's assessment.
+- Stored in `data/processed/qa_eval/gold_labels.json`.
+- Questions with no confident label are kept but only scored on
+  answerability.
+
+### 7.2 Recording the rewrites (the only Groq use)
+
+**Why record:** the rewrite is a model call, non-deterministic, and not
+logged. Both indexes must be fed the **same** rewrites.
+
+**How:** add a `--record-rewrites` mode to `scripts/eval_research_retrieval.py`.
+- It calls the backend's `AIClient.rewrite_search_query()` directly, not
+  through HTTP: `/research/search` doesn't return the rewrite, and would
+  also embed and search for no reason.
+- It writes `data/processed/qa_eval/frozen_rewrites.json`:
+  `{question, rewrite, model, prompt_sha256, finish_reason, date}`.
+- **Silent fallbacks:** on any failure the rewrite function returns the
+  original question unchanged. The recorder flags `rewrite == question` and
+  empty or cut-off outputs, and retries those once.
+
+**Cost, measured offline with the o200k tokenizer:**
+- System prompt 265 tokens; questions median 61 and max 159 tokens.
+- Per call: prompt about 344 tokens (median), 444 (max). With the 150
+  `max_tokens` that Groq's per-minute check also reserves, at most 594.
+- 83 calls: about 28,600 prompt tokens plus about 5,000 output, so **about
+  34k tokens**, roughly 17% of the 200k daily budget.
+
+**Pacing:** stay under about 6,500 reserved tokens per minute, which is 10
+calls a minute at worst. The 83 calls take **about 8–10 minutes**. The
+recorder sleeps between calls and stops on HTTP 429.
+
+**Approval:** runs once, with your go-ahead, on a day with enough budget
+left.
+
+### 7.3 Replay (zero Groq)
+
+- **What it is:** a `--replay frozen_rewrites.json --index {v1|v2}` mode.
+  It runs retrieval in-process using the backend's own `embeddings.search`
+  (and, for A0, `section_lookup`), with no HTTP and no LLM.
+- **Two query sets per arm:**
+  - **rewrite:** the recorded rewrites, as the app would search;
+  - **raw:** the questions as written, with no recording needed.
+- **What it records per question:** each passage that would reach the model
+  after the threshold, de-duplication and context budget, with its statute,
+  section, score and rank.
+- **Fixes to the script itself:**
+  - its `THRESHOLD = 0.7` is stale (the app uses 0.65), so read it from
+    settings;
+  - it only looks at the top-1 score, so look at the full passage set.
+
+### 7.4 Arms
 
 | Arm | Index | Retrieval |
 |---|---|---|
-| A0 | current index | current pipeline incl. contents-list lookup (baseline) |
-| A1 | v2 section chunks, MiniLM | rewrite only |
-| A2 | v2, MiniLM | rewrite + raw question (max per section) |
+| **A0** | current v1 | rewrite only + contents-list lookup (today's app) |
+| A1 | v2 section windows, MiniLM | rewrite only |
+| A2 | v2, MiniLM | **rewrite + raw question** (max per section) |
 | A3 | v2, MiniLM | A2 + explicit-reference fetch |
-| B | v2 section chunks, a 512-token multilingual model (`intfloat/multilingual-e5-base`, 768-dim), larger windows | best of A2/A3 |
+| A1-nh | v2 windows **without headers** | as A2 (tests the header) |
+| B | v2, `intfloat/multilingual-e5-base` (512 tokens, 768-dim, larger windows) | as A3 |
 
-**Why arm B:** it attacks cause 1 directly, since it reads 4× more text per
-vector. It costs more RAM and query time on the CPU server, and it needs
-`query:` / `passage:` prefixes.
+**Arm B:** it reads 4× more text per vector, which attacks root cause 1.
+The cost is more RAM and slower query embedding on the CPU server. MiniLM
+stays unless B wins clearly.
 
-**Choosing between A and B:** MiniLM is kept unless B wins clearly on the
-metrics below.
+### 7.5 Per-question report (not just means)
 
-### 6.4 Metrics (per arm, raw and rewritten queries reported separately)
+For every question and every arm, one row:
 
-- **Gold hit@k:** the gold section is among the passages that would reach
-  the model (after threshold, de-duplication and context budget). Reported
-  as hit@5 and MRR.
-- **Answerable rate:** split into in-library and out-of-library or foreign
-  questions.
-- **False-answer rate:** out-of-scope and foreign questions that get
-  passages above the threshold. Australia, the Nigerian CAC question and
-  the Thailand contract question must stay refused.
-- **Contents-list windows in the top 5:** target 0.
-- **Duplicate-statute slots in the top 5:** target 0.
-- **Context size per question:** characters, against the 7,200 budget.
-- **Citation grounding on stored answers:** re-run the checker over saved
-  answers with v2 passages. This is offline; no new generation.
+```
+#  question (60 chars) | gold | A0: rank/score/reached? | A1 | A2 | A3 | B | verdict
+```
 
-### 6.5 Threshold recalibration
+- **Verdicts:** **gained** (gold reached the model in this arm but not in
+  A0), **lost** (the reverse), **same**, **newly answerable**, **newly
+  refused**.
+- **Lists:**
+  - every gained and every lost question in full, with the passages each
+    arm sent;
+  - every out-of-scope or foreign question that becomes answerable, as a
+    **false answer**. The known traps are Australia (A4), the Nigerian CAC
+    question and the Thailand contract question, which must stay refused.
+- **Summaries, after the per-question tables:**
+  - gold hit@5 and MRR, answerable rate in and out of library, false-answer
+    count;
+  - contents windows in the top 5 (target 0) and duplicate-statute slots
+    (target 0);
+  - context characters (budget 7,200);
+  - questions A0 answered via the contents-list lookup (`via_toc`), to
+    decide section 5;
+  - citation-checker counts: the checker re-run offline on **stored** answers
+    against v2 passages, counting `mentioned`-only groundings.
+- **Test cases called out separately:** PPC s. 302 (A2), Contract Act s. 10
+  (A3), and DMMA s. 2 / MFLO s. 7(5) as the rewrite-failure pair. Each shows
+  rank and score under raw and frozen-rewrite queries for every arm.
 
-Headers raise scores (s. 302 went from 0.741 to 0.871), so 0.65 no longer
-means what it did.
+### 7.6 Threshold recalibration
 
-- **Method:** on the new index, sweep the threshold from 0.55 to 0.80.
-- **Plot:** in-library gold hit@5 against the out-of-scope false-answer
-  rate.
-- **Pick:** the highest threshold that keeps false answers at 0 on the
-  labelled out-of-scope set.
-- **Report:** s. 10's 0.633 (rewrite-style) shows why this matters.
+Headers raise scores (s. 302 went from 0.741 to 0.871), so 0.65 means
+something different on v2.
 
-### 6.6 Acceptance criteria (proposed)
+- **Sweep:** 0.55 to 0.80 on v2.
+- **Plot:** in-library gold hit@5 against out-of-scope false answers.
+- **Pick:** the highest threshold with zero false answers on the labelled
+  out-of-scope set.
+- **Why it matters:** s. 10 under a rewrite-style query scores 0.633.
 
-1. s. 10 and s. 302 reach the model for audit questions 3 and 2, under both
-   the raw and the frozen-rewrite query.
-2. Questions 1 and 5 retrieve DMMA s. 2 and MFLO s. 7.
-3. Question 4 is refused.
-4. In-library gold hit@5 improves by at least 15 points over A0.
-5. No new false answers on out-of-scope or foreign questions.
-6. No contents-list windows reach the top 5.
-7. Context stays within 7,200 characters.
-8. After that, **one live check** of the five audit questions (about
-   25k Groq tokens, with approval) confirms the answers cite the gold
-   sections.
+### 7.7 Acceptance (proposed)
 
----
+- s. 302 and s. 10 reach the model for A2 and A3 under the frozen rewrite.
+- DMMA s. 2 and MFLO s. 7 reach it for A1 and A5.
+- A4 is refused.
+- No question in the "lost" list without an explanation the developer
+  accepts.
+- No new false answers; no contents windows in the top 5.
+- Context within 7,200 characters.
 
-## 7. Colab embedding plan
+**Only then:** one live check of the five audit questions (about 25k Groq
+tokens, with approval) before switching `.env` to v2.
 
-The last full rebuild took hours on the development machine's CPU. On a
-Colab T4 GPU, embedding should take minutes. That is an estimate, to be
-measured on the first run.
+### 7.8 Keep the old index
 
-1. **Locally, no GPU:**
-   - run cleaner v2 and the section builder;
-   - write `sections.jsonl`, `statutes.json`, `windows.jsonl` (the text to
-     embed per vector) and the build report (coverage, de-duplication
-     choices, fallbacks);
-   - run the parser fixture tests;
-   - review the report by hand before embedding anything.
-2. **Upload `windows.jsonl` to Google Drive.**
-   - It contains statute text only: no `.env`, no keys, no user data.
-   - The raw datasets are not published elsewhere (see `data/README.md`),
-     so they stay in the user's own Drive.
-3. **Notebook:**
-   - GPU runtime; pin the backend's versions:
-     `sentence-transformers==3.1.1 transformers==4.57.6 faiss-cpu==1.15.0
-     numpy==2.4.6`;
-   - load the model by name;
-   - `encode(batch_size=256, normalize_embeddings=True)` in fp32;
-   - checkpoint `vectors_part_*.npy` to Drive every ~10k vectors (Colab
-     disconnects);
-   - build `IndexFlatIP`;
-   - write the index, the per-vector metadata and `manifest.json` (model,
-     dim, `max_seq_length`, input SHA-256, counts).
-   - Arm B is the same notebook with the model name and window size
-     changed, written to its own folder.
-4. **Download** into `backend/storage/faiss_v2/` (the current index is not
-   touched).
-5. **Parity checks locally:**
-   - Re-embed 200 random windows on the CPU and require cosine ≥ 0.999
-     against Colab's vectors (GPU vs CPU numerics).
-   - Vector count = window count.
-   - Every `section_uid` resolves.
-   - Each sampled vector's nearest neighbour is itself.
-   - Manifest hash = local `sections.jsonl` hash.
-6. **Evaluate** (section 6). **Switch** by pointing `FAISS_INDEX_PATH` /
-   `FAISS_METADATA_PATH` at `faiss_v2`. **Rollback** is the same change in
-   reverse.
+- `backend/storage/faiss/` stays as it is until v2 has been measured and
+  accepted.
+- After the switch it stays for at least one demo cycle as the rollback, a
+  `.env` change away.
+- The frozen rewrites and gold labels stay too, so any future index can be
+  replayed against both.
 
 ---
 
-## 8. Work breakdown (for when implementation is approved)
+## 8. Checked against the rejected experiments (README)
 
-1. **Cleaner fix (line-preserving reflow).**
-   - Re-run the cleaner.
-   - Fixture tests: "free consent", s. 10 heading on its own line.
-2. **Section builder.**
-   - Regions, headings, contents oracle, de-duplication, windows, fallbacks.
-   - Build report.
-   - Parser fixtures: s. 10, CSV s. 302, `19A`, quoted headings, `3[25-A.`,
-     contents entries not read as body, OCR-split heading recovered from
-     contents.
-3. **Gold labels for the 83 questions** (developer's assessment).
-4. **Frozen-rewrite capture** (~40k tokens, needs approval).
-5. **Colab embedding** (A index, then B) and the parity checks.
-6. **Offline evaluation harness and report.**
-7. **Runtime changes:**
-   - `embeddings.py` v2, dual query, explicit-reference fetch;
-   - context budget;
-   - citations payload;
-   - citation checker (structured grounding, "mentioned" entries);
-   - delete `section_lookup.py`.
-8. **Live check** of the five audit questions (~25k tokens, with approval).
-9. **Docs:** update `data/README.md`, PROJECT_CONTEXT.md and the corpus
-   statute list.
+| Rejected | Why it doesn't apply here |
+|---|---|
+| Demote or drop contents chunks | Other chunks took the slot because the section text wasn't retrievable. Here the section text is its own short, headed chunk (s. 302 at 0.871). |
+| Take more chunks from the matched statute | Not used. Retrieval is per section, with statute context in the header. |
+| BM25 + embedding fusion | Not used. |
+| Rewrite names the governing statute | Not used. The rewrite prompt is unchanged, and **dual query** lowers dependence on the rewrite instead. |
+| Look up a statute's contents list whenever the rewrite names it | Not used. The explicit-reference fetch uses only numbers the **user** wrote. Generic title words ("punishment") are never matched. |
 
 ---
 
 ## 9. Risks
 
-- **Heading false positives** (numbered list items, schedules). Mitigated by
-  contents-oracle validation and order checks; measured in the build
-  report.
-- **Statutes with no contents list** (56 of 894 lack a CONTENTS or SECTIONS
-  header in the first 3,000 characters). They get order-check-only
-  validation and are listed for review.
-- **128-token budget.** A long statute title plus heading can eat a large
-  share of a window. The header length is measured per window, and the
-  build fails if any header exceeds 30 tokens.
-- **The score distribution shifts.** Every threshold and score cut-off
-  needs recalibrating (section 6.5). The Research page's displayed scores
-  will also change.
-- **Bigger context per passage.** This is bounded by the 7,200-character
-  budget, which may trade passage count for passage completeness. The
-  evaluation shows the effect.
-- **CSV vs PDF wording differences** for the same section: one copy is
-  chosen per statute and the choice is recorded.
+- **Heading false positives** from numbered items in sections and
+  schedules. Mitigated by inventory validation and order checks, and
+  counted in the build report.
+- **Sections lost to OCR damage.** Text stays with the previous section and
+  the gap is reported, but a lost heading means that section is retrieved
+  only under its neighbour's header.
+- **Wrong de-duplication choice** (CSV vs PDF wording). One copy per
+  statute, the choice recorded, the other copy kept for filling gaps.
+- **Header crowding** of the 128-token window for long statute titles.
+  Measured, with the build failing past 30 tokens.
+- **The score distribution shifts.** Every threshold needs recalibrating
+  (section 7.6), and the Research page's displayed scores change.
+- **Passage size vs passage count** within the 7,200-character budget. The
+  model may get 4 complete sections instead of 5 fragments.
+- **Arm B's runtime cost**: about 1 GB more RAM, and slower CPU query
+  embedding on the server.
+- **One recorded rewrite per question** is a single sample of a
+  non-deterministic process. A question can pass on the frozen rewrite and
+  fail on a different live one.
+
+---
+
+## 10. What can't be measured offline
+
+1. **Answer quality.** Offline replay shows which passages *would* reach
+   the model, not what it would write. Whether it now cites s. 10 and
+   s. 302 correctly, stops saying "the library does not contain", and keeps
+   refusals honest needs the live check (section 7.7).
+2. **Live rewrite variance.** Only one recorded sample per question; the
+   distribution of live rewrites (the cause of the DMMA and MFLO misses) is
+   not measured. Dual query reduces the exposure but can't be proven
+   offline beyond those samples.
+3. **Groq token use per request.** The prompt size can be computed offline
+   from the context characters. Whether real requests stay under 8,000
+   tokens per minute, with reasoning tokens and the reply, needs live
+   calls.
+4. **Citation checking on new answers.** The checker can be re-run only on
+   stored answers against v2 passages. Its behaviour on answers written
+   *from* v2 passages needs new generations.
+5. **Server latency and memory**, especially for arm B and for loading a
+   ~150 MB index next to the NER model. They're measurable on this machine
+   but not representative of a deployment.
+6. **Legal correctness of gold labels.** They are the developer's
+   assessment. Whether s. 10 is "the" answer to the essential-elements
+   question, or DMMA s. 2 the complete answer on dissolution grounds, is a
+   lawyer's call.
+7. **Urdu questions.** The eval set is English. The multilingual model's
+   behaviour on Urdu queries against headed English chunks isn't covered.
+   Adding a few Urdu questions to the gold set would cover it offline,
+   apart from the rewrite recording.
