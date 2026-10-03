@@ -28,11 +28,13 @@ export default function DocumentsPage() {
     onSuccess: (data) => {
       setDoc(data);
       setAnalysis(null);
-      toast.success("Document uploaded.", {
-        description: data.extracted_text
-          ? `${data.extracted_text.length.toLocaleString()} characters extracted`
-          : "Upload saved — no extractable text in this file.",
-      });
+      if (data.extraction_warning) {
+        toast.warning("Uploaded, but no text was extracted.", { description: data.extraction_warning });
+      } else {
+        toast.success("Document uploaded.", {
+          description: `${data.extracted_text.length.toLocaleString()} characters extracted`,
+        });
+      }
     },
     onError: (e) => {
       toast.error(e?.response?.data?.error?.message || "Upload failed.", {
@@ -119,6 +121,7 @@ export default function DocumentsPage() {
               )}
             </button>
           </div>
+          {doc.extraction_warning && <ErrorLine>{doc.extraction_warning}</ErrorLine>}
 
           {isLawyer && <SaveToCase doc={doc} onAttached={setDoc} primary={analysed} />}
 
@@ -141,8 +144,8 @@ export default function DocumentsPage() {
                   <div>
                     <p>No text extracted from this file.</p>
                     <p className="ds-meta mt-1">
-                      Likely a scanned or image-only PDF. OCR for these needs Tesseract OCR and Poppler installed on
-                      the server.
+                      {doc.extraction_warning ||
+                        "Likely a scanned or image-only file. Reading these needs text recognition (OCR) installed on the server."}
                     </p>
                   </div>
                 </div>

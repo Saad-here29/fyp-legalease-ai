@@ -13,6 +13,7 @@ export const documentsApi = {
       })
       .then((r) => r.data);
   },
+  capabilities: () => client.get(ENDPOINTS.documents.capabilities).then((r) => r.data),
   get: (id) => client.get(ENDPOINTS.documents.byId(id)).then((r) => r.data),
   analyze: (id) =>
     client.post(ENDPOINTS.documents.analyze(id)).then((r) => r.data),

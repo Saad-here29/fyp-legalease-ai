@@ -9,6 +9,7 @@ import { ROLES, ROUTES } from "@/constants";
 import { casesApi } from "./api";
 import { documentsApi } from "@/features/document-analysis/api";
 import UploadStrip from "@/features/document-analysis/UploadStrip";
+import { useUploadTypes } from "@/features/document-analysis/useUploadTypes";
 import StatusTag from "./StatusTag";
 import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry } from "./caseMeta";
 
@@ -58,13 +59,18 @@ export default function CaseDetailPage() {
     onError: apiError("Could not update status."),
   });
 
+  const { accept: uploadAccept } = useUploadTypes();
   const uploadDocument = useMutation({
     mutationFn: (file) => documentsApi.upload(file, { caseId: id }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       refresh();
       qc.invalidateQueries({ queryKey: ["case-documents", id] });
       setTab("documents");
-      toast.success("Document uploaded and linked to this case.");
+      if (data.extraction_warning) {
+        toast.warning("Linked to this case, but no text was extracted.", { description: data.extraction_warning });
+      } else {
+        toast.success("Document uploaded and linked to this case.");
+      }
     },
     onError: apiError("Upload failed."),
   });
@@ -110,7 +116,7 @@ export default function CaseDetailPage() {
       >
         <input
           type="file"
-          accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
+          accept={uploadAccept}
           className="sr-only"
           disabled={uploadDocument.isPending}
           onChange={(e) => {

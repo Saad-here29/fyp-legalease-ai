@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Upload, Loader2 } from "lucide-react";
+import { useUploadTypes } from "./useUploadTypes";
 
 // Dashed upload strip with working drag-and-drop (design page 12). Shared
 // by the Documents page and a case's Documents tab.
 
-const ACCEPT = ".pdf,.docx,.txt,.png,.jpg,.jpeg";
-
 export default function UploadStrip({ busy, onFile, again = false, id = "doc-upload", idleText }) {
   const [over, setOver] = useState(false);
+  const { types, accept } = useUploadTypes();
   const take = (file) => file && !busy && onFile(file);
 
   return (
@@ -31,7 +31,7 @@ export default function UploadStrip({ busy, onFile, again = false, id = "doc-upl
       <input
         id={id}
         type="file"
-        accept={ACCEPT}
+        accept={accept}
         className="sr-only"
         disabled={busy}
         onChange={(e) => {
@@ -55,7 +55,7 @@ export default function UploadStrip({ busy, onFile, again = false, id = "doc-upl
           </>
         )}
       </span>
-      <span className="ds-meta">PDF, DOCX, TXT, PNG, JPG · up to 20 MB</span>
+      <span className="ds-meta">{types.join(", ")} · up to 20 MB</span>
     </label>
   );
 }

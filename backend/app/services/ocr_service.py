@@ -157,6 +157,11 @@ class OCRService:
 _singleton: OCRService | None = None
 
 
+def ocr_available() -> bool:
+    """Whether images and scanned PDFs can be read (Tesseract installed)."""
+    return _TESS_OK
+
+
 def get_ocr_service() -> OCRService:
     global _singleton
     if _singleton is None:

@@ -33,6 +33,7 @@ export const ENDPOINTS = {
   },
   documents: {
     upload: "/documents/upload",
+    capabilities: "/documents/capabilities",
     byId: (id) => `/documents/${id}`,
     analyze: (id) => `/documents/${id}/analyze`,
     download: (id) => `/documents/${id}/download`,

@@ -33,8 +33,8 @@ from app.db.session import SessionLocal, get_db
 from app.middlewares.auth import CurrentUser
 from app.models.document import Document, DocumentAnalysis
 from app.models.enums import DocumentType, FileType
-from app.schemas.documents import DocumentAnalysisResult, DocumentRead
-from app.services.ocr_service import get_ocr_service
+from app.schemas.documents import DocumentAnalysisResult, DocumentRead, UploadCapabilities
+from app.services.ocr_service import get_ocr_service, ocr_available
 
 router = APIRouter()
 
@@ -67,6 +67,33 @@ def _validate_and_classify(filename: str, size_bytes: int) -> FileType:
             hint="Compress the document or split it into smaller files.",
         )
     return _EXT_TO_FILE_TYPE[ext]
+
+
+def _extraction_warning(file_type: FileType, text: str | None) -> str | None:
+    """Why an upload produced no text, or None if it produced some."""
+    if text and text.strip():
+        return None
+    if file_type in (FileType.PNG, FileType.JPG) and not ocr_available():
+        return ("No text could be read from this image: text recognition (OCR) "
+                "is not installed on this server. Upload a PDF, DOCX or TXT instead.")
+    if file_type == FileType.PDF and not ocr_available():
+        return ("No text could be read: this PDF appears to be scanned, and text "
+                "recognition (OCR) is not installed on this server. Upload a PDF "
+                "with selectable text, or a DOCX or TXT.")
+    return "No text could be extracted from this file, so it cannot be analysed."
+
+
+@router.get(
+    "/capabilities",
+    response_model=UploadCapabilities,
+    summary="Which file types can have their text extracted on this server",
+)
+def upload_capabilities(user: CurrentUser):
+    ocr = ocr_available()
+    return UploadCapabilities(
+        ocr_available=ocr,
+        accepted_types=["PDF", "DOCX", "TXT"] + (["PNG", "JPG"] if ocr else []),
+    )
 
 
 @router.post(
@@ -120,6 +147,10 @@ def upload_document(
     db.commit()
     db.refresh(doc)
 
+    warning = _extraction_warning(file_type, extracted)
+    if warning:
+        logger.info(f"Upload {doc.id} ({file_type.value}): no text extracted")
+
     return DocumentRead(
         id=doc.id,
         case_id=doc.case_id,
@@ -130,6 +161,7 @@ def upload_document(
         extracted_text=doc.extracted_text,
         summary=doc.summary_text,
         created_at=doc.created_at,
+        extraction_warning=warning,
     )
 
 
