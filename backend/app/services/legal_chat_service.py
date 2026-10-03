@@ -57,13 +57,41 @@ SYSTEM_PROMPT = (
     "memory. "
     "If asked anything outside Pakistani law (cooking, sports, general "
     "knowledge, foreign law etc.), politely refuse and redirect to legal "
-    "topics. Answer in the same language the user writes in (English or "
-    "Urdu). "
+    "topics. "
     # The chat UI shows this opening line as a highlighted "Short answer" box.
-    "Begin every substantive answer with one sentence starting \"Short "
-    "answer:\" (in Urdu, \"مختصر جواب:\") that states the core point, then "
-    "give the detailed breakdown. Don't add it to refusals."
+    "Begin every substantive answer with one sentence starting with the "
+    "short-answer label given in the language instruction below, stating "
+    "the core point, then give the detailed breakdown. Don't add it to "
+    "refusals."
 )
+
+# Appended per question. The detected language is stated explicitly: left
+# to infer it, the model once answered an English question in Urdu (Oct 2026
+# audit) — the prompt's only concrete label example was the Urdu one.
+LANGUAGE_INSTRUCTION = {
+    "en": (
+        "LANGUAGE: The question is in English. Answer in the language of the "
+        "question — write the entire answer in English. Start it with "
+        "\"Short answer:\"."
+    ),
+    "ur": (
+        "LANGUAGE: The question is in Urdu. Answer in the language of the "
+        "question — write the entire answer in Urdu (Nastaliq script). Start "
+        "it with \"مختصر جواب:\"."
+    ),
+}
+
+
+def build_system_prompt(context_block: str, lang: str) -> str:
+    """The full system prompt for one question: base rules, the retrieved
+    authorities, then the language instruction for this question."""
+    return (
+        f"{SYSTEM_PROMPT}\n\n"
+        "--- Relevant Pakistani legal authorities (cite by [n]) ---\n"
+        f"{context_block}\n"
+        "--- End authorities ---\n\n"
+        f"{LANGUAGE_INSTRUCTION['ur' if lang == 'ur' else 'en']}"
+    )
 
 OUT_OF_SCOPE_REFUSAL = (
     "I can only answer questions about Pakistani law and legal matters. "
@@ -148,7 +176,9 @@ class LegalChatService:
             self.db.flush()
             history = []
 
-        lang = session.language_hint or _detect_language(message)
+        # Per question, not per session: answer in the language of *this*
+        # question even if the conversation started in the other language.
+        lang = _detect_language(message)
         sid = session.id
         self.db.add(ChatMessage(
             session_id=sid,
@@ -207,12 +237,7 @@ class LegalChatService:
             for i, p in enumerate(passages)
         )
         history.append({"role": "user", "content": message})
-        system = (
-            f"{SYSTEM_PROMPT}\n\n"
-            "--- Relevant Pakistani legal authorities (cite by [n]) ---\n"
-            f"{context_block}\n"
-            "--- End authorities ---"
-        )
+        system = build_system_prompt(context_block, lang)
 
         # AIServiceUnavailable propagates -> router returns 503; the user
         # message stays saved without a reply.
