@@ -21,7 +21,7 @@ REFRESH_COOKIE = "le_refresh"
 def _cookie_kwargs(*, max_age: int) -> dict:
     # In dev (http://localhost) we must NOT set `secure=True` or the browser
     # silently drops the cookie. In any non-dev env we force it on.
-    is_prod = settings.APP_ENV.lower() not in {"development", "dev", "local"}
+    is_prod = not settings.is_development
     return {
         "httponly": True,
         "secure": is_prod,

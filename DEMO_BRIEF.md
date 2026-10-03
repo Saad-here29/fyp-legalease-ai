@@ -710,8 +710,8 @@ OpenAPI explorer: **http://127.0.0.1:8000/docs** (FastAPI auto-generated, works 
 ### Environment variables (backend/.env)
 
 ```bash
-APP_ENV=development                    # / production
-APP_DEBUG=true                         # auto-doc URLs at /docs
+APP_ENV=development                    # / production; API docs at /docs only in development
+APP_DEBUG=true
 SECRET_KEY=<256-bit random>            # JWT signing
 ACCESS_TOKEN_EXPIRE_MINUTES=120
 REFRESH_TOKEN_EXPIRE_DAYS=7

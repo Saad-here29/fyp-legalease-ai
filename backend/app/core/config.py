@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173"
 
     @property
+    def is_development(self) -> bool:
+        return self.APP_ENV.lower() in {"development", "dev", "local"}
+
+    @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 

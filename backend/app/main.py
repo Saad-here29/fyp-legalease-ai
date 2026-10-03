@@ -51,8 +51,11 @@ app = FastAPI(
     version="0.1.0",
     description="AI-Powered Online Lawyer Management and Legal Assistance Platform",
     lifespan=lifespan,
-    docs_url="/docs" if settings.APP_DEBUG else None,
-    redoc_url="/redoc" if settings.APP_DEBUG else None,
+    # API docs and the schema behind them are for development only; APP_DEBUG
+    # alone used to expose them wherever it was left on.
+    docs_url="/docs" if settings.is_development else None,
+    redoc_url="/redoc" if settings.is_development else None,
+    openapi_url="/openapi.json" if settings.is_development else None,
 )
 
 app.add_middleware(

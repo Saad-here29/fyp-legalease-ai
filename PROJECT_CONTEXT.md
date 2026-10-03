@@ -10,9 +10,9 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
 
 ## Current status (fill in / correct before first session)
 - FYP-1 finished ~4 months ago. Panel feedback received (see FEEDBACK.md — add this too).
-- Modules already built: Case Management, AI Legal Chat, Document Analysis (backend
-  endpoint exists but UI was NEVER connected — confirm if still true),
-  AI Legal Research, OCR, Auth/Roles, **Contract Drafting & Compliance**
+- Modules already built: Case Management, AI Legal Chat, Document Analysis
+  (connected end to end: the Documents page uploads, analyses and shows the
+  summary, NER entities and parsed clauses/risks), AI Legal Research, OCR, Auth/Roles, **Contract Drafting & Compliance**
   (built + fully verified end-to-end 2026-09-21 — see "Contract Drafting &
   Compliance status" below).
 - **Notifications — confirmed NOT implemented (2026-09-20)**: no backend
@@ -475,9 +475,10 @@ during the audit except the ones approved (commit `8a02485`).
   isn't in Groq's response headers — check the Groq console.
 - **Slow database connections:** 0.5–2.6 s per new Supabase connection
   (Singapore region), so logins sometimes take 4–6 s.
-- **Backend stability:** the uvicorn process exited silently twice during
-  2026-09-27/28 (exit code 4, nothing logged; possibly memory — the NER model
-  once failed to load with "paging file is too small"). Run it in a visible
+- **Backend stability:** the "silent exits" of 2026-09-27/28 (exit code 4,
+  nothing logged) were not crashes: Claude Code stops background tasks after
+  about 10 minutes, and the server had been started as one. Started on its
+  own (a terminal, or a detached process), it stays up. Run it in a visible
   terminal on demo day.
 - **Corpus contents:** `docs/corpus_statute_list.md` lists every indexed
   title. Notable: 5 statutes indexed twice under OCR-variant titles;
@@ -626,9 +627,10 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
      view-only enforced (403 on write attempts).
    - **Document Analysis + OCR: partially working**. Upload + PyMuPDF text
      extraction work well on real PDFs. The "detected clauses" feature
-     **confirmed not real** — `analyze_document()` hardcodes
-     `key_clauses`/`parties`/`dates`/`risks` to `[]` on every call; only a
-     plain LLM summary is genuine. The OCR fallback (Tesseract) is
+     was not real at the time — `analyze_document()` hardcoded
+     `key_clauses`/`parties`/`dates`/`risks` to `[]`. **Since fixed:**
+     `parties`/`dates`/`references` come from the legal NER model and
+     `key_clauses`/`risks` are parsed from the LLM summary's sections. The OCR fallback (Tesseract) is
      confirmed blocked for scanned PDFs/images specifically (verified with
      a synthetic no-text-layer image — `extracted_text: null`); digital
      PDFs are unaffected since PyMuPDF/PyPDF2 don't need Tesseract. Also
