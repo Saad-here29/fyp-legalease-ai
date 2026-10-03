@@ -106,27 +106,31 @@ export default function CaseDetailPage() {
   const timeline = (timelineQuery.data || []).map(readableTimelineEntry);
   const docs = documentsQuery.data || [];
   const nextStatus = NEXT_STATUS[c.status];
+  // A closed case takes no new documents.
+  const canAddDocuments = isLawyer && c.status !== "closed";
 
   const headerActions = isLawyer && (
     <>
-      <label
-        className={`ds-btn-secondary cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-ds-ink ${
-          uploadDocument.isPending ? "pointer-events-none opacity-70" : ""
-        }`}
-      >
-        <input
-          type="file"
-          accept={uploadAccept}
-          className="sr-only"
-          disabled={uploadDocument.isPending}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) uploadDocument.mutate(file);
-            e.target.value = "";
-          }}
-        />
-        {uploadDocument.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Uploading" /> : "Add document"}
-      </label>
+      {canAddDocuments && (
+        <label
+          className={`ds-btn-secondary cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-ds-ink ${
+            uploadDocument.isPending ? "pointer-events-none opacity-70" : ""
+          }`}
+        >
+          <input
+            type="file"
+            accept={uploadAccept}
+            className="sr-only"
+            disabled={uploadDocument.isPending}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadDocument.mutate(file);
+              e.target.value = "";
+            }}
+          />
+          {uploadDocument.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Uploading" /> : "Add document"}
+        </label>
+      )}
       {nextStatus && (
         <button className="ds-btn-primary" disabled={advanceStatus.isPending} onClick={() => advanceStatus.mutate(nextStatus)}>
           {advanceStatus.isPending ? (
@@ -193,7 +197,7 @@ export default function CaseDetailPage() {
         {tab === "timeline" && <Timeline entries={timeline} loading={timelineQuery.isLoading} />}
         {tab === "documents" && (
           <div>
-            {isLawyer && (
+            {canAddDocuments && (
               <div className="mb-8">
                 <UploadStrip
                   id="case-doc-upload"

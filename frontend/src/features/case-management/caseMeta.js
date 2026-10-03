@@ -33,7 +33,8 @@ export function readableTimelineEntry(entry) {
   const status = /^Status:\s*(\w+)\s*→\s*(\w+)\s*$/.exec(e.title || "");
   if (status) {
     e.title = `Status changed to ${statusLabel(status[2])}`;
-    e.description = `from ${statusLabel(status[1])}`;
+    // Keep the server's note (e.g. "Automatic — a client was linked…").
+    e.description = [`from ${statusLabel(status[1])}`, entry.description].filter(Boolean).join(" · ");
   }
   if (e.kind === "CREATED" && e.description) {
     e.description = e.description.replace(/^Filed as (\w+)/, (_, t) => `Filed as ${TYPE_LABEL[t] || humanize(t)}`);

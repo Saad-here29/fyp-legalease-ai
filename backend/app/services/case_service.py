@@ -141,11 +141,13 @@ class CaseService:
             if log.action == "CASE_STATUS_CHANGED":
                 old = (log.old_values or {}).get("status")
                 new = (log.new_values or {}).get("status")
+                automatic = (log.new_values or {}).get("automatic")
                 entries.append(
                     CaseTimelineEntry(
                         timestamp=log.created_at,
                         kind="STATUS",
                         title=f"Status: {old} → {new}",
+                        description="Automatic — a client was linked to the case" if automatic else None,
                         actor_name=actor.full_name if actor else None,
                     )
                 )
@@ -255,6 +257,7 @@ class CaseService:
                 case.id,
                 new_values={"client_email": client.email, "client_id": str(client.id)},
             )
+            self._log_automatic_assignment(creator.id, case.id)
 
         self.db.commit()
         self.db.refresh(case)
@@ -287,7 +290,8 @@ class CaseService:
             previous_email = prev.email if prev else None
 
         case.client_id = client.id
-        if case.status == CaseStatus.CREATED:
+        became_assigned = case.status == CaseStatus.CREATED
+        if became_assigned:
             case.status = CaseStatus.ASSIGNED
 
         existing = (
@@ -315,6 +319,8 @@ class CaseService:
             old_values={"client_email": previous_email} if previous_email else None,
             new_values={"client_email": client.email, "client_id": str(client.id)},
         )
+        if became_assigned:
+            self._log_automatic_assignment(user.id, case.id)
         self.db.commit()
         self.db.refresh(case)
         return case
@@ -411,6 +417,17 @@ class CaseService:
         elif user.role == UserRole.CLIENT and case.client_id == user.id:
             return
         raise NotAuthorized("You do not have access to this case.")
+
+    def _log_automatic_assignment(self, user_id: uuid.UUID, case_id: uuid.UUID) -> None:
+        """Linking a client moves a CREATED case to ASSIGNED on its own; record
+        it like any other status change so the timeline shows it."""
+        self._log(
+            user_id,
+            "CASE_STATUS_CHANGED",
+            case_id,
+            old_values={"status": CaseStatus.CREATED.value},
+            new_values={"status": CaseStatus.ASSIGNED.value, "automatic": True},
+        )
 
     def _log(
         self,

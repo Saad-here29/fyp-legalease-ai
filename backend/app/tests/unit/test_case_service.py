@@ -162,3 +162,50 @@ def test_client_only_sees_own_cases(db_session, lawyer, client_user):
     cases = svc.list_for_user(client_user)
     assert len(cases) == 1
     assert cases[0].title == "Their case"
+
+
+# ============================================================
+# Automatic CREATED -> ASSIGNED is on the timeline (Oct 2026 audit: the
+# status changed silently when a client was linked)
+# ============================================================
+def _status_entries(svc, case, user):
+    return [e for e in svc.timeline(case.id, user) if e.kind == "STATUS"]
+
+
+def test_linking_a_client_logs_the_automatic_assignment(db_session, lawyer, client_user):
+    svc = CaseService(db_session)
+    case = svc.create(CaseCreate(title="Rana v. Rana", case_type=CaseType.DIVORCE), lawyer)
+    assert _status_entries(svc, case, lawyer) == []
+
+    svc.assign_client_by_email(case.id, client_user.email, lawyer)
+    [entry] = _status_entries(svc, case, lawyer)
+    assert entry.title == "Status: created → assigned"
+    assert entry.description == "Automatic — a client was linked to the case"
+    assert entry.actor_name == lawyer.full_name
+
+
+def test_creating_with_a_client_logs_the_automatic_assignment(db_session, lawyer, client_user):
+    svc = CaseService(db_session)
+    case = svc.create(
+        CaseCreate(title="Rana v. Rana", case_type=CaseType.DIVORCE, client_email=client_user.email), lawyer
+    )
+    [entry] = _status_entries(svc, case, lawyer)
+    assert entry.title == "Status: created → assigned"
+    assert entry.description.startswith("Automatic")
+
+
+def test_relinking_on_an_assigned_case_logs_no_status_change(db_session, lawyer, client_user):
+    svc = CaseService(db_session)
+    case = svc.create(
+        CaseCreate(title="Rana v. Rana", case_type=CaseType.DIVORCE, client_email=client_user.email), lawyer
+    )
+    svc.assign_client_by_email(case.id, client_user.email, lawyer)
+    assert len(_status_entries(svc, case, lawyer)) == 1
+
+
+def test_manual_status_change_has_no_automatic_note(db_session, lawyer):
+    svc = CaseService(db_session)
+    case = svc.create(CaseCreate(title="Rana v. Rana", case_type=CaseType.DIVORCE), lawyer)
+    svc.update_status(case.id, CaseStatus.IN_PROGRESS, lawyer)
+    [entry] = _status_entries(svc, case, lawyer)
+    assert entry.description is None
