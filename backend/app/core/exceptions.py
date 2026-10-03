@@ -89,6 +89,13 @@ class UnsupportedMediaType(AppException):
     hint = "Allowed formats are PDF, DOCX, TXT, PNG, and JPG."
 
 
+class DatabaseUnavailable(AppException):
+    status_code = 503
+    code = "db_unavailable"
+    message = "The database is temporarily unreachable."
+    hint = "Please try again in a few seconds."
+
+
 class AIServiceUnavailable(AppException):
     status_code = 503
     code = "ai_unavailable"

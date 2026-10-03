@@ -4,12 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DBAPIError
 
 from app.core.config import settings
 from app.core.logging import configure_logging, logger
-from app.core.exceptions import AppException
+from app.core.exceptions import AppException, DatabaseUnavailable
 from app.db.base import Base
-from app.db.session import SessionLocal, engine
+from app.db.session import SessionLocal, engine, is_connection_error
 import app.models  # noqa: F401  — registers every ORM class with Base.metadata
 
 
@@ -69,6 +70,16 @@ async def app_exception_handler(_, exc: AppException):
         status_code=exc.status_code,
         content={"error": {"code": exc.code, "message": exc.message, "hint": exc.hint}},
     )
+
+
+@app.exception_handler(DBAPIError)
+async def db_error_handler(request, exc: DBAPIError):
+    # A connection dropped mid-request: a clear 503 instead of a raw 500.
+    # Anything else (bad SQL, constraint violations) stays a 500.
+    if not is_connection_error(exc):
+        raise exc
+    logger.error(f"Database connection lost during {request.method} {request.url.path}: {exc.orig}")
+    return await app_exception_handler(request, DatabaseUnavailable())
 
 
 @app.get("/", tags=["health"])
