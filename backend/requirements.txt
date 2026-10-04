@@ -1,3 +1,10 @@
+# Runtime dependencies. Tests, lint and scripts: requirements-dev.txt.
+#
+# torch comes from the PyTorch CPU index: the app runs embeddings and the
+# legal NER model on the CPU, and the default PyPI build on Linux pulls
+# about 2.5 GB of CUDA libraries it never uses.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # ===== Web framework =====
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
@@ -7,65 +14,40 @@ python-multipart==0.0.10
 sqlalchemy==2.0.35
 alembic==1.13.3
 psycopg2-binary==2.9.9
-asyncpg==0.29.0
 
 # ===== Validation / settings =====
 pydantic==2.9.2
 pydantic-settings==2.5.2
+# read by pydantic-settings for backend/.env
+python-dotenv==1.0.1
 email-validator==2.2.0
+dnspython>=2.6.1
 
-# ===== Authentication & Security =====
+# ===== Authentication & security =====
 PyJWT==2.9.0
 bcrypt==4.2.0
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.3.0
 
 # ===== AI / NLP =====
+# openai: the client for Groq (OpenAI-compatible API) and the OpenAI fallback
 openai==1.51.0
 google-generativeai==0.8.3
 sentence-transformers==3.1.1
-# Legal NER (app/ai/ner.py) imports transformers directly; 4.57.x verified
-# with the Colab-trained model (see docs/ner_training_results.md).
+# Legal NER (app/ai/ner.py) imports transformers and torch directly; 4.57.x
+# verified with the Colab-trained model (see docs/ner_training_results.md).
 transformers==4.57.6
-faiss-cpu>=1.9.0
+torch==2.14.0
+numpy==2.4.6
+faiss-cpu==1.15.0
 tiktoken==0.7.0
 langdetect==1.0.9
 
-# ===== OCR =====
+# ===== Documents / OCR =====
 pytesseract==0.3.13
 pdf2image==1.17.0
 Pillow==10.4.0
 PyPDF2==3.0.1
 python-docx==1.1.2
 PyMuPDF>=1.24.10
-dnspython>=2.6.1
-
-# ===== Async tasks =====
-celery==5.4.0
-redis==5.0.8
-
-# ===== HTTP / utils =====
-httpx==0.27.2
-python-dotenv==1.0.1
 
 # ===== Logging =====
 loguru==0.7.2
-
-# ===== Email / Notifications =====
-aiosmtplib==3.0.2
-jinja2==3.1.4
-
-# ===== Storage =====
-boto3==1.35.30           # for S3-compatible blob storage (optional)
-
-# ===== Testing =====
-pytest==8.3.3
-pytest-asyncio==0.24.0
-pytest-cov==5.0.0
-httpx==0.27.2
-faker==30.1.0
-
-# ===== Dev =====
-ruff==0.6.9
-black==24.8.0
-mypy==1.11.2
