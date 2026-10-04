@@ -3,8 +3,8 @@ import remarkGfm from "remark-gfm";
 import { citeAnchor } from "./citations";
 
 // The one renderer for AI-generated content — chat answers, document
-// summaries, drafted contracts — styled by `prose prose-ink` (Tailwind
-// typography, theme in tailwind.config.js).
+// summaries, drafted contracts — styled by `prose prose-ds` (Tailwind
+// typography, design system v1 theme in tailwind.config.js).
 //
 // Safety: react-markdown never renders raw HTML from the model's output.
 // The only tag let through is <br> — the model writes it inside table cells
@@ -39,28 +39,12 @@ function linkCitations(text, citeId) {
   return text.replace(/\[(\d{1,2})\](?!\()/g, (_, n) => `[${n}](#${citeAnchor(citeId, n)})`);
 }
 
-// "ink" = the previous editorial theme (pages not yet migrated); "ds" =
-// design system v1 (docs/STYLE_GUIDE.md), where markers are small ink boxes.
-const VARIANTS = { ink: "prose-ink", ds: "prose-ds" };
-
 // Non-citation links open in a new tab.
 const ExternalLink = ({ href, children, ...props }) => (
   <a href={href} target="_blank" rel="noreferrer" {...props}>
     {children}
   </a>
 );
-
-// eslint-disable-next-line no-unused-vars -- `node` is react-markdown's AST prop; keep it off the DOM
-const InkLink = ({ node, href, children, ...props }) =>
-  href?.startsWith("#cite-") ? (
-    <sup className="citation-marker">
-      <a href={href} className="no-underline">
-        {children}
-      </a>
-    </sup>
-  ) : (
-    <ExternalLink href={href} {...props}>{children}</ExternalLink>
-  );
 
 // eslint-disable-next-line no-unused-vars -- `node` is react-markdown's AST prop; keep it off the DOM
 const DsLink = ({ node, href, children, ...props }) =>
@@ -72,14 +56,14 @@ const DsLink = ({ node, href, children, ...props }) =>
     <ExternalLink href={href} {...props}>{children}</ExternalLink>
   );
 
-export default function Markdown({ children, citeId, variant = "ink", className = "" }) {
+export default function Markdown({ children, citeId, className = "" }) {
   const text = children || "";
   return (
-    <div className={`prose ${VARIANTS[variant]} max-w-none ${className}`}>
+    <div className={`prose prose-ds max-w-none ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeBreaks]}
-        components={{ a: variant === "ds" ? DsLink : InkLink }}
+        components={{ a: DsLink }}
       >
         {citeId ? linkCitations(text, citeId) : text}
       </ReactMarkdown>

@@ -107,7 +107,7 @@ export default function ContractDetailPage() {
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
         <article className="bg-ds-sheet border border-ds-rule rounded-ds px-6 sm:px-12 py-10 min-w-0">
           <Markdown
-            variant="ds"
+           
             className="font-ds-serif text-[18px] leading-[30px] prose-headings:font-ds-serif prose-headings:font-medium
               prose-h1:text-center prose-h1:uppercase prose-h1:tracking-[0.12em] prose-h1:text-[22px]"
           >

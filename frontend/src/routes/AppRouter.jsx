@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { ROUTES, ROLES } from "@/constants";
 import LandingPage from "@/features/landing/LandingPage";
 import WelcomePage from "@/features/auth/WelcomePage";
@@ -18,7 +18,7 @@ import DocumentsPage from "@/features/document-analysis/DocumentsPage";
 import CaseDetailPage from "@/features/case-management/CaseDetailPage";
 import ContractsPage from "@/features/contract-drafting/ContractsPage";
 import ContractDetailPage from "@/features/contract-drafting/ContractDetailPage";
-import ComingSoonPage from "@/components/common/ComingSoonPage";
+import NotFoundPage from "@/components/common/NotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 const ALL_ROLES = [ROLES.LAWYER, ROLES.CLIENT, ROLES.STUDENT];
@@ -111,69 +111,6 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
-
-      {/* In-progress modules — show a clean "Coming Soon" page inside the
-          dashboard shell instead of bouncing to landing. */}
-      <Route
-        path="/lawyer/clients"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.LAWYER]}>
-            <ComingSoonPage
-              title="Clients"
-              description="A unified directory of all your clients with case counts, contact details, and quick assign-to-case actions. Currently you can manage clients via the case-create form (email-based assignment)."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/lawyer/schedule"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.LAWYER]}>
-            <ComingSoonPage
-              title="Schedule"
-              description="Calendar view of all your hearings, deadlines, and client meetings with email reminders. Hearings can be tracked today via case status (HEARING_SCHEDULED)."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/client/upload"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.CLIENT]}>
-            <ComingSoonPage
-              title="Upload & OCR"
-              description="Use the Documents tab to upload PDFs and images. OCR runs automatically on upload."
-              eta="Available now via Documents"
-            />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/library"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-            <ComingSoonPage
-              title="Library"
-              description="Curated reading lists, landmark judgments, and drafting templates for law students. Until then, use Legal Research to explore the full Pakistani corpus."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/progress"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-            <ComingSoonPage
-              title="Progress"
-              description="Track exercises completed, average scores, and learning streaks across the practice simulator."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path={ROUTES.CONTRACTS}
         element={
@@ -190,44 +127,8 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path={ROUTES.SIMULATOR}
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-            <ComingSoonPage
-              title="Practice Simulator"
-              description="Interactive scenarios for law students — drafting petitions, cross-examination, and applying statutes to fact patterns, with AI feedback."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.NOTIFICATIONS}
-        element={
-          <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <ComingSoonPage
-              title="Notifications"
-              description="In-app + email alerts for hearings, deadlines, document uploads, and case status changes."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.PROFILE}
-        element={
-          <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <ComingSoonPage
-              title="Profile"
-              description="Edit your name, phone, password, and role-specific fields (bar license, CNIC, etc.)."
-              eta="Iteration 3"
-            />
-          </ProtectedRoute>
-        }
-      />
 
-      <Route path="*" element={<Navigate to={ROUTES.LANDING} replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

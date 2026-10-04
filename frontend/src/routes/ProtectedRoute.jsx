@@ -1,12 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
-import { ROLES, ROUTES } from "@/constants";
-
-const OWN_DASHBOARD = {
-  [ROLES.LAWYER]: ROUTES.LAWYER_DASHBOARD,
-  [ROLES.CLIENT]: ROUTES.CLIENT_DASHBOARD,
-  [ROLES.STUDENT]: ROUTES.STUDENT_DASHBOARD,
-};
+import { ROUTES, dashboardRouteFor } from "@/constants";
 
 /**
  * Wraps protected routes. Redirects to /login if the user is not authenticated,
@@ -28,8 +22,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   }
 
   if (allowedRoles?.length && !allowedRoles.includes(user?.role)) {
-    const ownDashboard = OWN_DASHBOARD[user?.role] || ROUTES.LANDING;
-    return <Navigate to={ownDashboard} replace />;
+    return <Navigate to={dashboardRouteFor(user?.role)} replace />;
   }
 
   return children;

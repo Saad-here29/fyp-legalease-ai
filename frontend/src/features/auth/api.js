@@ -21,18 +21,7 @@ export const authApi = {
     client.post(ENDPOINTS.auth.resendOtp, { email }).then((r) => r.data),
 };
 
-export function dashboardRouteFor(role) {
-  switch (role) {
-    case "lawyer":
-      return "/lawyer/dashboard";
-    case "client":
-      return "/client/dashboard";
-    case "student":
-      return "/student/dashboard";
-    default:
-      return "/";
-  }
-}
+export { dashboardRouteFor } from "@/constants";
 
 export function extractAuthError(err) {
   const data = err?.response?.data?.error;

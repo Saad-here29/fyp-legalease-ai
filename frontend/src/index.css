@@ -3,59 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Light theme — used minimally; LegalEase defaults to dark */
-    --background: 40 40% 96%;
-    --foreground: 215 60% 12%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 60% 12%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 60% 12%;
-    --primary: 215 60% 14%;
-    --primary-foreground: 40 40% 96%;
-    --secondary: 215 20% 92%;
-    --secondary-foreground: 215 60% 14%;
-    --muted: 215 20% 92%;
-    --muted-foreground: 215 20% 40%;
-    --accent: 41 50% 58%;
-    --accent-foreground: 215 60% 14%;
-    --destructive: 0 70% 45%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 215 20% 88%;
-    --input: 215 20% 88%;
-    --ring: 41 50% 58%;
-    --radius: 0.75rem;
-  }
-
-  .dark {
-    /* Dark theme — primary surface for LegalEase AI */
-    --background: 215 50% 6%;
-    --foreground: 40 30% 92%;
-    --card: 215 50% 9%;
-    --card-foreground: 40 30% 92%;
-    --popover: 215 50% 9%;
-    --popover-foreground: 40 30% 92%;
-    --primary: 41 50% 60%;
-    --primary-foreground: 215 60% 8%;
-    --secondary: 215 30% 14%;
-    --secondary-foreground: 40 30% 92%;
-    --muted: 215 30% 14%;
-    --muted-foreground: 215 15% 65%;
-    --accent: 41 55% 58%;
-    --accent-foreground: 215 60% 8%;
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 40 30% 96%;
-    --border: 215 30% 18%;
-    --input: 215 30% 18%;
-    --ring: 41 50% 58%;
-  }
-
+  /* Design system v1 defaults: hairlines in Rule, Paper page, Plex Sans. */
   * {
-    @apply border-border;
+    @apply border-ds-rule;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-ds-paper text-ds-text font-ds-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -66,20 +20,6 @@
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-glass backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl;
-  }
-
-  .gold-text {
-    @apply bg-gold-gradient bg-clip-text text-transparent;
-  }
-
-  /* New editorial system — numbered citation footnote markers in AI chat
-     answers. One of the two allowed uses of the accent color. */
-  .citation-marker {
-    @apply text-brick font-medium;
-    margin-left: 1px;
-  }
 
   /* ===== Design system v1 (docs/design_reference, page 1; docs/STYLE_GUIDE.md) =====
      All `ds-` prefixed while pages migrate one at a time. */
@@ -152,47 +92,4 @@
   }
   .ds-label { @apply block font-ds-sans font-semibold text-[15px] leading-[20px] text-ds-text mb-2; }
 
-  /* ===== Type scale (2026-09 overhaul) =====
-     Serif (font-editorial) for identity moments, sans for everything else.
-     Steps are deliberately far apart; body text is never below 16px. */
-  .type-display {
-    @apply font-editorial text-5xl sm:text-6xl lg:text-7xl leading-[1.04] tracking-tight text-ink-text;
-  }
-  .type-title {
-    @apply font-editorial text-4xl lg:text-5xl leading-[1.1] tracking-tight text-ink-text;
-  }
-  .type-section {
-    @apply font-editorial text-3xl lg:text-4xl leading-tight text-ink-text;
-  }
-  .type-lead {
-    @apply text-lg lg:text-xl leading-relaxed text-ink-muted;
-  }
-  /* Small uppercase label above a heading — one of the accent's places. */
-  .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.16em] text-brick;
-  }
-  .type-meta {
-    @apply text-sm text-ink-muted;
-  }
-
-  /* Every serif heading/greeting/identity-moment uses font-editorial.
-     Bold at the CSS level (not per-usage) so every existing and future
-     `font-editorial` element gets real weight contrast against body text
-     with zero risk of someone forgetting `font-bold` on a new page. */
-  .font-editorial {
-    font-weight: 700;
-  }
-}
-
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
-  }
 }

@@ -339,13 +339,13 @@ function Answer({ message }) {
         <>
           <div className="mt-4 border-t-2 border-ds-ink border-x border-b border-x-ds-rule border-b-ds-rule bg-ds-sheet px-6 py-5" dir="auto">
             <p className="font-ds-sans font-semibold text-[15px] leading-[20px] text-ds-text-2">{label}</p>
-            <Markdown citeId={message.id} variant="ds" className="mt-1.5 prose-p:my-0 text-[19px] leading-[30px] font-medium">
+            <Markdown citeId={message.id} className="mt-1.5 prose-p:my-0 text-[19px] leading-[30px] font-medium">
               {short}
             </Markdown>
           </div>
           {rest && (
             <div className="mt-6" dir="auto">
-              <Markdown citeId={message.id} variant="ds">
+              <Markdown citeId={message.id}>
                 {rest}
               </Markdown>
             </div>
@@ -353,7 +353,7 @@ function Answer({ message }) {
         </>
       ) : (
         <div className="mt-4 border-t-2 border-ds-ink pt-6" dir="auto">
-          <Markdown citeId={message.id} variant="ds">
+          <Markdown citeId={message.id}>
             {message.content}
           </Markdown>
         </div>

@@ -1,6 +1,3 @@
-export const APP_NAME = import.meta.env.VITE_APP_NAME || "LegalEase AI";
-export const APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.1.0";
-
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -10,20 +7,13 @@ export const API_TIMEOUT_MS = Number(
 
 // Values are lowercase to match the backend's actual enum values
 // (backend/app/models/enums.py). Keys stay uppercase since those are just
-// the JS identifiers callers use (ROLES.LAWYER, CASE_STATUS.CREATED, ...).
+// the JS identifiers callers use (ROLES.LAWYER, ...).
 export const ROLES = Object.freeze({
   LAWYER: "lawyer",
   CLIENT: "client",
   STUDENT: "student",
 });
 
-export const CASE_STATUS = Object.freeze({
-  CREATED: "created",
-  ASSIGNED: "assigned",
-  IN_PROGRESS: "in_progress",
-  HEARING_SCHEDULED: "hearing_scheduled",
-  CLOSED: "closed",
-});
 
 export const CASE_TYPES = Object.freeze({
   DIVORCE: "divorce",
@@ -68,7 +58,14 @@ export const ROUTES = Object.freeze({
   DOCUMENTS: "/documents",
   CONTRACTS: "/contracts",
   CONTRACT_DETAIL: "/contracts/:id",
-  SIMULATOR: "/simulator",
-  NOTIFICATIONS: "/notifications",
-  PROFILE: "/profile",
 });
+
+// The dashboard a signed-in user belongs on (login, wrong-role redirects,
+// the 404 page). One map instead of three copies.
+const DASHBOARD_BY_ROLE = Object.freeze({
+  [ROLES.LAWYER]: ROUTES.LAWYER_DASHBOARD,
+  [ROLES.CLIENT]: ROUTES.CLIENT_DASHBOARD,
+  [ROLES.STUDENT]: ROUTES.STUDENT_DASHBOARD,
+});
+
+export const dashboardRouteFor = (role) => DASHBOARD_BY_ROLE[role] || ROUTES.LANDING;

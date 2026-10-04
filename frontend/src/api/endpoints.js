@@ -14,11 +14,6 @@ export const ENDPOINTS = {
     verifyOtp: "/auth/verify-otp",
     resendOtp: "/auth/resend-otp",
   },
-  users: {
-    list: "/users",
-    byId: (id) => `/users/${id}`,
-    profile: "/users/profile",
-  },
   cases: {
     list: "/cases",
     create: "/cases",
@@ -29,31 +24,20 @@ export const ENDPOINTS = {
     updateStatus: (id) => `/cases/${id}/status`,
     documents: (id) => `/cases/${id}/documents`,
     saveResearch: (id) => `/cases/${id}/research`,
-    hearings: (id) => `/cases/${id}/hearings`,
   },
   documents: {
     upload: "/documents/upload",
     capabilities: "/documents/capabilities",
-    byId: (id) => `/documents/${id}`,
     analyze: (id) => `/documents/${id}/analyze`,
-    download: (id) => `/documents/${id}/download`,
   },
   chat: {
     sessions: "/chat/sessions",
-    sessionById: (id) => `/chat/sessions/${id}`,
     message: "/chat/message",
-    ask: "/chat/ask",
     history: (sessionId) => `/chat/sessions/${sessionId}/history`,
   },
   research: {
     search: "/research/search",
     stats: "/research/stats",
-    byId: (id) => `/research/${id}`,
-    similarCases: (id) => `/research/${id}/similar`,
-  },
-  ocr: {
-    upload: "/ocr/upload",
-    status: (jobId) => `/ocr/jobs/${jobId}`,
   },
   contracts: {
     list: "/contracts",
@@ -61,14 +45,5 @@ export const ENDPOINTS = {
     byId: (id) => `/contracts/${id}`,
     versions: (id) => `/contracts/${id}/versions`,
     checkCompliance: (id) => `/contracts/${id}/check-compliance`,
-  },
-  simulator: {
-    scenarios: "/simulator/scenarios",
-    attempts: "/simulator/attempts",
-    progress: (studentId) => `/students/${studentId}/progress`,
-  },
-  notifications: {
-    list: "/notifications",
-    markRead: (id) => `/notifications/${id}/read`,
   },
 };

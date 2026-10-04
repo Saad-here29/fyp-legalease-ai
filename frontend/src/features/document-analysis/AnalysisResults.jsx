@@ -34,7 +34,7 @@ export default function AnalysisResults({ analysis }) {
           <h2 className="ds-h2">AI summary</h2>
           <span className="ds-tag-neutral">AI-generated · read with the original</span>
         </div>
-        <Markdown variant="ds" className="mt-6">
+        <Markdown className="mt-6">
           {summary}
         </Markdown>
 
