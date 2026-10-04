@@ -200,14 +200,21 @@ extend these.
 - **Migrated:** `AppShell` (sidebar, page header, mobile drawer), `AuthShell`
   (ink identity panel shared by all six auth pages), Login, AI Chat
   (incl. `prose-ds` for AI output, `.ds-cite` markers, the Short answer box),
-  Documents, Cases list, Case detail, Research (search + passage), Dashboards (lawyer, client, student), Contracts (list, drafting, contract page), Landing, and the forms inside all six auth screens.
-- **Not yet migrated:** only `ComingSoonPage.jsx` (the unlinked placeholder
-  routes) still uses the previous tokens (`paper`, `ink-panel`, `ink-text`,
-  `ink-muted`, `hairline`, `brick`, `font-editorial`, `.type-*`), which are
-  still defined in the Tailwind config. Those tokens are **deprecated** — don't
-  use them in new work; remove them once that page moves.
-- The `ds-` prefix exists only because the old `paper` (`#F6F1E7`) differs
-  from the new Paper (`#F4EFE4`); it can be dropped after migration.
+  Documents, Cases list, Case detail, Research (search + passage), Dashboards (lawyer, client, student), Contracts (list, drafting, contract page), Landing, the forms inside all six auth screens, and the 404 page (`NotFoundPage`).
+- **Migration complete (2026-10-04).**
+  - `ComingSoonPage.jsx` and its eight placeholder routes were removed, so
+    nothing used the previous theme any more.
+  - The previous tokens are gone from `tailwind.config.js` and `index.css`:
+    `paper`, `ink-*`, `hairline`, `brick`, `legal-*`, the shadcn colour
+    variables, `font-editorial` / Inter / Playfair, `.type-*`, the `ink`
+    prose theme, gradients and animations.
+  - The base layer uses design-system tokens (body `ds-paper` / `ds-text` /
+    IBM Plex Sans, default border `ds-rule`).
+  - `index.html` loads only Newsreader and IBM Plex Sans.
+- **The `ds-` prefix** exists only because the old `paper` (`#F6F1E7`)
+  differed from the new Paper (`#F4EFE4`). Now that the old tokens are
+  gone, it could be dropped in a rename-only change. That hasn't been done,
+  because it would touch every page.
 
 ### Old files removed (2026-09-28)
 The pre-v1 components no page imported any more — old layouts, sidebar,

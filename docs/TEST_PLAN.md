@@ -1,225 +1,217 @@
 # LegalEase AI — Test Plan
 
-**Project:** LegalEase AI — AI-Powered Online Lawyer Management and Legal Assistance Platform
-**Iteration:** FYP-1 (committed scope: Auth, Case Management, AI Chat, AI Research, OCR)
-**Reference:** Final Report § 4.3 (Test Strategy) — Tables 4.2 / 4.3 / 4.4 / 4.5
+**Project:** LegalEase AI, an AI-powered online lawyer management and
+legal assistance platform.
+**Scope:** auth, case management, AI chat, legal research, document
+analysis (with OCR/text extraction), and contract drafting and compliance.
+**Reference:** Final Report § 4.3 (Test Strategy), Tables 4.2–4.5.
+**Updated:** October 2026: 210 automated backend tests, 85% line coverage.
 
 ---
 
 ## 1. Objectives
 
-This test plan verifies that the LegalEase AI platform meets the functional and non-functional requirements defined in the SRS for iteration-1 + iteration-2 modules. It covers:
-
-| Goal | How verified |
+| Goal | How it's verified |
 |---|---|
-| Correctness of authentication, RBAC, and the case lifecycle state machine | Unit tests against `AuthService`, `CaseService` (in-memory SQLite, isolated per test) |
-| OCR pipeline behaviour across file formats | Unit tests against `OCRService` with temp files |
-| Research / retrieval helpers (title mapping, chunk trimming) | Pure-Python unit tests against `ResearchService` helpers |
-| Email validation (MX-record gate) | Unit tests using `ALWAYS_VALID_DOMAINS` to keep tests offline |
-| End-to-end API surface (health, swagger, smoke) | Functional curl smoke tests against the live FastAPI server |
-| Provider failover (Groq → OpenAI → Gemini) | Live smoke verified during demo prep |
+| Authentication: signup, OTP, login, lockout, token revocation, password reset | Unit and HTTP tests (in-memory SQLite) |
+| Access control and the case state machine | Unit tests against `CaseService`; HTTP checks with real accounts (§ 9) |
+| Upload safety: generated storage names, type and size checks, cleanup | HTTP tests with a temporary upload folder |
+| Text extraction and the "no text" path | Unit tests (`OCRService`); HTTP tests with a stubbed extractor |
+| Chat: language, refusal, history budget, citation checker | Offline unit tests (the model is stubbed; no Groq calls) |
+| Retrieval helpers: section lookup, index stats, title mapping, chunk trimming | Pure-Python unit tests |
+| Contracts: required clauses, unfilled placeholders | Unit tests |
+| Legal NER: entity grouping, post-processing, the real model | Unit tests (some load the model from `backend/storage/models/legal_ner`) |
+| Database failure handling | Retry and 503 tests with a failing session |
+| Production settings | API docs hidden outside development |
 
 ---
 
-## 2. Test Levels
+## 2. Test levels
 
-### 2.1 Unit Tests (`backend/app/tests/unit/`)
-
-Run with:
+### 2.1 Automated backend tests (`backend/app/tests/`)
 
 ```bash
 cd backend
-./venv/Scripts/python -m pytest app/tests --no-cov -q
+pytest                               # all 210, with coverage (pyproject addopts)
+pytest -o addopts="" -q              # without coverage, faster
 ```
 
-All tests use the `db_session` fixture from `conftest.py` — a fresh in-memory SQLite engine per test for full isolation.
+- **Database:** each test gets a fresh in-memory SQLite database
+  (`conftest.py`).
+- **Model calls:** none. Every test that would reach Groq stubs the client,
+  and some tests fail on purpose if the model is called.
+- **HTTP tests:** these use FastAPI's `TestClient` against the real app.
 
-### 2.2 Integration / Smoke Tests (`backend/app/tests/test_health.py` + curl)
+### 2.2 End-to-end checks against a running system
 
-Health endpoint covered automatically. Live integration sanity checked via curl against a running backend:
+These ran in the October 2026 quality pass, over real HTTP with fresh
+accounts. Results are in § 9.
 
-```bash
-curl -i -X POST http://127.0.0.1:8000/api/v1/auth/register \
-    -H "Content-Type: application/json" \
-    -d '{"email":"smoke@gmail.com","password":"TestPass123!","full_name":"Smoke","role":"CLIENT"}'
-```
+### 2.3 Manual UI checks
 
-### 2.3 Manual UI/UX Tests
-
-Performed by the team in Chrome / Edge against http://localhost:5173 after `npm run dev`. Coverage matrix in § 5 below.
-
----
-
-## 3. Test Cases — Authentication (Final Report Table 4.2)
-
-Implemented in [`backend/app/tests/unit/test_auth_service.py`](backend/app/tests/unit/test_auth_service.py).
-
-| ID | Test name | Inputs | Expected | Result |
-|---|---|---|---|---|
-| UT-AUTH-001 | `test_ut_auth_001_successful_login_returns_user_and_tokens` | Email + correct password on verified user | `LoginResponse` with `access_token`, `refresh_token`, role intact, failed-count reset | ✅ Pass |
-| UT-AUTH-002 | `test_ut_auth_002_wrong_password_raises_invalid_credentials` | Email + wrong password | Raises `InvalidCredentials`; `failed_login_count` incremented | ✅ Pass |
-| UT-AUTH-003 | `test_ut_auth_003_nonexistent_user_raises_invalid_credentials` | Email that doesn't exist | Raises `InvalidCredentials` (no info leak) | ✅ Pass |
-| UT-AUTH-004 | `test_account_locks_after_five_failed_attempts` | 5× wrong password | Account `is_active=False`, raises `AccountLocked` even with right password | ✅ Pass |
-| UT-AUTH-005 | `test_signup_creates_inactive_lawyer_pending_otp` | Valid lawyer signup payload | Returns `{email, message}`; User row has `is_verified=False`, `otp` set, Lawyer profile attached | ✅ Pass |
-| UT-AUTH-006 | `test_verify_otp_activates_account_without_auto_login` | Signup → fetch OTP → `verify_otp(email, otp)` | Returns confirmation dict (no tokens); user becomes `is_verified=True`, OTP cleared; subsequent `login()` issues tokens | ✅ Pass |
-| UT-AUTH-007 | `test_signup_rejects_duplicate_verified_email` | Signup with an already-verified email | Raises `ValidationFailed` | ✅ Pass |
-| UT-AUTH-008 | `test_refresh_issues_new_token_pair` | Valid refresh token | Returns a new access + refresh pair | ✅ Pass |
-| UT-AUTH-009 | `test_unverified_account_cannot_login` | Right password but `is_verified=False` | Raises `AccountLocked` with "verify your email" hint | ✅ Pass |
+Every page is checked at desktop (1280 px) and phone (390 px) width in a
+real browser, for each role. Results are in § 9.
 
 ---
 
-## 4. Test Cases — Case Management (Final Report Table 4.3)
+## 3. Test inventory
 
-Implemented in [`backend/app/tests/unit/test_case_service.py`](backend/app/tests/unit/test_case_service.py).
+| File | Tests | Covers |
+|---|---:|---|
+| `test_health.py` | 2 | `/health`, root |
+| `test_api_docs.py` | 5 | `/docs`, `/redoc`, `/openapi.json` only in development |
+| `unit/test_auth_service.py` | 9 | UT-AUTH-001…009 (below) |
+| `unit/test_signup_pending.py` | 2 | Re-registering an unverified email changes nothing but the code |
+| `unit/test_logout_revocation.py` | 5 | After logout, access and refresh tokens are 401, on every device |
+| `unit/test_case_service.py` | 9 | UT-CASE-001…005, automatic created → assigned on the timeline |
+| `unit/test_quality_pass_fixes.py` | 6 | Urdu refusal, 409 for taken emails, timeline names in one query |
+| `unit/test_upload_paths.py` | 21 | Path traversal (`../`, `..\`, absolute, UNC), null bytes, long names |
+| `unit/test_upload_cleanup.py` | 8 | Rejected uploads leave no file; size cap; cleanup on failure |
+| `unit/test_upload_extraction.py` | 8 | "No text" warning, upload capabilities |
+| `unit/test_analyze_no_text.py` | 4 | Analysing a text-less document is 422, with no model call |
+| `unit/test_ocr_service.py` | 4 | UT-OCR-001…003 |
+| `unit/test_chat_language.py` | 9 | Answer in the language of the question (prompt checks) |
+| `unit/test_chat_history_budget.py` | 8 | History capped at 2,000 tokens |
+| `unit/test_citation_check.py` | 29 | Section citations checked against passages; case law removed |
+| `unit/test_section_lookup.py` | 14 | Contents-list parsing and section lookup |
+| `unit/test_research_service.py` | 11 | Title mapping, excerpt trimming |
+| `unit/test_index_stats.py` | 3 | Library size reported from the index |
+| `unit/test_summary_sections.py` | 6 | Clauses and risks parsed from the summary |
+| `unit/test_contract_placeholders.py` | 10 | Unfilled-placeholder scan and compliance |
+| `unit/test_ner.py` | 25 | Legal NER grouping and post-processing; the real model |
+| `unit/test_db_unavailable.py` | 7 | One retry, then 503; other DB errors stay 500 |
+| `unit/test_email_validator.py` | 5 | UT-EMAIL-001…002 |
+| **Total** | **210** | |
 
-| ID | Test name | Verifies | Result |
+---
+
+## 4. Test cases — Authentication (Final Report Table 4.2)
+
+| ID | Test | Expected | Result |
 |---|---|---|---|
-| UT-CASE-001 | `test_lawyer_creates_case_in_created_state` | Lawyer can create a case; defaults to `CREATED` when no client supplied | ✅ Pass |
-| UT-CASE-002 | `test_create_with_client_email_auto_assigns` | Case created with `client_email` auto-promotes to `ASSIGNED` and links client | ✅ Pass |
-| UT-CASE-003 | `test_status_transitions_follow_state_machine` | ASSIGNED → IN_PROGRESS → HEARING_SCHEDULED → CLOSED valid; further transition from CLOSED raises `IllegalStateTransition` | ✅ Pass |
-| UT-CASE-004 | `test_client_cannot_create_case` | RBAC — Client role calling `create()` raises `NotAuthorized` | ✅ Pass |
-| UT-CASE-005 | `test_client_only_sees_own_cases` | `list_for_user(client)` returns only that client's cases (not other clients') | ✅ Pass |
+| UT-AUTH-001 | `test_ut_auth_001_successful_login_returns_user_and_tokens` | Access + refresh tokens, failed-count reset | ✅ |
+| UT-AUTH-002 | `test_ut_auth_002_wrong_password_raises_invalid_credentials` | `InvalidCredentials`; failed count +1 | ✅ |
+| UT-AUTH-003 | `test_ut_auth_003_nonexistent_user_raises_invalid_credentials` | `InvalidCredentials` (no hint whether the user exists) | ✅ |
+| UT-AUTH-004 | `test_account_locks_after_five_failed_attempts` | Locked; `AccountLocked` even with the right password | ✅ |
+| UT-AUTH-005 | `test_signup_creates_inactive_lawyer_pending_otp` | Inactive, unverified user with an OTP and a lawyer profile | ✅ |
+| UT-AUTH-006 | `test_verify_otp_activates_account_without_auto_login` | Verified, OTP cleared, no tokens until login | ✅ |
+| UT-AUTH-007 | `test_signup_rejects_duplicate_verified_email` | `AlreadyExists` (HTTP 409) | ✅ |
+| UT-AUTH-008 | `test_refresh_issues_new_token_pair` | New access + refresh pair | ✅ |
+| UT-AUTH-009 | `test_unverified_account_cannot_login` | `AccountLocked` with "verify your email" | ✅ |
 
----
-
-## 5. Test Cases — OCR (Final Report Table 4.4)
-
-Implemented in [`backend/app/tests/unit/test_ocr_service.py`](backend/app/tests/unit/test_ocr_service.py).
-
-| ID | Test name | Verifies | Result |
-|---|---|---|---|
-| UT-OCR-001a | `test_txt_extraction_returns_content` | TXT pipeline returns full content verbatim (no Tesseract dependency) | ✅ Pass |
-| UT-OCR-001b | `test_urdu_text_extraction` | Urdu UTF-8 text preserved through extraction (script + diacritics) | ✅ Pass |
-| UT-OCR-002 | `test_unsupported_format_raises` | `.xyz` raises `UnsupportedMediaType` with clear hint | ✅ Pass |
-| UT-OCR-003 | `test_pdf_pipeline_returns_empty_for_missing_file` | Non-existent file path returns `""` (no crash) | ✅ Pass |
-
----
-
-## 6. Test Cases — Research Helpers (Final Report Table 4.5)
-
-Implemented in [`backend/app/tests/unit/test_research_service.py`](backend/app/tests/unit/test_research_service.py).
-
-| ID | Test name | Verifies | Result |
-|---|---|---|---|
-| UT-RESEARCH-001a | `test_friendly_title_for_statutes` | `Pakistan_Penal_Code` → "Pakistan Penal Code 1860" and similar mappings | ✅ Pass |
-| UT-RESEARCH-001b | `test_friendly_title_for_supreme_court_judgments` | `C.A_supreme (2665)` → "Supreme Court of Pakistan — Civil Appeal No. 2665" | ✅ Pass |
-| UT-RESEARCH-001c | `test_friendly_title_unknown_source_falls_back_to_underscored` | Unknown source falls back to underscore-replaced title | ✅ Pass |
-| UT-RESEARCH-002a | `test_trim_advances_past_leading_fragment` | Mid-word leading fragments (`", a, where..."`) trimmed to the next clean sentence | ✅ Pass |
-| UT-RESEARCH-002b | `test_trim_handles_already_clean_text` | Text already starting with a capital is left untouched (no over-trim) | ✅ Pass |
-| UT-RESEARCH-002c | `test_trim_handles_empty_input` | Empty string returns empty string | ✅ Pass |
-
----
-
-## 7. Test Cases — Email validator
-
-Implemented in [`backend/app/tests/unit/test_email_validator.py`](backend/app/tests/unit/test_email_validator.py).
-
-| ID | Test name | Verifies | Result |
-|---|---|---|---|
-| UT-EMAIL-001a | `test_gmail_passes_fast_path` | `@gmail.com` short-circuits MX lookup via `ALWAYS_VALID_DOMAINS` | ✅ Pass |
-| UT-EMAIL-001b | `test_university_passes_fast_path` | `@fast.edu.pk` short-circuits MX lookup | ✅ Pass |
-| UT-EMAIL-002a | `test_missing_at_sign_rejected` | `"notanemail"` raises `EmailValidationError` | ✅ Pass |
-| UT-EMAIL-002b | `test_no_tld_rejected` | `"user@localhost"` raises (no TLD) | ✅ Pass |
-| UT-EMAIL-002c | `test_empty_string_rejected` | `""` raises | ✅ Pass |
-
----
-
-## 8. Test Cases — System health
-
-Implemented in [`backend/app/tests/test_health.py`](backend/app/tests/test_health.py).
+## 5. Test cases — Case management (Final Report Table 4.3)
 
 | ID | Test | Verifies | Result |
 |---|---|---|---|
-| INT-HEALTH-001 | `/health` returns 200 + `{"status":"ok"}` | App starts, routes register, JSON shape stable | ✅ Pass |
+| UT-CASE-001 | `test_lawyer_creates_case_in_created_state` | A new case without a client is `created` | ✅ |
+| UT-CASE-002 | `test_create_with_client_email_auto_assigns` | With `client_email` it becomes `assigned` and the client is linked | ✅ |
+| UT-CASE-003 | `test_status_transitions_follow_state_machine` | Valid path; nothing leaves `closed` | ✅ |
+| UT-CASE-004 | `test_client_cannot_create_case` | `NotAuthorized` for clients | ✅ |
+| UT-CASE-005 | `test_client_only_sees_own_cases` | A client lists only their own cases | ✅ |
 
----
+## 6. Test cases — OCR / text extraction (Final Report Table 4.4)
 
-## 9. Manual UI/UX coverage matrix
-
-Performed before each demo. Each row is a single end-to-end click-through.
-
-| Flow | Role | Steps | Pass/Fail |
+| ID | Test | Verifies | Result |
 |---|---|---|---|
-| Signup → OTP → Login → Dashboard | Lawyer | Fill signup form with valid `@gmail.com` → OTP page with 10:00 countdown → fetch code from `[dev] OTP` log → verify → redirect to `/login` with email prefilled → enter password → land on `/lawyer/dashboard` | ✅ |
-| Signup with fake domain | Any | Use `@nonexistentdomain-zzz.com` → 422 with "This email domain does not appear to exist" | ✅ |
-| Create case + assign client by email | Lawyer | Cases tab → New case → fill title + case_type + client_email of a registered Client → submit → case appears with status ASSIGNED | ✅ |
-| Case state machine | Lawyer | Open a case → Advance to IN_PROGRESS → HEARING_SCHEDULED → CLOSED, see each event on timeline | ✅ |
-| OCR upload | Lawyer | Documents tab → upload `Pakistan Penal Code.pdf` → see extracted text + char count | ✅ |
-| OCR save-to-case | Lawyer | After upload → "Save to a case" panel → select a case → Save → case timeline shows DOCUMENT event | ✅ |
-| AI Chat — in scope | Any | Ask "What is the penalty for child abuse under the Zainab Alert Act?" → Llama-3.3 answer with source badges in ~2s | ✅ |
-| AI Chat — out of scope | Any | Ask "Best pizza recipe?" → returns the spec refusal text in <500ms, no LLM call | ✅ |
-| AI Chat — Urdu | Any | Ask `خلع کا قانون کیا ہے؟` → Urdu answer with sources | ✅ |
-| Legal Research search | Any | Search "child custody Pakistan" → 10 ranked results with relevance %, friendly source titles | ✅ |
-| Research detail + auto-analysis | Any | Click "Read more" → analysis auto-fires in 2-4s → Issue / Findings / Judgment / Legal Basis / Relevance cards rendered | ✅ |
-| Research save-to-case | Lawyer | On detail page → "Save to a case" dropdown → pick case → entry appears on case timeline as NOTE | ✅ |
-| RBAC bounce | Lawyer logged in | Navigate to `/client/dashboard` → ProtectedRoute redirects to `/lawyer/dashboard` (own dashboard) | ✅ |
-| Logout | Any | Sidebar → Sign out → cookies cleared → bounced to landing/login | ✅ |
+| UT-OCR-001a | `test_txt_extraction_returns_content` | TXT text returned verbatim | ✅ |
+| UT-OCR-001b | `test_urdu_text_extraction` | Urdu UTF-8 preserved | ✅ |
+| UT-OCR-002 | `test_unsupported_format_raises` | `.xyz` → `UnsupportedMediaType` | ✅ |
+| UT-OCR-003 | `test_pdf_pipeline_returns_empty_for_missing_file` | Missing file → `""`, no crash | ✅ |
+
+## 7. Test cases — Research helpers (Final Report Table 4.5)
+
+| ID | Test | Verifies | Result |
+|---|---|---|---|
+| UT-RESEARCH-001a | `test_friendly_title_for_statutes` | Known source keys get readable titles | ✅ |
+| UT-RESEARCH-001c | `test_friendly_title_unknown_source_falls_back_to_underscored` | Unknown keys fall back cleanly | ✅ |
+| UT-RESEARCH-002a–c | `test_trim_*` | Excerpts start at a clean boundary; empty input handled | ✅ |
+
+UT-RESEARCH-001b (Supreme Court judgment titles) was removed with its code
+in October 2026: the library holds statutes only.
+
+## 8. Test cases — Email validator
+
+| ID | Test | Verifies | Result |
+|---|---|---|---|
+| UT-EMAIL-001a/b | `test_gmail_passes_fast_path`, `test_university_passes_fast_path` | Known domains skip the DNS lookup | ✅ |
+| UT-EMAIL-002a–c | format tests | Missing `@`, no TLD, empty → rejected | ✅ |
 
 ---
 
-## 10. Non-functional requirements verified
+## 9. End-to-end and UI results (quality pass, 2026-10-04)
 
-| NFR | Verification method | Result |
+**Over real HTTP with fresh accounts:** 113 checks, 107 passed. The 6 that
+didn't were real findings, all fixed since:
+
+| Finding | Fix |
+|---|---|
+| Upload path traversal | Generated storage names (`test_upload_paths.py`) |
+| Rejected uploads left on disk | `test_upload_cleanup.py` |
+| Pending signup overwrite | `test_signup_pending.py` |
+| 422 for a taken email | Now 409 (`test_quality_pass_fixes.py`) |
+| Urdu question got the English refusal | Urdu refusal (`test_quality_pass_fixes.py`) |
+| A dead research endpoint | Removed |
+
+The Urdu khula question itself is still refused. That's the known khula
+retrieval gap, covered by the retrieval redesign.
+
+What passed, by area:
+
+| Area | Passed checks |
+|---|---|
+| Auth | Register, OTP, resend, wrong OTP, verify, cookies (HttpOnly, SameSite), `/me`, refresh, logout revokes both tokens, lockout after 5, reset unlocks, forgot-password gives the same answer for unknown emails |
+| Cases | Create (assigned / created), role refusals, invalid type 422, timeline, assign errors (404/403), every valid and invalid transition, client read-only, outsider and student blocked, stats, 404/422 ids |
+| Documents | Capabilities, TXT upload + attach, outsider blocked, image without OCR warns, text-less analyse is 422, .exe 415, 21 MB 413, client upload, sign-in required |
+| Contracts | Missing fields 422 before any model call, client and student can't draft, draft → compliance → versions, client of the linked case can view, outsider blocked |
+| Model features | Document analysis (summary + NER parties), research search ×3 and analysis, English chat in English with the short answer and valid `[n]`, off-topic refusal, private history. About 16k Groq tokens in all |
+
+**UI:** 31 routes × 2 widths × 3 roles (62 page loads) showed no horizontal
+overflow, no error alerts, and a heading on every page. After the theme
+cleanup, every page renders in IBM Plex Sans on Paper, with no old fonts,
+and unknown addresses show the 404 page.
+
+---
+
+## 10. Non-functional requirements
+
+| Requirement | How it's checked | Result |
 |---|---|---|
-| Response time < 3s | Chat: AI bubble timestamp shows "Generated in Xs" — typically 0.8-2.5s. Research search: <500ms (no LLM). Verified live | ✅ Met |
-| Auth: bcrypt cost ≥ 10 | `settings.BCRYPT_ROUNDS=10` (configurable to 12 in prod); verified in code | ✅ Met |
-| Auth: HttpOnly cookies | `backend/app/core/cookies.py` sets `httponly=True, samesite=lax, secure=is_prod` | ✅ Met |
-| Auth: account lockout | UT-AUTH-004 passes — 5 failed attempts → `is_active=False`, `AccountLocked` thrown | ✅ Met |
-| Auth: OTP expiry | OTP rows carry `otp_expires_at = now + 10min`; UT-AUTH-006 verifies the activation path | ✅ Met |
-| Scope restriction | Manual test: "Best pizza recipe?" returns the exact spec refusal — `chat_service.py` short-circuits when no chunk passes `RAG_SIMILARITY_THRESHOLD` | ✅ Met |
-| Multilingual EN+UR | UT-OCR-001b verifies Urdu UTF-8 round-trip; manual chat test confirms Urdu RAG | ✅ Met |
-| RBAC | UT-CASE-004 + UT-CASE-005 verify role-gating in service layer | ✅ Met |
-| Audit logging | Every privileged action writes `activity_logs` row — verified by inspecting `case timeline` events | ✅ Met |
+| Password hashing | `BCRYPT_ROUNDS=12` | ✅ |
+| Auth cookies | `core/cookies.py`: HttpOnly, SameSite=Lax, Secure outside development (checked live) | ✅ |
+| Session revocation | `test_logout_revocation.py`, plus a live check | ✅ |
+| Account lockout | UT-AUTH-004, plus a live check | ✅ |
+| Upload safety | `test_upload_paths.py`, `test_upload_cleanup.py` | ✅ |
+| Scope restriction | Refusal without a model call (tests + live) | ✅ |
+| English + Urdu | `test_chat_language.py`, `test_quality_pass_fixes.py`; live English check | ✅ (Urdu retrieval weaker) |
+| Access control | Service-level checks; live cross-role checks | ✅ |
+| Response time | Measured: API calls 3–8 s (Supabase latency), chat 9–27 s | ⚠️ Slower than the 3 s target |
 
 ---
 
-## 11. Coverage snapshot
+## 11. Coverage (2026-10-04)
 
-```
-$ python -m pytest app/tests --no-cov -q
-...............................                                          [100%]
-31 passed
-```
+`pytest` with `pytest-cov`: **85% of lines** across `app/` (including the
+test files themselves).
 
-Module-level coverage (most recent run with `pytest-cov`):
+| Module | Coverage |
+|---|---|
+| `ai/citation_check.py` | 95% |
+| `ai/ner.py` | 97% |
+| `db/session.py` | 85% |
+| `services/case_service.py` | 79% |
+| `api/v1/documents.py` | 71% |
+| `services/legal_chat_service.py` | 71% |
+| `services/auth_service.py` | 64% |
+| `services/research_service.py` | 61% |
+| `services/contract_service.py` | 49% |
+| `services/ocr_service.py` | 49% (Tesseract paths need OCR installed) |
 
-| Module | Coverage | Notes |
-|---|---|---|
-| `app/services/auth_service.py` | ~60% | Hot path covered; password-reset edge cases pending |
-| `app/services/case_service.py` | ~55% | Lifecycle + RBAC covered; save_research_to_case pending |
-| `app/services/research_service.py` | ~55% | Helpers fully covered; FAISS integration is smoke-tested |
-| `app/services/ocr_service.py` | ~45% | Pipeline fan-out covered; Tesseract path tested manually (env-dependent) |
-| `app/utils/email_validator.py` | ~65% | Fast-path + format errors covered |
-| **Overall** | **~59%** | Tests prioritise business logic over framework boilerplate |
+## 12. Not tested
 
----
-
-## 12. Out-of-scope for iteration 2
-
-The following are intentionally not yet tested because the corresponding modules ship in iteration 3:
-
-- Practice Simulator
-- Contract Drafting & Compliance
-- Notifications (in-app + email reminders)
-- Hearings sub-module beyond the case status flag
-
-Each of these renders a Coming Soon page in production and has no logic to test yet.
-
----
-
-## 13. How to reproduce these results
-
-```bash
-# Backend tests
-cd backend
-./venv/Scripts/python -m pytest app/tests --no-cov -q
-
-# With coverage
-./venv/Scripts/python -m pytest app/tests --cov=app --cov-report=term-missing
-
-# Live smoke check
-curl http://127.0.0.1:8000/health
-# Expected: {"status":"ok"}
-```
-
-Full demo walkthrough (manual UI tests) is documented in [DEMO_BRIEF.md](../DEMO_BRIEF.md) § 9.
+- **Frontend:** there are no automated frontend tests. UI is checked
+  manually (§ 9).
+- **Live model quality:** answer correctness isn't checked automatically.
+  The retrieval evaluation and gold set are planned in
+  `docs/retrieval_redesign.md`.
+- **Not built, so not tested:** the Practice Simulator and Notifications.
+- **Load testing:** not done.

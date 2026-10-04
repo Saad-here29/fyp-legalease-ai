@@ -19,8 +19,8 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
   route, model, or service exists at all (`app/main.py` registers exactly 5
   routers — auth, cases, chat, research, documents — nothing else; live
   probes of `/notifications`, `/notifications/`, `/notification` all
-  returned `404`). Still purely the frontend "Coming Soon" placeholder from
-  the original audit. **Decision: explicitly de-scoped for this
+  returned `404`). The frontend "Coming Soon" placeholder was removed on
+  2026-10-04, so `/notifications` now shows the 404 page. **Decision: explicitly de-scoped for this
   iteration** — to be documented in the report as planned future work,
   not silently omitted. Priority shifts to the two genuinely missing
   modules below.
@@ -34,6 +34,11 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
   2026-09-26 accuracy sweep still applies — see "UI accuracy sweep".
 - **Pre-demo readiness audit done (2026-09-28)** — see "Pre-demo readiness
   audit" below for what works, known gaps and the demo script.
+- **Quality pass done (2026-10-04)** — see "Quality pass (October 2026)"
+  below: end-to-end checks with fresh accounts; security fixes (upload path
+  traversal, rejected uploads left on disk, pending-signup takeover); dead
+  code, placeholder routes and the pre-v1 theme removed; dependencies
+  cleaned; docs rewritten to match the code.
 
 ## ⚠️ Known constraint — Groq free-tier limits (CRITICAL for demo day)
 Every AI feature — chat (query rewrite + answer), Research analysis,
@@ -128,6 +133,16 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
   `.gitignore` bugs found along the way: it was excluding
   `alembic/versions/*.py` (migrations must be tracked) and had a bare
   `models/` rule that was silently also matching `backend/app/models/`.
+  - **Correction (2026-10-04):** most of the cleanup above **never reached
+    git**.
+    - The September commit added correctly named copies to
+      `Documents and Reports/` but left the misspelt originals.
+    - It also left the root `Claude.md`, `ai-services/corpus-builder/` and
+      the empty `app/ai/prompts/`, `app/validators/` and `app/ocr/`
+      packages.
+
+    All of them were removed in the October quality pass (commits
+    `97aa562`, `abe85f7`).
 - Not yet done (deliberately deferred, needs its own approved pass): moving
   hardcoded prompt strings into `app/ai/prompts/`, and deciding whether to
   fully adopt or drop the `repositories/` pattern and the frontend
@@ -513,17 +528,71 @@ during the audit except the ones approved (commit `8a02485`).
 7. Sign out → sign in as the client → dashboard ("Where your case stands",
    documents, activity) → the case is read-only.
 
+## Quality pass (October 2026)
+
+**Phase 1 (2026-10-04):**
+- End-to-end checks over real HTTP with fresh `@example.com` accounts:
+  113 checks, 107 passed.
+- 62 page loads (every route, 3 roles, desktop and phone).
+- About 16k Groq tokens.
+- Details in `docs/TEST_PLAN.md` § 9.
+
+**Fixed, each with tests:**
+- **Uploads:**
+  - **Path traversal:** uploads are stored as `<hex>.<ext>` and the client
+    filename is display-only (`ead6de0`).
+  - **Rejected uploads left on disk:** the type is now checked before
+    writing, the size capped while streaming, and the file removed on any
+    later failure (`8d3dd13`).
+- **Pending-signup takeover:** a second signup for an unverified email only
+  re-sends the code (`8d3dd13`).
+- **`cfa9f2a`:**
+  - the Urdu out-of-scope refusal;
+  - 409 `already_exists` for taken emails;
+  - the timeline's per-person name lookups replaced by one query.
+- **`7c021c1`:**
+  - the favicon;
+  - production builds without source maps, with vendor chunks;
+  - a complete `.env.example`;
+  - the `GROQ_MODEL` default set to gpt-oss-120b.
+
+**Removed (all with `git rm`):**
+- duplicate root files and empty folders (`97aa562`);
+- dead backend code: rbac, the old chat service, Celery, the placeholder
+  packages, the old seed corpus and `/research/{id}`, the judgment titles,
+  and `/chat/ask` (`abe85f7`);
+- the eight Coming Soon routes, replaced by one 404 page, plus dead frontend
+  code and the whole pre-v1 Tailwind theme (`1eb0cc2`);
+- unused dependencies; torch, numpy and faiss are now pinned and dev tools
+  split into `requirements-dev.txt` (`80c8b68`).
+
+**Still open:**
+- **Retrieval quality:** the khula gap, the PPC s. 302 and Contract Act
+  s. 10 misses. The section-based redesign is approved but not built
+  (`docs/retrieval_redesign.md`), and the gold set is awaiting review.
+- **Database latency:** 3–8 s per API call, from the Singapore region.
+- **No frontend tests.**
+- **SMTP and OCR** are not configured.
+- **Ten `.gitkeep`-only placeholder folders** under `frontend/src`, pending
+  approval to remove.
+- **The `eval_research_retrieval.py` self-signup** reads an old log path.
+- **Test accounts and uploads to delete** (S18/S19): lists prepared,
+  waiting for approval.
+
 ## Folder structure
+See `docs/folder-structure.md` (updated 2026-10-04) and the README in each
+top-level folder:
 ```
-FYP Project/
-  backend/     -> FastAPI, Python
-  frontend/    -> React
+backend/  frontend/  ai-services/  scripts/  data/ (not in git)  docs/ (incl. reports/)
 ```
-(Confirm this is still accurate — paths may have changed since FYP-1.)
 
 ## Tech stack
-- Backend: FastAPI + PostgreSQL
-- Frontend: React
+- Backend: FastAPI + SQLAlchemy + Alembic; PostgreSQL on Supabase
+  (Singapore region: 0.2–0.4 s per query, about 4 s per new connection)
+- Frontend: React 19 + Vite, design system v1 (`docs/STYLE_GUIDE.md`)
+- Legal NER: fine-tuned DistilBERT (`backend/storage/models/legal_ner`), CPU
+- Dependencies: `backend/requirements.txt` (runtime, pinned, CPU PyTorch
+  index) and `requirements-dev.txt` (tests, lint, scripts)
 - AI providers (fallback chain — first available key wins):
   1. Groq (primary, free) — model: **openai/gpt-oss-120b** (updated
      2026-09-20; `llama-3.3-70b-versatile` was retired by Groq)
@@ -542,10 +611,13 @@ FYP Project/
 
 ## Key environment variables (do not commit real values)
 ```
-DATABASE_URL, SECRET_KEY, GROQ_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY,
-EMBEDDING_MODEL_NAME, FAISS_INDEX_PATH, RAG_TOP_K, RAG_SIMILARITY_THRESHOLD,
-RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
+DATABASE_URL, SECRET_KEY, APP_ENV, GROQ_API_KEY, GROQ_MODEL, OPENAI_API_KEY,
+GEMINI_API_KEY, EMBEDDING_MODEL_NAME, FAISS_INDEX_PATH, FAISS_METADATA_PATH,
+NER_ENABLED, NER_MODEL_PATH, RAG_TOP_K, RAG_SIMILARITY_THRESHOLD,
+RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD,
+SMTP_*
 ```
+`backend/.env.example` lists every setting with its default.
 
 ## FYP-1 panel feedback to address in this phase
 - "Lack of AI" — chat/research modules feel like thin API wrappers; need real
@@ -611,8 +683,10 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
       pre-verify the demo accounts), create two verified demo accounts,
       and install Tesseract + Poppler only if scanned files will be shown.
       See "Pre-demo readiness audit" above.
-6. Add missing security pieces: rate limiting, file upload sanitization,
-   basic prompt-injection input handling.
+6. Add missing security pieces: rate limiting and basic prompt-injection
+   input handling. (Upload sanitization was done on 2026-10-04: generated
+   storage names, type checked before writing, size capped while
+   streaming.)
 7. Add test coverage for RAG acceptance criteria (MRR, recall@5, refusal rate).
 8. The 78-question run above gave a relevance-score distribution, not real
    MRR/recall (that needs a ground-truth relevant-document mapping per
@@ -644,5 +718,6 @@ RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP, UPLOAD_DIR, DOC_MAX_SIZE_MB, TESSERACT_CMD
      write attempt) — though the dedicated `require_role` middleware in
      `app/middlewares/rbac.py` turns out to be dead code; enforcement
      actually happens via manual role checks inside each service method.
+     (`rbac.py` was removed on 2026-10-04.)
    - **Notifications: confirmed not implemented** — see "Current status"
      above.

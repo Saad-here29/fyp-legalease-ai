@@ -1,8 +1,8 @@
 """User identity + role-specific profile tables.
 
 Reconstructed from usage in services/auth_service.py, services/case_service.py,
-middlewares/auth.py, middlewares/rbac.py, repositories/user_repository.py and
-schemas/auth.py. See the reconstruction plan for field-by-field evidence.
+middlewares/auth.py, repositories/user_repository.py and schemas/auth.py
+(and the since-removed middlewares/rbac.py). See the reconstruction plan for field-by-field evidence.
 """
 
 import uuid
