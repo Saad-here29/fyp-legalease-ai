@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.logging import configure_logging, logger
 from app.core.exceptions import AppException, DatabaseUnavailable
 from app.db.base import Base
-from app.db.session import SessionLocal, engine, is_connection_error
+from app.db.session import engine, is_connection_error
 import app.models  # noqa: F401  — registers every ORM class with Base.metadata
 
 
@@ -25,16 +25,6 @@ async def lifespan(_: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("SQLite schema ensured via create_all")
 
-    # Seed the legal corpus reference data if empty (Pakistani statutes +
-    # landmark judgments). Idempotent — skips if rows already exist.
-    try:
-        from app.ai.seed_corpus import seed_legal_corpus
-        with SessionLocal() as db:
-            added = seed_legal_corpus(db)
-            if added:
-                logger.info(f"Seeded {added} legal corpus entries")
-    except Exception as e:  # noqa: BLE001
-        logger.warning(f"Corpus seed skipped: {e}")
 
     # Legal NER model for Document Analysis (~13 s on CPU): load in a
     # background thread so startup isn't blocked; an analyze request that

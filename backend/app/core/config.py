@@ -43,10 +43,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+psycopg2://legalease:legalease_dev_pw@localhost:5432/legalease"
     DATABASE_ECHO: bool = False
 
-    # ===== Redis / Celery =====
-    REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
     # ===== Groq (primary) =====
     # The prompts and the rewrite's reasoning_effort setting are tuned for

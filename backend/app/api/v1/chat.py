@@ -80,21 +80,3 @@ def send_message(
         case_id=payload.case_id,
     )
 
-
-# Backward-compatible alias for the original /chat/ask endpoint
-@router.post(
-    "/ask",
-    response_model=ChatMessageResponse,
-    summary="Alias of /chat/message",
-)
-def ask(
-    payload: ChatMessageRequest,
-    user: CurrentUser,
-    db: Session = Depends(get_db),
-):
-    return LegalChatService(db).send(
-        user=user,
-        message=payload.message,
-        session_id=payload.session_id,
-        case_id=payload.case_id,
-    )

@@ -37,18 +37,6 @@ class ResearchSearchResponse(APIModel):
     results: list[ResearchResult]
 
 
-class ResearchEntryDetail(APIModel):
-    id: str
-    title: str
-    section_number: str | None
-    document_type: str
-    jurisdiction: str
-    court: str | None
-    year: int | None
-    content: str
-    source_url: str | None = None
-
-
 class StructuredAnalysisRequest(APIModel):
     """Payload for /research/analyze — generate a structured legal breakdown
     of a passage. The passage itself is sent inline so the endpoint stays

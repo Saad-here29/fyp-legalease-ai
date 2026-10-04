@@ -29,13 +29,6 @@ class CaseAssignClientByEmail(APIModel):
     client_email: EmailStr
 
 
-class CaseParticipantRead(APIModel):
-    id: uuid.UUID
-    full_name: str
-    email: EmailStr
-    role: str
-
-
 class CaseRead(APIModel):
     id: uuid.UUID
     title: str

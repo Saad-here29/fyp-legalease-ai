@@ -24,19 +24,6 @@ def test_friendly_title_for_statutes():
     assert _friendly_title("Family_Courts_Act_1964") == "Family Courts Act 1964"
 
 
-def test_friendly_title_for_supreme_court_judgments():
-    # The corpus stores SC judgments as "C.A_supreme (N)" — must render
-    # as something a lawyer would actually say out loud.
-    assert (
-        _friendly_title("C.A_supreme (2665)")
-        == "Supreme Court of Pakistan — Civil Appeal No. 2665"
-    )
-    assert (
-        _friendly_title("C.A_supreme (1)")
-        == "Supreme Court of Pakistan — Civil Appeal No. 1"
-    )
-
-
 def test_friendly_title_unknown_source_falls_back_to_underscored():
     assert _friendly_title("Some_New_Statute_2030") == "Some New Statute 2030"
 

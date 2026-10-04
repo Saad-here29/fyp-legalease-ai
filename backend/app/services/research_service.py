@@ -23,10 +23,7 @@ from app.schemas.research import ResearchResult, StructuredAnalysis
 
 
 # Map raw corpus filenames → human-readable titles. Anything matching a
-# known statute is renamed; SC judgments (`C.A_supreme (N)`) are reformatted
-# into "Supreme Court of Pakistan — Civil Appeal No. N" with the raw source
-# kept as a subtitle (so the demo looks professional without fabricating
-# case names we don't actually have).
+# known statute is renamed; other sources keep their title.
 _STATUTE_TITLES: dict[str, str] = {
     "Pakistan_Penal_Code": "Pakistan Penal Code 1860",
     "Code_of_Criminal_Procedure_1898": "Code of Criminal Procedure 1898",
@@ -36,16 +33,10 @@ _STATUTE_TITLES: dict[str, str] = {
     "Pakistani_Legal_Reference": "Pakistani Legal Reference",
 }
 
-_SC_RE = re.compile(r"^C\.?A_supreme\s*\(?(\d+)\)?$", re.IGNORECASE)
-
-
 def _friendly_title(source: str) -> str:
     """Convert the raw corpus source key into a presentable title."""
     if source in _STATUTE_TITLES:
         return _STATUTE_TITLES[source]
-    m = _SC_RE.match(source.strip())
-    if m:
-        return f"Supreme Court of Pakistan — Civil Appeal No. {m.group(1)}"
     # Fallback: replace underscores with spaces, title-case it
     return source.replace("_", " ").strip()
 
@@ -126,7 +117,7 @@ class ResearchService:
                     id=stable_id,
                     title=title,
                     citation=citation,
-                    court=h.get("court") or ("Supreme Court of Pakistan" if _SC_RE.match(source) else None),
+                    court=h.get("court"),
                     year=h.get("year"),
                     case_type=kind,
                     excerpt=excerpt,
