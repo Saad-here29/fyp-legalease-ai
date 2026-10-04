@@ -68,6 +68,17 @@ class ValidationFailed(AppException):
     hint = "Review the highlighted fields and try again."
 
 
+class AlreadyExists(ValidationFailed):
+    """A unique value (email, licence, CNIC, university ID) is taken: 409,
+    not 422 (Oct 2026 quality pass). Subclasses ValidationFailed so callers
+    catching that keep working."""
+
+    status_code = 409
+    code = "already_exists"
+    message = "That value is already registered."
+    hint = "Try signing in instead."
+
+
 class IllegalStateTransition(AppException):
     status_code = 409
     code = "illegal_state_transition"

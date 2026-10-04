@@ -109,24 +109,6 @@ class CaseService:
         case = self.get(case_id, user)
         entries: list[CaseTimelineEntry] = []
 
-        # Creation event
-        creator = (
-            self.db.get(User, case.assigned_lawyer_id)
-            if case.assigned_lawyer_id
-            else None
-        )
-        entries.append(
-            CaseTimelineEntry(
-                timestamp=case.created_at,
-                kind="CREATED",
-                title="Case opened",
-                description=f"Filed as {case.case_type.value}"
-                + (f" at {case.court_code}" if case.court_code else ""),
-                actor_name=creator.full_name if creator else None,
-            )
-        )
-
-        # Activity log events for this case
         logs = (
             self.db.query(ActivityLog)
             .filter(
@@ -136,8 +118,35 @@ class CaseService:
             .order_by(ActivityLog.created_at.asc())
             .all()
         )
+        documents = (
+            self.db.query(Document)
+            .filter(Document.case_id == case.id)
+            .order_by(Document.created_at.asc())
+            .all()
+        )
+        # Every actor's name in one query, not one per person (each round
+        # trip to the database costs 0.2-0.4 s; Oct 2026 quality pass, R4).
+        names = self._names(
+            {case.assigned_lawyer_id}
+            | {log.user_id for log in logs}
+            | {doc.uploaded_by_id for doc in documents}
+        )
+
+        # Creation event
+        entries.append(
+            CaseTimelineEntry(
+                timestamp=case.created_at,
+                kind="CREATED",
+                title="Case opened",
+                description=f"Filed as {case.case_type.value}"
+                + (f" at {case.court_code}" if case.court_code else ""),
+                actor_name=names.get(case.assigned_lawyer_id),
+            )
+        )
+
+        # Activity log events for this case
         for log in logs:
-            actor = self.db.get(User, log.user_id) if log.user_id else None
+            actor_name = names.get(log.user_id)
             if log.action == "CASE_STATUS_CHANGED":
                 old = (log.old_values or {}).get("status")
                 new = (log.new_values or {}).get("status")
@@ -148,7 +157,7 @@ class CaseService:
                         kind="STATUS",
                         title=f"Status: {old} → {new}",
                         description="Automatic — a client was linked to the case" if automatic else None,
-                        actor_name=actor.full_name if actor else None,
+                        actor_name=actor_name,
                     )
                 )
             elif log.action == "CASE_CLIENT_ASSIGNED":
@@ -159,7 +168,7 @@ class CaseService:
                         kind="CLIENT_ASSIGNED",
                         title="Client linked to case",
                         description=new_email,
-                        actor_name=actor.full_name if actor else None,
+                        actor_name=actor_name,
                     )
                 )
             elif log.action == "RESEARCH_SAVED_TO_CASE":
@@ -170,31 +179,32 @@ class CaseService:
                         kind="NOTE",
                         title=f"Research saved: {title}",
                         description=(log.new_values or {}).get("excerpt"),
-                        actor_name=actor.full_name if actor else None,
+                        actor_name=actor_name,
                     )
                 )
 
         # Document upload events
-        documents = (
-            self.db.query(Document)
-            .filter(Document.case_id == case.id)
-            .order_by(Document.created_at.asc())
-            .all()
-        )
         for doc in documents:
-            uploader = self.db.get(User, doc.uploaded_by_id) if doc.uploaded_by_id else None
             entries.append(
                 CaseTimelineEntry(
                     timestamp=doc.created_at,
                     kind="DOCUMENT",
                     title=f"Document uploaded: {doc.file_name}",
                     description=f"{doc.document_type.value} · {doc.file_size_bytes} bytes",
-                    actor_name=uploader.full_name if uploader else None,
+                    actor_name=names.get(doc.uploaded_by_id),
                 )
             )
 
         entries.sort(key=lambda e: e.timestamp)
         return entries
+
+    def _names(self, user_ids: set) -> dict:
+        """{user id: full name} for the given ids, in a single query."""
+        ids = [i for i in user_ids if i is not None]
+        if not ids:
+            return {}
+        rows = self.db.query(User.id, User.full_name).filter(User.id.in_(ids)).all()
+        return dict(rows)
 
     # ----- Write ---------------------------------------------------------
 

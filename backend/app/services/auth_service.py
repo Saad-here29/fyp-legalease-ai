@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.exceptions import (
     AccountLocked,
+    AlreadyExists,
     InvalidCredentials,
     NotAuthenticated,
     NotFound,
@@ -96,7 +97,7 @@ class AuthService(BaseService):
         # password reset or edit the profile.
         existing = self.users.get_by_email(email)
         if existing and existing.is_verified:
-            raise ValidationFailed(
+            raise AlreadyExists(
                 message="An account with this email already exists.",
                 hint="Try signing in or use a different email.",
             )
@@ -370,31 +371,31 @@ class AuthService(BaseService):
             )
 
     @staticmethod
-    def _friendly_integrity_error(e: IntegrityError, payload: SignupRequest) -> ValidationFailed:
+    def _friendly_integrity_error(e: IntegrityError, payload: SignupRequest) -> AlreadyExists:
         """Map Postgres unique-constraint names to user-facing messages so the
         frontend can show 'X already registered' instead of a generic 500."""
         text = str(getattr(e, "orig", e)).lower()
         if "lawyers_bar_license_no" in text:
-            return ValidationFailed(
+            return AlreadyExists(
                 message=f"Bar license '{payload.bar_license_no}' is already registered.",
                 hint="If this is your license, use Sign in instead.",
             )
         if "clients_cnic" in text:
-            return ValidationFailed(
+            return AlreadyExists(
                 message=f"CNIC '{payload.cnic}' is already registered.",
                 hint="If this is your CNIC, use Sign in instead.",
             )
         if "students_university_id" in text:
-            return ValidationFailed(
+            return AlreadyExists(
                 message=f"University ID '{payload.university_id}' is already registered.",
                 hint="If this is your ID, use Sign in instead.",
             )
         if "users_email" in text or "ix_users_email" in text:
-            return ValidationFailed(
+            return AlreadyExists(
                 message="An account with this email already exists.",
                 hint="Try signing in instead.",
             )
-        return ValidationFailed(
+        return AlreadyExists(
             message="Could not create the account — a unique field is already in use.",
             hint="Check your email, license number, CNIC, or university ID.",
         )

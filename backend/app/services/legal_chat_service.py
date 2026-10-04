@@ -143,11 +143,28 @@ def build_system_prompt(context_block: str, lang: str) -> str:
         f"{LANGUAGE_INSTRUCTION['ur' if lang == 'ur' else 'en']}"
     )
 
-OUT_OF_SCOPE_REFUSAL = (
-    "I can only answer questions about Pakistani law and legal matters. "
-    "This question appears to be outside my scope. Please ask about "
-    "Pakistani statutes, court procedures, or legal matters."
-)
+# Fixed replies sent without a model call, in the language of the question
+# (an Urdu question used to get the English refusal; Oct 2026 quality pass).
+OUT_OF_SCOPE_REFUSAL = {
+    "en": (
+        "I can only answer questions about Pakistani law and legal matters. "
+        "This question appears to be outside my scope. Please ask about "
+        "Pakistani statutes, court procedures, or legal matters."
+    ),
+    "ur": (
+        "میں صرف پاکستانی قانون اور قانونی معاملات سے متعلق سوالات کے جواب دے سکتا ہوں۔ "
+        "یہ سوال میرے دائرۂ کار سے باہر معلوم ہوتا ہے۔ براہِ کرم پاکستانی قوانین، "
+        "عدالتی طریقۂ کار یا قانونی معاملات کے بارے میں پوچھیں۔"
+    ),
+}
+INDEX_NOT_READY = {
+    "en": "The legal knowledge base is still being built. Please try again in a few minutes.",
+    "ur": "قانونی معلومات کا ذخیرہ ابھی تیار کیا جا رہا ہے۔ براہِ کرم چند منٹ بعد دوبارہ کوشش کریں۔",
+}
+
+
+def fixed_reply(texts: dict[str, str], lang: str) -> str:
+    return texts["ur" if lang == "ur" else "en"]
 
 
 def _ms_since(t0: float) -> int:
@@ -247,10 +264,7 @@ class LegalChatService:
         index_size = embeddings.build_or_load()
         if index_size == 0:
             logger.warning("Chat called but FAISS index is empty.")
-            return self._reply(
-                sid, lang,
-                "The legal knowledge base is still being built. Please try again in a few minutes.",
-            )
+            return self._reply(sid, lang, fixed_reply(INDEX_NOT_READY, lang))
 
         search_query = rewrite_for_search(message)
         retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
@@ -278,7 +292,7 @@ class LegalChatService:
             logger.info(
                 f"Chat refusal — no chunks above {settings.RAG_SIMILARITY_THRESHOLD} threshold"
             )
-            return self._reply(sid, lang, OUT_OF_SCOPE_REFUSAL,
+            return self._reply(sid, lang, fixed_reply(OUT_OF_SCOPE_REFUSAL, lang),
                                response_time_ms=_ms_since(t0))
 
         context_block = "\n\n".join(
