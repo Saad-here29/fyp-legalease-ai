@@ -8,6 +8,7 @@ synchronously here; in production they should be pushed onto Celery.
 from __future__ import annotations
 
 import hashlib
+import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -51,6 +52,38 @@ _EXT_TO_FILE_TYPE = {
     "jpg": FileType.JPG,
     "jpeg": FileType.JPG,
 }
+
+
+# Longest display name the documents.file_name column holds.
+_MAX_NAME = 255
+_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _display_name(raw: str | None) -> str:
+    """The client's filename, made safe to store and show: only its last
+    path component (split on / and \ whatever the server OS), no control
+    characters or null bytes, at most 255 characters with the extension
+    kept. It is never used to build a path; see _storage_path()."""
+    name = _CONTROL.sub("", raw or "")
+    name = re.split(r"[\\/]", name)[-1].strip().strip(".")
+    if not name:
+        return "upload"
+    if len(name) > _MAX_NAME:
+        stem, dot, ext = name.rpartition(".")
+        ext = ext if dot and 0 < len(ext) <= 10 else ""
+        name = (stem if ext else name)[: _MAX_NAME - len(ext) - (1 if ext else 0)] + ("." + ext if ext else "")
+    return name
+
+
+def _storage_path(upload_dir: Path, ext: str) -> Path:
+    """A generated name inside upload_dir: 32 hex characters plus the
+    validated extension. No part of the client's filename reaches the
+    path, so "../", "..\\", absolute paths or drive letters can't steer
+    the write (Oct 2026 audit: "../../x.txt" escaped its folder)."""
+    path = (upload_dir / f"{uuid.uuid4().hex}.{ext}").resolve()
+    if path.parent != upload_dir.resolve():
+        raise ValidationFailed("Invalid upload path.")
+    return path
 
 
 def _validate_and_classify(filename: str, size_bytes: int) -> FileType:
@@ -112,9 +145,10 @@ def upload_document(
     upload_dir = Path(settings.UPLOAD_DIR)
     upload_dir.mkdir(parents=True, exist_ok=True)
 
+    display_name = _display_name(file.filename)
+    ext = Path(display_name).suffix.lower().lstrip(".")
     # Stream to disk while computing SHA-256 (Algorithm 3)
-    storage_name = f"{uuid.uuid4().hex}_{file.filename}"
-    storage_path = upload_dir / storage_name
+    storage_path = _storage_path(upload_dir, ext if re.fullmatch(r"[a-z0-9]{1,10}", ext) else "bin")
     sha = hashlib.sha256()
     total = 0
     with storage_path.open("wb") as out:
@@ -126,7 +160,7 @@ def upload_document(
             total += len(chunk)
             out.write(chunk)
 
-    file_type = _validate_and_classify(file.filename or "", total)
+    file_type = _validate_and_classify(display_name, total)
 
     # OCR / text extraction
     ocr = get_ocr_service()
@@ -135,7 +169,7 @@ def upload_document(
     doc = Document(
         case_id=case_id,
         uploaded_by_id=user.id,
-        file_name=file.filename or storage_name,
+        file_name=display_name,
         storage_path=str(storage_path),
         sha256_hash=sha.hexdigest(),
         file_type=file_type,
