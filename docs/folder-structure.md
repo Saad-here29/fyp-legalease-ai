@@ -68,12 +68,12 @@ frontend/
                            document-analysis, contract-drafting
 ```
 
-**Placeholder folders still in git, pending approval to remove:** these hold
-only a `.gitkeep`:
-- `src/assets`, `src/pages`, `src/services`, `src/styles`, `src/utils`;
-- `src/components/forms`, `src/components/ui`;
-- `src/features/notifications`, `src/features/ocr`,
-  `src/features/practice-simulator`.
+Ten placeholder folders that held only a `.gitkeep` were removed on
+2026-10-04:
+- `assets`, `pages`, `services`, `styles`, `utils`;
+- `components/forms`, `components/ui`;
+- the unbuilt `features/notifications`, `features/ocr`,
+  `features/practice-simulator`.
 
 ## ai-services/
 

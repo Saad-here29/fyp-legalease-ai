@@ -573,11 +573,11 @@ during the audit except the ones approved (commit `8a02485`).
 - **Database latency:** 3–8 s per API call, from the Singapore region.
 - **No frontend tests.**
 - **SMTP and OCR** are not configured.
-- **Ten `.gitkeep`-only placeholder folders** under `frontend/src`, pending
-  approval to remove.
-- **The `eval_research_retrieval.py` self-signup** reads an old log path.
-- **Test accounts and uploads to delete** (S18/S19): lists prepared,
-  waiting for approval.
+- **Test data cleanup (S18/S19), done 2026-10-04:** 37 test accounts and
+  their 624 rows deleted in one transaction, then 26 upload files (55.5 MB)
+  removed. Kept: `fyplegalease@gmail.com`, `nothing@gmail.com`,
+  `i228795@nu.edu.pk`, `saadullahlakho@gmail.com`, whose data was checked
+  unchanged afterwards. The database now has 4 users.
 
 ## Folder structure
 See `docs/folder-structure.md` (updated 2026-10-04) and the README in each
