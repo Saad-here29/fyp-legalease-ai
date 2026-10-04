@@ -33,7 +33,18 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
-    chunkSizeWarningLimit: 1000,
+    // No source maps in production builds: they published the full source
+    // (3.4 MB). Vendor code is split out so no chunk passes the default
+    // 500 kB warning (it was hidden by a 1000 kB limit).
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          data: ["@tanstack/react-query", "axios", "zustand"],
+          markdown: ["react-markdown", "remark-gfm"],
+        },
+      },
+    },
   },
 });

@@ -48,9 +48,11 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
-    # ===== Groq (primary — free Llama 3.3 70B) =====
+    # ===== Groq (primary) =====
+    # The prompts and the rewrite's reasoning_effort setting are tuned for
+    # gpt-oss; it is also what backend/.env runs.
     GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
 
     # ===== OpenAI =====
     OPENAI_API_KEY: str = ""

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL, API_TIMEOUT_MS } from "@/constants";
+import { useAuthStore } from "@/store/authStore";
 
 /**
  * Axios instance — sends HttpOnly auth cookies with every request via
@@ -59,13 +60,7 @@ client.interceptors.response.use(
       return client(original);
     } catch (refreshErr) {
       flushQueue(refreshErr);
-      // Dynamic import avoids a hard frontend-→-store circular dep
-      try {
-        const { useAuthStore } = await import("@/store/authStore");
-        useAuthStore.getState().clear();
-      } catch {
-        // ignore
-      }
+      useAuthStore.getState().clear();
       // Hard bounce to login — query-string preserves where we were
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
