@@ -87,8 +87,13 @@ class AuthService(BaseService):
             )
 
         # 2) Reject if there's already a *verified* user with this email.
-        # If an unverified row exists, regenerate the OTP and update fields
-        # rather than erroring — covers the "I closed the tab" case.
+        # If an unverified row exists, only send it a fresh code — covers the
+        # "I closed the tab" case. Its password, name, role and profile are
+        # left alone: overwriting them let anyone re-register someone else's
+        # pending email, and once the owner verified with the code they
+        # received, the account carried the other person's password (Oct
+        # 2026 quality pass, R3). To change a detail, verify, then use
+        # password reset or edit the profile.
         existing = self.users.get_by_email(email)
         if existing and existing.is_verified:
             raise ValidationFailed(
@@ -116,16 +121,9 @@ class AuthService(BaseService):
             self.db.flush()  # need user.id for the role profile FK
             self._add_role_profile(user, payload)
         else:
-            # Refresh fields on the unverified row (allows password fix /
-            # name correction before verification)
-            existing.password_hash = hash_password(payload.password)
-            existing.full_name = payload.full_name
-            existing.phone = payload.phone
-            existing.role = payload.role
             existing.otp = otp
             existing.otp_expires_at = expires_at
             user = existing
-            self._update_role_profile(user, payload)
 
         self.audit(
             "SIGNUP_OTP_SENT",
@@ -370,35 +368,6 @@ class AuthService(BaseService):
                     current_year=payload.current_year,
                 )
             )
-
-    def _update_role_profile(self, user: User, payload: SignupRequest) -> None:
-        """When an unverified user retries signup, update their role profile
-        in place rather than inserting a new row (avoids unique violations
-        on bar_license_no / cnic / university_id)."""
-        if payload.role == UserRole.LAWYER:
-            row = self.db.query(Lawyer).filter(Lawyer.user_id == user.id).first()
-            if row is None:
-                self._add_role_profile(user, payload)
-                return
-            row.bar_license_no = payload.bar_license_no
-            row.specialization = payload.specialization
-            row.bar_year = payload.bar_year
-            row.bar_council = payload.bar_council
-        elif payload.role == UserRole.CLIENT:
-            row = self.db.query(Client).filter(Client.user_id == user.id).first()
-            if row is None:
-                self._add_role_profile(user, payload)
-                return
-            row.address = payload.address
-            row.cnic = payload.cnic
-        elif payload.role == UserRole.STUDENT:
-            row = self.db.query(Student).filter(Student.user_id == user.id).first()
-            if row is None:
-                self._add_role_profile(user, payload)
-                return
-            row.university_id = payload.university_id
-            row.university_name = payload.university_name
-            row.current_year = payload.current_year
 
     @staticmethod
     def _friendly_integrity_error(e: IntegrityError, payload: SignupRequest) -> ValidationFailed:

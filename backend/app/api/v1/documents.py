@@ -86,20 +86,23 @@ def _storage_path(upload_dir: Path, ext: str) -> Path:
     return path
 
 
-def _validate_and_classify(filename: str, size_bytes: int) -> FileType:
+def _classify(filename: str) -> tuple[FileType, str]:
+    """File type and extension from the (display) name, checked before
+    anything is written to disk."""
     ext = Path(filename).suffix.lower().lstrip(".")
     if ext not in _EXT_TO_FILE_TYPE:
         raise UnsupportedMediaType(
-            message=f"Files of type .{ext} are not supported.",
+            message=f"Files of type .{ext} are not supported." if ext else "Files without an extension are not supported.",
             hint="Allowed: PDF, DOCX, TXT, PNG, JPG.",
         )
-    max_bytes = settings.DOC_MAX_SIZE_MB * 1024 * 1024
-    if size_bytes > max_bytes:
-        raise FileTooLarge(
-            message=f"File exceeds {settings.DOC_MAX_SIZE_MB} MB.",
-            hint="Compress the document or split it into smaller files.",
-        )
-    return _EXT_TO_FILE_TYPE[ext]
+    return _EXT_TO_FILE_TYPE[ext], ext
+
+
+def _too_large() -> FileTooLarge:
+    return FileTooLarge(
+        message=f"File exceeds {settings.DOC_MAX_SIZE_MB} MB.",
+        hint="Compress the document or split it into smaller files.",
+    )
 
 
 def _extraction_warning(file_type: FileType, text: str | None) -> str | None:
@@ -146,40 +149,51 @@ def upload_document(
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     display_name = _display_name(file.filename)
-    ext = Path(display_name).suffix.lower().lstrip(".")
-    # Stream to disk while computing SHA-256 (Algorithm 3)
-    storage_path = _storage_path(upload_dir, ext if re.fullmatch(r"[a-z0-9]{1,10}", ext) else "bin")
+    # Type first: an unsupported file is refused before a byte is written
+    # (Oct 2026 quality pass, R2: rejected uploads used to stay on disk).
+    file_type, ext = _classify(display_name)
+    max_bytes = settings.DOC_MAX_SIZE_MB * 1024 * 1024
+
+    # Stream to disk while computing SHA-256 (Algorithm 3). Stop as soon as
+    # the size limit is passed, and remove the file if anything below fails
+    # — the size check, text extraction or the database write — so only
+    # files with a document row are kept.
+    storage_path = _storage_path(upload_dir, ext)
     sha = hashlib.sha256()
     total = 0
-    with storage_path.open("wb") as out:
-        while True:
-            chunk = file.file.read(1024 * 1024)
-            if not chunk:
-                break
-            sha.update(chunk)
-            total += len(chunk)
-            out.write(chunk)
+    try:
+        with storage_path.open("wb") as out:
+            while True:
+                chunk = file.file.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > max_bytes:
+                    raise _too_large()
+                sha.update(chunk)
+                out.write(chunk)
 
-    file_type = _validate_and_classify(display_name, total)
+        # OCR / text extraction
+        ocr = get_ocr_service()
+        extracted = ocr.extract(storage_path)
 
-    # OCR / text extraction
-    ocr = get_ocr_service()
-    extracted = ocr.extract(storage_path)
-
-    doc = Document(
-        case_id=case_id,
-        uploaded_by_id=user.id,
-        file_name=display_name,
-        storage_path=str(storage_path),
-        sha256_hash=sha.hexdigest(),
-        file_type=file_type,
-        file_size_bytes=total,
-        document_type=document_type,
-        extracted_text=extracted or None,
-    )
-    db.add(doc)
-    db.commit()
-    db.refresh(doc)
+        doc = Document(
+            case_id=case_id,
+            uploaded_by_id=user.id,
+            file_name=display_name,
+            storage_path=str(storage_path),
+            sha256_hash=sha.hexdigest(),
+            file_type=file_type,
+            file_size_bytes=total,
+            document_type=document_type,
+            extracted_text=extracted or None,
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+    except BaseException:
+        storage_path.unlink(missing_ok=True)
+        raise
 
     warning = _extraction_warning(file_type, extracted)
     if warning:
