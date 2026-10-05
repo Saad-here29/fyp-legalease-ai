@@ -27,7 +27,7 @@ from app.models.case import Case, CaseParticipant
 from app.models.document import Document
 from app.models.enums import CaseStatus, RoleInCase, UserRole
 from app.models.user import User
-from app.schemas.cases import CaseCreate, CaseDetail, CaseDetailsUpdate, CaseTimelineEntry
+from app.schemas.cases import CaseCreate, CaseDetail, CaseDetailsUpdate, CaseRead, CaseTimelineEntry
 
 _DETAIL_FIELDS = ("title", "description", "court_code", "filing_date", "case_number",
                   "petitioner", "respondent", "next_hearing_date")
@@ -89,18 +89,10 @@ class CaseService:
         doc_count = (
             self.db.query(Document).filter(Document.case_id == case.id).count()
         )
+        # Every CaseRead field from the row, so a new column can't be left out
+        # (case number and the new fields were, until 2026-10-06).
         return CaseDetail(
-            id=case.id,
-            title=case.title,
-            description=case.description,
-            case_type=case.case_type,
-            status=case.status,
-            court_code=case.court_code,
-            filing_date=case.filing_date,
-            assigned_lawyer_id=case.assigned_lawyer_id,
-            client_id=case.client_id,
-            created_at=case.created_at,
-            updated_at=case.updated_at,
+            **CaseRead.model_validate(case).model_dump(),
             lawyer_name=lawyer.full_name if lawyer else None,
             lawyer_email=lawyer.email if lawyer else None,
             client_name=client.full_name if client else None,

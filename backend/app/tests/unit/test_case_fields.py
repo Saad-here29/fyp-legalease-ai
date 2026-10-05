@@ -149,3 +149,14 @@ def test_patch_over_http(client, db_session, people):
     ctok = create_access_token(people["client"].id, "client", people["client"].token_version)
     r = client.patch(f"/api/v1/cases/{case.id}", json={"respondent": "X"}, headers={"Authorization": f"Bearer {ctok}"})
     assert r.status_code in (403, 404)
+
+
+def test_detail_includes_every_case_field(db_session, people):
+    """Regression: detail() listed fields by hand and dropped the new ones."""
+    from app.schemas.cases import CaseRead as _Read
+    case = _case(db_session, people["lawyer"], case_number="C.S. 41/2026", petitioner="A", respondent="B",
+                 next_hearing_date=date.today() + timedelta(days=5), client_email="client@gmail.com")
+    for viewer in (people["lawyer"], people["client"]):
+        d = CaseService(db_session).detail(case.id, viewer).model_dump()
+        assert all(d[f] == getattr(_Read.model_validate(case), f) for f in _Read.model_fields)
+        assert d["case_number"] == "C.S. 41/2026" and d["client_email"] == "client@gmail.com"
