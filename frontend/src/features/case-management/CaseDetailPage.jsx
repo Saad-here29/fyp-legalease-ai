@@ -147,8 +147,9 @@ export default function CaseDetailPage() {
 
   const tabs = [
     { key: "overview", label: "Overview" },
-    { key: "timeline", label: "Timeline", count: timeline.length },
-    { key: "documents", label: "Documents", count: docs.length },
+    // No count until loaded: "Timeline 0" while loading read as "no activity".
+    { key: "timeline", label: "Timeline", count: timelineQuery.isLoading ? null : timeline.length },
+    { key: "documents", label: "Documents", count: documentsQuery.isLoading ? null : docs.length },
   ];
 
   return (
@@ -194,7 +195,8 @@ export default function CaseDetailPage() {
 
       <div className="mt-10">
         {tab === "overview" && (
-          <Overview c={c} timeline={timeline} docs={docs} isLawyer={isLawyer} onShow={setTab} onRefresh={refresh} />
+          <Overview c={c} timeline={timeline} timelineLoading={timelineQuery.isLoading} docs={docs}
+            isLawyer={isLawyer} onShow={setTab} onRefresh={refresh} />
         )}
         {tab === "timeline" && <Timeline entries={timeline} loading={timelineQuery.isLoading} />}
         {tab === "documents" && (
@@ -217,7 +219,7 @@ export default function CaseDetailPage() {
   );
 }
 
-function Overview({ c, timeline, docs, isLawyer, onShow, onRefresh }) {
+function Overview({ c, timeline, timelineLoading, docs, isLawyer, onShow, onRefresh }) {
   const recent = timeline.slice(-3).reverse();
   return (
     <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
@@ -240,7 +242,11 @@ function Overview({ c, timeline, docs, isLawyer, onShow, onRefresh }) {
               </button>
             )}
           </div>
-          {recent.length === 0 ? (
+          {timelineLoading ? (
+            <p className="flex items-center gap-3 ds-body text-ds-text-2 py-4">
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Loading activity…
+            </p>
+          ) : recent.length === 0 ? (
             <p className="ds-body text-ds-text-2 py-4">No activity yet.</p>
           ) : (
             <TimelineRows entries={recent} />
