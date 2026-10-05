@@ -330,8 +330,8 @@ def analyze_document(
         if not text.strip():
             raise ValidationFailed(
                 message="This document has no extractable text to analyse.",
-                hint="It may be a scanned or image-only file; OCR needs Tesseract and "
-                "Poppler installed on the server. Upload a text-based PDF, DOCX or TXT.",
+                hint="It may be a scanned or image-only file whose text couldn't be read. "
+                "Upload a clearer scan, or a text-based PDF, DOCX or TXT.",
             )
         document_type = doc.document_type
 

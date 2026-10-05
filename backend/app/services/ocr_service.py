@@ -2,7 +2,7 @@
 
 Pipeline (Final Report § 4 / Algorithm 3):
     - PDF with selectable text → PyPDF2 direct extraction (fast, lossless)
-    - PDF without selectable text → pdf2image → Tesseract per page
+    - PDF without selectable text → pages rendered with PyMuPDF → Tesseract
     - PNG / JPG → Tesseract directly
     - DOCX → python-docx
     - TXT → read as utf-8
@@ -13,6 +13,7 @@ Returns extracted text. The caller persists it on the Document row.
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 from app.core.config import settings
@@ -48,8 +49,8 @@ _TESS_OK = _configure_tesseract()
 
 
 class OCRService:
-    """Extracts text from a saved file path. Synchronous; small docs only.
-    Larger docs should be queued via Celery in production."""
+    """Extracts text from a saved file path. Synchronous: runs inside the
+    upload request (a scanned page takes a few seconds)."""
 
     def extract(self, path: Path, mime_type: str | None = None) -> str:
         suffix = path.suffix.lower().lstrip(".")
@@ -102,31 +103,15 @@ class OCRService:
         if not _TESS_OK:
             logger.warning(
                 f"PDF {path.name} has no extractable text — likely a scanned "
-                "image. Install Tesseract OCR + Poppler to enable OCR."
+                "image. Set TESSERACT_CMD in .env to enable OCR."
             )
             return ""
 
-        try:
-            import pytesseract
-            from pdf2image import convert_from_path
-        except ImportError as e:
-            logger.warning(f"OCR dependencies missing: {e}")
+        pages = _render_pdf_pages(path)
+        if not pages:
             return ""
-
-        try:
-            pages = convert_from_path(str(path))
-        except Exception as e:  # noqa: BLE001
-            logger.warning(
-                f"pdf2image failed (Poppler missing?): {e}. "
-                "Install Poppler and add to PATH to OCR scanned PDFs."
-            )
-            return ""
-
-        chunks: list[str] = []
-        for img in pages:
-            chunks.append(
-                pytesseract.image_to_string(img, lang=settings.TESSERACT_LANG)
-            )
+        chunks = [_ocr_image(img) for img in pages]
+        logger.info(f"OCR: {path.name}, {len(pages)} page(s), {sum(len(c) for c in chunks)} chars")
         return "\n".join(chunks).strip()
 
     # ----- DOCX ----------------------------------------------------------
@@ -145,12 +130,61 @@ class OCRService:
     def _extract_image(self, path: Path) -> str:
         if not _TESS_OK:
             return ""
-        import pytesseract
         from PIL import Image
         with Image.open(path) as img:
-            return pytesseract.image_to_string(
-                img, lang=settings.TESSERACT_LANG
-            ).strip()
+            return _ocr_image(img).strip()
+
+
+OCR_DPI = 300  # Tesseract's recommended resolution for printed text
+
+_ARABIC_SCRIPT = re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
+_LETTER = re.compile(r"[^\W\d_]")
+
+
+def mostly_urdu(text: str) -> bool:
+    """More than half the letters are Arabic script."""
+    letters = _LETTER.findall(text)
+    return bool(letters) and len(_ARABIC_SCRIPT.findall(text)) > len(letters) / 2
+
+
+def _ocr_image(img) -> str:
+    """One page or image. Read with TESSERACT_LANG (eng+urd); if that comes
+    back mostly Urdu, read it again with Urdu alone: on an Urdu test page
+    eng+urd turned whole words into Latin junk ("Gul" for "apni"), 5.8%
+    character errors against 1.5% for urd alone. English pages are read
+    once and are unaffected."""
+    import pytesseract
+    text = pytesseract.image_to_string(img, lang=settings.TESSERACT_LANG)
+    langs = settings.TESSERACT_LANG.split("+")
+    if "urd" in langs and len(langs) > 1 and mostly_urdu(text):
+        text = pytesseract.image_to_string(img, lang="urd")
+    return text
+
+
+def _render_pdf_pages(path: Path) -> list:
+    """Page images of a scanned PDF, for Tesseract. PyMuPDF renders them
+    itself, so Poppler isn't needed; pdf2image (which needs Poppler) is
+    only a fallback for when PyMuPDF is missing."""
+    try:
+        import fitz  # PyMuPDF
+        from PIL import Image
+        images = []
+        with fitz.open(str(path)) as doc:
+            for page in doc:
+                pix = page.get_pixmap(dpi=OCR_DPI, colorspace=fitz.csGRAY)
+                images.append(Image.frombytes("L", (pix.width, pix.height), pix.samples))
+        return images
+    except ImportError:
+        pass
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"PyMuPDF could not render {path.name} for OCR: {e}")
+        return []
+    try:
+        from pdf2image import convert_from_path
+        return convert_from_path(str(path), dpi=OCR_DPI)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"pdf2image failed (Poppler missing?): {e}")
+        return []
 
 
 _singleton: OCRService | None = None
