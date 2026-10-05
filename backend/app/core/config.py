@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     # no consequences from memory, say what the passages don't cover.
     STRICT_GROUNDING: bool = False
     # Note on answers whose best passage scores in [threshold, upper).
-    LOW_CONFIDENCE_NOTE: bool = False
+    LOW_CONFIDENCE_NOTE: bool = True  # on since 2026-10-06 (approved after the 78-question check)
     LOW_CONFIDENCE_UPPER: float = 0.70
     # Family-law side index (core family statutes re-embedded in windows).
     FAMILY_INDEX: bool = False

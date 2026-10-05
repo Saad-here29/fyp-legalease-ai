@@ -219,3 +219,11 @@ def test_options_report_the_family_switch(monkeypatch):
     assert chat_options(None).family_index is False
     monkeypatch.setattr(chat.settings, "FAMILY_INDEX", True)
     assert chat_options(None).family_index is True
+
+
+def test_low_confidence_note_is_on_by_default():
+    from app.core.config import Settings
+    s = Settings(_env_file=None)
+    assert s.LOW_CONFIDENCE_NOTE is True and s.LOW_CONFIDENCE_UPPER == 0.70
+    # The other steps stay off until approved.
+    assert not (s.REWRITE_V2 or s.STRICT_GROUNDING or s.FAMILY_INDEX)
