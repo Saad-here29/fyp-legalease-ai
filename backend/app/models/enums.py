@@ -32,10 +32,17 @@ class CaseStatus(str, enum.Enum):
 
 
 class CaseType(str, enum.Enum):
+    # Family
     CUSTODY = "custody"
     INHERITANCE = "inheritance"
     DIVORCE = "divorce"
     MAINTENANCE = "maintenance"
+    # General (migration e7b3c9d14a02)
+    CIVIL = "civil"
+    CRIMINAL = "criminal"
+    COMMERCIAL = "commercial"
+    PROPERTY = "property"
+    SERVICE = "service"
 
 
 class RoleInCase(str, enum.Enum):

@@ -32,8 +32,12 @@ class Case(Base, TimestampMixin):
         default=CaseStatus.CREATED,
         nullable=False,
     )
-    court_code: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    court_code: Mapped[str | None] = mapped_column(String(60), nullable=True)  # the court
     filing_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    case_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    petitioner: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    respondent: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    next_hearing_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     assigned_lawyer_id: Mapped[uuid.UUID | None] = mapped_column(
         UUIDType, ForeignKey("users.id"), nullable=True
     )

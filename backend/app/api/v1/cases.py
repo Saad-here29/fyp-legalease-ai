@@ -18,6 +18,7 @@ from app.schemas.cases import (
     CaseAssignClientByEmail,
     CaseCreate,
     CaseDetail,
+    CaseDetailsUpdate,
     CaseRead,
     CaseStatusUpdate,
     CaseTimelineEntry,
@@ -137,6 +138,20 @@ def assign_client(
     return CaseService(db).assign_client_by_email(
         case_id, payload.client_email, user
     )
+
+
+@router.patch(
+    "/{case_id}",
+    response_model=CaseRead,
+    summary="Edit case details (number, court, parties, next hearing, summary) — assigned lawyer only",
+)
+def update_case_details(
+    case_id: uuid.UUID,
+    payload: CaseDetailsUpdate,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    return CaseService(db).update_details(case_id, payload, user)
 
 
 @router.patch(

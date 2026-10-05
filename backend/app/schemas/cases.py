@@ -15,10 +15,26 @@ class CaseCreate(APIModel):
     case_type: CaseType
     court_code: str | None = Field(default=None, max_length=60)
     filing_date: date | None = None
+    case_number: str | None = Field(default=None, max_length=64)
+    petitioner: str | None = Field(default=None, max_length=200)
+    respondent: str | None = Field(default=None, max_length=200)
+    next_hearing_date: date | None = None
     # Either client_id (existing user) OR client_email (lookup by email).
     # If client_email points to a registered CLIENT, they auto-see this case.
     client_id: uuid.UUID | None = None
     client_email: EmailStr | None = None
+
+
+class CaseDetailsUpdate(APIModel):
+    """PATCH /cases/{id}: only the fields sent are changed; send null to clear one."""
+    title: str | None = Field(default=None, min_length=3, max_length=200)
+    description: str | None = Field(default=None, max_length=4000)
+    court_code: str | None = Field(default=None, max_length=60)
+    filing_date: date | None = None
+    case_number: str | None = Field(default=None, max_length=64)
+    petitioner: str | None = Field(default=None, max_length=200)
+    respondent: str | None = Field(default=None, max_length=200)
+    next_hearing_date: date | None = None
 
 
 class CaseStatusUpdate(APIModel):
@@ -37,6 +53,10 @@ class CaseRead(APIModel):
     status: CaseStatus
     court_code: str | None
     filing_date: date | None
+    case_number: str | None = None
+    petitioner: str | None = None
+    respondent: str | None = None
+    next_hearing_date: date | None = None
     assigned_lawyer_id: uuid.UUID | None
     client_id: uuid.UUID | None
     created_at: datetime
@@ -45,7 +65,7 @@ class CaseRead(APIModel):
 
 class CaseTimelineEntry(APIModel):
     timestamp: datetime
-    kind: str  # CREATED / STATUS / CLIENT_ASSIGNED / DOCUMENT / NOTE
+    kind: str  # CREATED / STATUS / CLIENT_ASSIGNED / DOCUMENT / NOTE / HEARING / DETAILS
     title: str
     description: str | None = None
     actor_name: str | None = None

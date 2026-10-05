@@ -38,8 +38,17 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    # `alembic -x schema=NAME ...` runs the migrations inside that schema
+    # (tables, enum types and alembic_version), e.g. to test a migration up
+    # and down on a throwaway schema before touching the real tables.
+    schema = context.get_x_argument(as_dictionary=True).get("schema")
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        if schema:
+            from sqlalchemy import text
+            connection.execute(text(f'SET search_path TO "{schema}"'))
+            connection.commit()  # session setting; Alembic then opens its own transaction
+        context.configure(connection=connection, target_metadata=target_metadata,
+                          version_table_schema=schema)
         with context.begin_transaction():
             context.run_migrations()
 

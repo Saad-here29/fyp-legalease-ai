@@ -20,13 +20,17 @@ from app.core.exceptions import (
     IllegalStateTransition,
     NotAuthorized,
     NotFound,
+    ValidationFailed,
 )
 from app.models.audit import ActivityLog
 from app.models.case import Case, CaseParticipant
 from app.models.document import Document
 from app.models.enums import CaseStatus, RoleInCase, UserRole
 from app.models.user import User
-from app.schemas.cases import CaseCreate, CaseDetail, CaseTimelineEntry
+from app.schemas.cases import CaseCreate, CaseDetail, CaseDetailsUpdate, CaseTimelineEntry
+
+_DETAIL_FIELDS = ("title", "description", "court_code", "filing_date", "case_number",
+                  "petitioner", "respondent", "next_hearing_date")
 
 _ALLOWED_TRANSITIONS: dict[CaseStatus, set[CaseStatus]] = {
     CaseStatus.CREATED: {CaseStatus.ASSIGNED, CaseStatus.IN_PROGRESS, CaseStatus.CLOSED},
@@ -170,6 +174,29 @@ class CaseService:
                         actor_name=actor_name,
                     )
                 )
+            elif log.action == "CASE_HEARING_SET":
+                new_date = (log.new_values or {}).get("next_hearing_date")
+                old_date = (log.old_values or {}).get("next_hearing_date")
+                entries.append(
+                    CaseTimelineEntry(
+                        timestamp=log.created_at,
+                        kind="HEARING",
+                        title=f"Next hearing: {new_date}" if new_date else "Next hearing date removed",
+                        description=f"Was {old_date}" if old_date else None,
+                        actor_name=actor_name,
+                    )
+                )
+            elif log.action == "CASE_DETAILS_UPDATED":
+                changed = ", ".join(k.replace("_", " ") for k in (log.new_values or {}))
+                entries.append(
+                    CaseTimelineEntry(
+                        timestamp=log.created_at,
+                        kind="DETAILS",
+                        title="Case details updated",
+                        description=changed.replace("court code", "court").replace("description", "summary"),
+                        actor_name=actor_name,
+                    )
+                )
             elif log.action == "RESEARCH_SAVED_TO_CASE":
                 title = (log.new_values or {}).get("title") or "Authority saved"
                 entries.append(
@@ -240,6 +267,10 @@ class CaseService:
             case_type=payload.case_type,
             court_code=payload.court_code,
             filing_date=payload.filing_date,
+            case_number=payload.case_number,
+            petitioner=payload.petitioner,
+            respondent=payload.respondent,
+            next_hearing_date=payload.next_hearing_date,
             assigned_lawyer_id=creator.id,
             client_id=client.id if client else None,
             status=CaseStatus.ASSIGNED if client else CaseStatus.CREATED,
@@ -267,7 +298,48 @@ class CaseService:
                 new_values={"client_email": client.email, "client_id": str(client.id)},
             )
             self._log_automatic_assignment(creator.id, case.id)
+        if payload.next_hearing_date:
+            self._log(creator.id, "CASE_HEARING_SET", case.id,
+                      new_values={"next_hearing_date": payload.next_hearing_date.isoformat()})
 
+        self.db.commit()
+        self.db.refresh(case)
+        return case
+
+    def update_details(self, case_id: uuid.UUID, payload: CaseDetailsUpdate, user: User) -> Case:
+        """Assigned lawyer only, and not once the case is closed. Every change
+        is audited; a hearing-date change also gets its own timeline entry."""
+        case = self.get(case_id, user)
+        if user.role != UserRole.LAWYER or case.assigned_lawyer_id != user.id:
+            raise NotAuthorized("Only the assigned lawyer can edit this case.")
+        if case.status == CaseStatus.CLOSED:
+            raise IllegalStateTransition(
+                message="This case is closed.",
+                hint="Closed cases can't be edited.",
+            )
+        sent = payload.model_dump(exclude_unset=True)
+        if sent.get("title", "") is None:
+            raise ValidationFailed(message="A case needs a title.", hint="Enter a title of at least 3 characters.")
+
+        def show(v):
+            return v.isoformat() if hasattr(v, "isoformat") else v
+
+        old, new = {}, {}
+        for field in _DETAIL_FIELDS:
+            if field in sent and sent[field] != getattr(case, field):
+                old[field], new[field] = show(getattr(case, field)), show(sent[field])
+                setattr(case, field, sent[field])
+        if not new:
+            return case
+        case.updated_at = datetime.now(UTC)
+        if "next_hearing_date" in new:
+            self._log(user.id, "CASE_HEARING_SET", case.id,
+                      old_values={"next_hearing_date": old["next_hearing_date"]},
+                      new_values={"next_hearing_date": new["next_hearing_date"]})
+        others = {k: v for k, v in new.items() if k != "next_hearing_date"}
+        if others:
+            self._log(user.id, "CASE_DETAILS_UPDATED", case.id,
+                      old_values={k: old[k] for k in others}, new_values=others)
         self.db.commit()
         self.db.refresh(case)
         return case
@@ -405,6 +477,15 @@ class CaseService:
                 1 for c in cases if c.status == CaseStatus.HEARING_SCHEDULED
             ),
             "closed": sum(1 for c in cases if c.status == CaseStatus.CLOSED),
+            "upcoming_hearings": sorted(
+                (
+                    {"case_id": str(c.id), "title": c.title, "case_number": c.case_number,
+                     "court": c.court_code, "date": c.next_hearing_date.isoformat()}
+                    for c in active
+                    if c.next_hearing_date and c.next_hearing_date >= datetime.now(UTC).date()
+                ),
+                key=lambda h: h["date"],
+            )[:5],
         }
 
     # ----- Internal ------------------------------------------------------
