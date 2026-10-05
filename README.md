@@ -57,7 +57,7 @@ The search library holds **statutes only**, with no court judgments.
 | **Database** | PostgreSQL (Supabase in development) |
 | **AI** | Groq `openai/gpt-oss-120b` (OpenAI and Gemini as optional fallbacks), `sentence-transformers` multilingual MiniLM embeddings, FAISS, a fine-tuned DistilBERT legal NER model (PyTorch, CPU) |
 | **Documents** | PyMuPDF, PyPDF2, python-docx; Tesseract and Poppler optional, for scanned files |
-| **Testing** | pytest (210 backend tests), ruff, ESLint |
+| **Testing** | pytest (213 backend tests), ruff, ESLint |
 
 ---
 
@@ -149,7 +149,7 @@ npm run dev
 
 ```powershell
 cd backend
-pytest                    # 210 tests, offline (no AI calls)
+pytest                    # 213 tests, offline (no AI calls)
 ruff check app
 
 cd ..\frontend

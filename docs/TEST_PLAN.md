@@ -5,7 +5,7 @@ legal assistance platform.
 **Scope:** auth, case management, AI chat, legal research, document
 analysis (with OCR/text extraction), and contract drafting and compliance.
 **Reference:** Final Report § 4.3 (Test Strategy), Tables 4.2–4.5.
-**Updated:** October 2026: 210 automated backend tests, 85% line coverage.
+**Updated:** October 2026: 213 automated backend tests, 85% line coverage.
 
 ---
 
@@ -32,7 +32,7 @@ analysis (with OCR/text extraction), and contract drafting and compliance.
 
 ```bash
 cd backend
-pytest                               # all 210, with coverage (pyproject addopts)
+pytest                               # all 213, with coverage (pyproject addopts)
 pytest -o addopts="" -q              # without coverage, faster
 ```
 
@@ -77,11 +77,11 @@ real browser, for each role. Results are in § 9.
 | `unit/test_research_service.py` | 11 | Title mapping, excerpt trimming |
 | `unit/test_index_stats.py` | 3 | Library size reported from the index |
 | `unit/test_summary_sections.py` | 6 | Clauses and risks parsed from the summary |
-| `unit/test_contract_placeholders.py` | 10 | Unfilled-placeholder scan and compliance |
+| `unit/test_contract_placeholders.py` | 13 | Unfilled-placeholder scan and compliance; optional compliance body |
 | `unit/test_ner.py` | 25 | Legal NER grouping and post-processing; the real model |
 | `unit/test_db_unavailable.py` | 7 | One retry, then 503; other DB errors stay 500 |
 | `unit/test_email_validator.py` | 5 | UT-EMAIL-001…002 |
-| **Total** | **210** | |
+| **Total** | **213** | |
 
 ---
 

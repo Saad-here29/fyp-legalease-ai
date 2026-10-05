@@ -60,7 +60,7 @@ Run it in its own terminal window. API docs are at
 ## Test and lint
 
 ```powershell
-pytest            # 210 tests: in-memory SQLite, no AI calls (model code is stubbed)
+pytest            # 213 tests: in-memory SQLite, no AI calls (model code is stubbed)
 ruff check app
 ```
 
