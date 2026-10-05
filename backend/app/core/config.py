@@ -101,6 +101,13 @@ class Settings(BaseSettings):
     RAG_CHUNK_SIZE: int = 800
     RAG_CHUNK_OVERLAP: int = 100
 
+    # ===== Chat quality steps (Oct 2026) =====
+    # Each step is shipped only if the offline evaluation shows it helps;
+    # otherwise it stays built but off. Results:
+    # docs/chat_quality_steps_2026-10.md
+    # Query rewrite at temperature 0, no statute names added.
+    REWRITE_V2: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

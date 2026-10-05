@@ -71,6 +71,65 @@ SUMMARY_MAX_CHARS = 20_000
 REWRITE_MAX_TOKENS = 150
 REWRITE_REASONING_EFFORT = "low"
 
+CHAT_TEMPERATURE = 0.3
+# The rewrite decides what is retrieved, and so whether a question is
+# answered or refused. At 0.3 the same question was answered one day and
+# refused the next (docs/chat_review_family_law_2026-10-05.md, 2.2).
+REWRITE_TEMPERATURE_V2 = 0.0
+
+# v1: the prompt in use until Oct 2026. Its talaq example names a statute,
+# and the model copied the habit: "... under Muslim Family Laws Ordinance"
+# steered dowry and restitution questions away from the Family Courts Act.
+REWRITE_PROMPT_V1 = (
+    "You are a legal search query optimizer for a Pakistani law "
+    "database. Rewrite the user's question into a short, focused "
+    "search query (max ~20 words) using the precise terminology "
+    "Pakistani statutes actually use — not just a paraphrase. "
+    "Translate everyday/layperson phrasing into the legal terms of "
+    "art a statute would use, for example: a husband pronouncing "
+    "divorce -> \"talaq\" (Muslim Family Laws Ordinance); a wife "
+    "seeking to end her marriage -> \"khula\"; \"property after "
+    "someone dies\" -> \"inheritance\" / \"succession\"; \"getting "
+    "custody of my kids\" -> \"guardianship\" / \"hizanat\".\n\n"
+    "If the question has NOTHING to do with law at all (weather, "
+    "recipes, general trivia, etc.), do NOT apologise or say you "
+    "can't help — that refusal text gets embedded and searched too, "
+    "and phrases like 'legal' or 'Pakistani law' inside an apology "
+    "can accidentally look relevant. Instead output the question's "
+    "literal subject with no legal framing added, e.g. 'weather "
+    "today' or 'chocolate cake recipe' — let it score low on its "
+    "own merits rather than gaming the relevance check.\n\n"
+    "Output ONLY the rewritten query — no preamble, no quotes, no "
+    "explanation, and never an apology or refusal sentence."
+)
+
+# v2: the same jobs, with terms of art only, never the name of an Act.
+REWRITE_PROMPT_V2 = (
+    "You are a legal search query optimizer for a Pakistani law "
+    "database. Rewrite the user's question into a short, focused "
+    "search query (max ~20 words) using the precise terminology "
+    "Pakistani statutes actually use — not just a paraphrase. "
+    "Translate everyday/layperson phrasing into the legal terms of "
+    "art a statute would use, for example: a husband pronouncing "
+    "divorce -> \"talaq\"; a wife "
+    "seeking to end her marriage -> \"khula\"; \"property after "
+    "someone dies\" -> \"inheritance\" / \"succession\"; \"getting "
+    "custody of my kids\" -> \"guardianship\" / \"hizanat\".\n\n"
+    "Never add the name of an Act, Ordinance, Order, Code or Rules, or "
+    "an abbreviation of one, unless the user's question names it. Keep "
+    "every issue the question raises; don't narrow it to one.\n\n"
+    "If the question has NOTHING to do with law at all (weather, "
+    "recipes, general trivia, etc.), do NOT apologise or say you "
+    "can't help — that refusal text gets embedded and searched too, "
+    "and phrases like 'legal' or 'Pakistani law' inside an apology "
+    "can accidentally look relevant. Instead output the question's "
+    "literal subject with no legal framing added, e.g. 'weather "
+    "today' or 'chocolate cake recipe' — let it score low on its "
+    "own merits rather than gaming the relevance check.\n\n"
+    "Output ONLY the rewritten query — no preamble, no quotes, no "
+    "explanation, and never an apology or refusal sentence."
+)
+
 
 def _content(resp, max_tokens: int = CHAT_MAX_TOKENS) -> str:
     choice = resp.choices[0]
@@ -154,6 +213,7 @@ class AIClient:
         *,
         max_tokens: int = CHAT_MAX_TOKENS,
         reasoning_effort: str | None = None,
+        temperature: float = CHAT_TEMPERATURE,
     ) -> str:
         """history: [{role, content}] for prior turns + latest user message.
         `reasoning_effort` is passed to Groq's reasoning models only."""
@@ -176,7 +236,9 @@ class AIClient:
             try:
                 if prov != self.provider:
                     logger.info(f"Falling back from {self.provider} to {prov}")
-                return self._chat_with_provider(prov, history, system, max_tokens, reasoning_effort)
+                return self._chat_with_provider(
+                    prov, history, system, max_tokens, reasoning_effort, temperature,
+                )
             except AIServiceUnavailable as e:
                 last_err = e
                 continue
@@ -191,7 +253,7 @@ class AIClient:
             "gemini": self._gemini is not None,
         }.get(name, False)
 
-    def rewrite_search_query(self, query: str) -> str:
+    def rewrite_search_query(self, query: str, *, v2: bool = False) -> str:
         """Rewrite a user's question into a short search query before
         embedding, with two jobs in one pass:
           1. Compress long, multi-clause questions down to the core issue.
@@ -207,36 +269,21 @@ class AIClient:
         71-character question in plain English can still rank the right
         statute passage below an irrelevant title-word match.
 
+        `v2` selects REWRITE_PROMPT_V2 at temperature 0 (see below).
+
         Never breaks retrieval: falls back to the original query untouched
         if no provider is configured or the call fails for any reason."""
         if not self.enabled:
             return query
-        system = (
-            "You are a legal search query optimizer for a Pakistani law "
-            "database. Rewrite the user's question into a short, focused "
-            "search query (max ~20 words) using the precise terminology "
-            "Pakistani statutes actually use — not just a paraphrase. "
-            "Translate everyday/layperson phrasing into the legal terms of "
-            "art a statute would use, for example: a husband pronouncing "
-            "divorce -> \"talaq\" (Muslim Family Laws Ordinance); a wife "
-            "seeking to end her marriage -> \"khula\"; \"property after "
-            "someone dies\" -> \"inheritance\" / \"succession\"; \"getting "
-            "custody of my kids\" -> \"guardianship\" / \"hizanat\".\n\n"
-            "If the question has NOTHING to do with law at all (weather, "
-            "recipes, general trivia, etc.), do NOT apologise or say you "
-            "can't help — that refusal text gets embedded and searched too, "
-            "and phrases like 'legal' or 'Pakistani law' inside an apology "
-            "can accidentally look relevant. Instead output the question's "
-            "literal subject with no legal framing added, e.g. 'weather "
-            "today' or 'chocolate cake recipe' — let it score low on its "
-            "own merits rather than gaming the relevance check.\n\n"
-            "Output ONLY the rewritten query — no preamble, no quotes, no "
-            "explanation, and never an apology or refusal sentence."
+        system, temperature = (
+            (REWRITE_PROMPT_V2, REWRITE_TEMPERATURE_V2) if v2
+            else (REWRITE_PROMPT_V1, CHAT_TEMPERATURE)
         )
         try:
             rewritten = self.chat(
                 [{"role": "user", "content": query}], system=system,
                 max_tokens=REWRITE_MAX_TOKENS, reasoning_effort=REWRITE_REASONING_EFFORT,
+                temperature=temperature,
             ).strip()
             return rewritten or query
         except AIServiceUnavailable:
@@ -266,11 +313,12 @@ class AIClient:
     def _chat_with_provider(
         self, provider: str, history: list[dict], system: str,
         max_tokens: int = CHAT_MAX_TOKENS, reasoning_effort: str | None = None,
+        temperature: float = CHAT_TEMPERATURE,
     ) -> str:
         if provider == "groq":
-            return self._chat_groq(history, system, max_tokens, reasoning_effort)
+            return self._chat_groq(history, system, max_tokens, reasoning_effort, temperature)
         if provider == "openai":
-            return self._chat_openai(history, system, max_tokens)
+            return self._chat_openai(history, system, max_tokens, temperature)
         if provider == "gemini":
             return self._chat_gemini(history, system)
         raise AIServiceUnavailable(message=f"Unknown provider: {provider}")
@@ -278,12 +326,13 @@ class AIClient:
     def _chat_groq(
         self, history: list[dict], system: str,
         max_tokens: int = CHAT_MAX_TOKENS, reasoning_effort: str | None = None,
+        temperature: float = CHAT_TEMPERATURE,
     ) -> str:
         try:
             resp = self._groq.chat.completions.create(
                 model=settings.GROQ_MODEL,
                 messages=[{"role": "system", "content": system}, *history],
-                temperature=0.3,
+                temperature=temperature,
                 max_tokens=max_tokens,
                 # Not a named argument in openai 1.51; Groq reads it from the body.
                 extra_body={"reasoning_effort": reasoning_effort} if reasoning_effort else None,
@@ -298,12 +347,13 @@ class AIClient:
 
     def _chat_openai(
         self, history: list[dict], system: str, max_tokens: int = CHAT_MAX_TOKENS,
+        temperature: float = CHAT_TEMPERATURE,
     ) -> str:
         try:
             resp = self._openai.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[{"role": "system", "content": system}, *history],
-                temperature=0.3,
+                temperature=temperature,
                 max_tokens=max_tokens,
             )
             return _content(resp, max_tokens)

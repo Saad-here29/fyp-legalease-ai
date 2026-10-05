@@ -170,6 +170,34 @@ def _ms_since(t0: float) -> int:
     return int((time.perf_counter() - t0) * 1000)
 
 
+def retrieve_passages(message: str, search_query: str) -> list[dict]:
+    """The passages the model will see: the top RAG_TOP_K for the
+    (rewritten) search query that pass the threshold, with contents-list
+    chunks replaced by the sections they point to. Empty means refuse.
+    The evaluation script (scripts/eval_chat_quality.py) replays this
+    function offline, so chat and evaluation can't drift apart."""
+    retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
+    passages = [
+        r for r in retrieved
+        if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
+    ]
+
+    # A table-of-contents chunk often outranks the section text it lists
+    # (fixed-size chunks split sections). Follow it to the sections the
+    # question points at; their text replaces the contents list.
+    extra = section_lookup.section_passages(message, passages)
+    if extra:
+        logger.info(
+            f"Section lookup: +{len(extra)} passages via contents list "
+            f"({', '.join(sorted({e['via_toc'] for e in extra}))})"
+        )
+        passages = [
+            p for p in passages
+            if not section_lookup.is_toc(embeddings.record_text(p))
+        ] + extra
+    return passages
+
+
 def _detect_language(text: str) -> str:
     try:
         from langdetect import detect
@@ -266,25 +294,7 @@ class LegalChatService:
             return self._reply(sid, lang, fixed_reply(INDEX_NOT_READY, lang))
 
         search_query = rewrite_for_search(message)
-        retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
-        passages = [
-            r for r in retrieved
-            if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
-        ]
-
-        # A table-of-contents chunk often outranks the section text it lists
-        # (fixed-size chunks split sections). Follow it to the sections the
-        # question points at; their text replaces the contents list.
-        extra = section_lookup.section_passages(message, passages)
-        if extra:
-            logger.info(
-                f"Section lookup: +{len(extra)} passages via contents list "
-                f"({', '.join(sorted({e['via_toc'] for e in extra}))})"
-            )
-            passages = [
-                p for p in passages
-                if not section_lookup.is_toc(embeddings.record_text(p))
-            ] + extra
+        passages = retrieve_passages(message, search_query)
 
         # Out-of-scope refusal — no LLM call, no hallucination risk
         if not passages:
