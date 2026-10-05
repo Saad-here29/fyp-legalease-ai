@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from app.models.enums import SenderType
 from app.schemas.common import APIModel
@@ -31,6 +31,20 @@ class ChatMessageRead(APIModel):
     citations: list[dict] | None
     response_time_ms: int | None = None
     created_at: datetime
+
+    # The same per-answer flags as the live reply (answer_flags), so a
+    # reloaded conversation shows the same notes.
+    @computed_field
+    @property
+    def confidence(self) -> str | None:
+        from app.services.legal_chat_service import answer_flags
+        return answer_flags(self.citations)["confidence"]
+
+    @computed_field
+    @property
+    def family_scope(self) -> bool:
+        from app.services.legal_chat_service import answer_flags
+        return answer_flags(self.citations)["family_scope"]
 
 
 class ChatAskResponse(APIModel):

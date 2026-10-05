@@ -71,6 +71,8 @@ ai-services/ner_training/trained_model/
 # ===== Uploads / Storage =====
 backend/uploads/
 backend/storage/
+# Family-law side index vectors (rebuilt automatically)
+backend/cache/
 *.pdf.tmp
 *.docx.tmp
 

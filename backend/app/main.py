@@ -33,6 +33,10 @@ async def lifespan(_: FastAPI):
     from app.ai import ner
     ner.start_background_load()
 
+    # Family-law side index (only when FAMILY_INDEX is on): same idea.
+    from app.ai import family_index
+    family_index.start_background_load()
+
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 

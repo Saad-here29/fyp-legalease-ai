@@ -148,7 +148,8 @@ def record(arm: str, sets: list[str], out: Path, pause: float) -> None:
 
 # ---------------------------------------------------------------- replay
 
-def replay(rewrites: Path, out: Path, family: str = "off") -> None:
+def replay(rewrites: Path, out: Path, family: str = "off",
+           family_threshold: float | None = None) -> None:
     _backend()
     from app.ai import embeddings
     from app.core.config import settings
@@ -162,13 +163,15 @@ def replay(rewrites: Path, out: Path, family: str = "off") -> None:
     review = {i: (acts, chunks) for i, _, acts, chunks in REVIEW}
     items = json.loads(rewrites.read_text(encoding="utf-8"))["items"]
 
-    if family != "off":
-        settings.FAMILY_INDEX = True  # this process only
+    # This process only: "off" is the setup without the family index.
+    settings.FAMILY_INDEX = family != "off"
+    if family_threshold is not None:
+        settings.FAMILY_THRESHOLD = family_threshold
 
     results = []
     for it in items:
-        kwargs = {} if family == "off" else {"family_scope": family == "on" or None}
-        passages = chat.retrieve_passages(it["question"], it["rewrite"], **kwargs)
+        passages = chat.retrieve_passages(it["question"], it["rewrite"],
+                                          family="on" if family == "on" else "auto")
         rows = []
         for p in passages:
             i = text_pos.get(embeddings.record_text(p), pos.get(id(p)))
@@ -197,8 +200,72 @@ def replay(rewrites: Path, out: Path, family: str = "off") -> None:
         print(f"{r['id']:4} {r['status']:10} best={r['best']}  {', '.join(sorted({x['source'][:30] for x in rows}))[:110]}")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"rewrites": str(rewrites), "family": family,
-                               "threshold": settings.RAG_SIMILARITY_THRESHOLD, "results": results},
+                               "threshold": settings.RAG_SIMILARITY_THRESHOLD,
+                               "family_threshold": settings.FAMILY_THRESHOLD, "results": results},
                               ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+# ---------------------------------------------------------------- answer
+
+def answer(rewrites: Path, out: Path, prompt: str, family: str, ids: list[str] | None,
+           pause: float) -> None:
+    """Generate answers (Groq) for the review questions with the old or the
+    strict prompt, on identical passages. Resumes; stops on the first
+    failure. About 3,000-4,500 tokens per answered question."""
+    _backend()
+    from app.ai import embeddings
+    from app.ai.client import get_ai_client
+    from app.core.config import settings
+    from app.services import legal_chat_service as chat
+
+    client = get_ai_client()
+    if client.provider != "groq":
+        sys.exit(f"Groq is not the active provider ({client.provider}).")
+    client._openai = client._gemini = None
+    usage = {}
+    real_create = client._groq.chat.completions.create
+
+    def counting_create(*a, **kw):
+        resp = real_create(*a, **kw)
+        usage.update(prompt=resp.usage.prompt_tokens, completion=resp.usage.completion_tokens,
+                     finish=resp.choices[0].finish_reason)
+        return resp
+
+    client._groq.chat.completions.create = counting_create
+    settings.FAMILY_INDEX = family != "off"
+    embeddings.build_or_load()
+
+    data = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {"prompt": prompt, "items": []}
+    done = {it["id"] for it in data["items"]}
+    items = [it for it in json.loads(rewrites.read_text(encoding="utf-8"))["items"]
+             if it["set"] == "review" and it["id"] not in done and (not ids or it["id"] in ids)]
+    for it in items:
+        passages = chat.retrieve_passages(it["question"], it["rewrite"],
+                                          family="on" if family == "on" else "auto")
+        rec = {"id": it["id"], "question": it["question"], "rewrite": it["rewrite"],
+               "passages": [{"n": i + 1, "source": embeddings.record_source(p),
+                             "score": round(float(p.get("relevance", 0)), 4),
+                             "text": embeddings.record_text(p)} for i, p in enumerate(passages)]}
+        if not passages:
+            rec.update(answer=None, refused=True, tokens=0)
+        else:
+            usage.clear()
+            lang = chat._detect_language(it["question"])
+            try:
+                checked = chat.compose_answer(client, passages, [{"role": "user", "content": it["question"]}],
+                                              lang, strict=(prompt == "strict"))
+            except Exception as e:  # noqa: BLE001
+                sys.exit(f"Groq call failed at {it['id']}: {e}. Saved; rerun to resume.")
+            rec.update(answer=checked.text, refused=False, citation_check=checked.summary(),
+                       tokens=usage.get("prompt", 0) + usage.get("completion", 0),
+                       finish=usage.get("finish"))
+        data["items"].append(rec)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"{it['id']} {'refused' if rec['refused'] else 'answered'} {rec['tokens']} tok")
+        if not rec["refused"]:
+            time.sleep(pause)
+    print("total tokens:", sum(i["tokens"] for i in data["items"]))
 
 
 # ---------------------------------------------------------------- compare
@@ -224,6 +291,7 @@ def compare(a: Path, b: Path) -> None:
 
 
 def main() -> None:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # cp1252 consoles
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("record")
@@ -235,6 +303,14 @@ def main() -> None:
     p.add_argument("--rewrites", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--family", choices=["off", "auto", "on"], default="off")
+    p.add_argument("--family-threshold", type=float, default=None)
+    a = sub.add_parser("answer")
+    a.add_argument("--rewrites", type=Path, required=True)
+    a.add_argument("--out", type=Path, required=True)
+    a.add_argument("--prompt", choices=["old", "strict"], required=True)
+    a.add_argument("--family", choices=["off", "auto", "on"], default="off")
+    a.add_argument("--ids", default="", help="comma-separated review ids, e.g. R3,R6")
+    a.add_argument("--pause", type=float, default=45.0)
     c = sub.add_parser("compare")
     c.add_argument("a", type=Path)
     c.add_argument("b", type=Path)
@@ -245,7 +321,10 @@ def main() -> None:
     if args.cmd == "record":
         record(args.arm, args.sets.split(","), args.out, args.pause)
     elif args.cmd == "replay":
-        replay(args.rewrites, args.out, args.family)
+        replay(args.rewrites, args.out, args.family, args.family_threshold)
+    elif args.cmd == "answer":
+        answer(args.rewrites, args.out, args.prompt, args.family,
+               [x for x in args.ids.split(",") if x], args.pause)
     else:
         compare(args.a, args.b)
 

@@ -25,7 +25,7 @@ from functools import lru_cache
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ai import embeddings, section_lookup
+from app.ai import embeddings, family_index, section_lookup
 from app.ai.citation_check import check_citations
 from app.ai.client import get_ai_client
 from app.ai.query_rewrite import rewrite_for_search
@@ -63,6 +63,30 @@ SYSTEM_PROMPT = (
     "short-answer label given in the language instruction below, stating "
     "the core point, then give the detailed breakdown. Don't add it to "
     "refusals."
+)
+
+# Step 2 of the Oct 2026 chat-quality work (settings.STRICT_GROUNDING).
+# The 2026-10-05 legal review found answers that extended a widow's share
+# to a separated wife "by analogy", applied an Air Force Act offence to
+# advocates, and listed consequences no passage mentioned
+# (docs/chat_review_family_law_2026-10-05.md, section 4).
+STRICT_GROUNDING_RULES = (
+    "GROUNDING RULES — these override anything above:\n"
+    "1. Every statement of law, procedure, right, remedy, penalty or "
+    "consequence must come from a numbered passage and carry its [n]. A "
+    "sentence you cannot tie to a passage does not belong in the answer.\n"
+    "2. Apply a passage only to what it covers. If it is limited to a "
+    "particular person (e.g. a widow, a member of the armed forces), "
+    "proceeding (e.g. probate, an inquiry) or statute, don't apply it to "
+    "anyone or anything else. No reasoning by analogy.\n"
+    "3. Don't add consequences, procedures, remedies, duties or examples "
+    "from your own knowledge, even if you believe them to be correct.\n"
+    "4. If the passages don't cover the question or part of it, say so "
+    "plainly — e.g. \"The retrieved provisions don't cover who bears the "
+    "burden of proof\" — and stop there for that part. If they cover none "
+    "of it, say that and give no other answer.\n"
+    "5. The short-answer sentence follows the same rules: state only what "
+    "the passages support."
 )
 
 # Appended per question. The detected language is stated explicitly: left
@@ -131,11 +155,14 @@ LANGUAGE_INSTRUCTION = {
 }
 
 
-def build_system_prompt(context_block: str, lang: str) -> str:
+def build_system_prompt(context_block: str, lang: str, *, strict: bool | None = None) -> str:
     """The full system prompt for one question: base rules, the retrieved
-    authorities, then the language instruction for this question."""
+    authorities, then the language instruction for this question.
+    `strict` (default settings.STRICT_GROUNDING) adds STRICT_GROUNDING_RULES."""
+    strict = settings.STRICT_GROUNDING if strict is None else strict
+    rules = f"{SYSTEM_PROMPT}\n\n{STRICT_GROUNDING_RULES}" if strict else SYSTEM_PROMPT
     return (
-        f"{SYSTEM_PROMPT}\n\n"
+        f"{rules}\n\n"
         "--- Relevant Pakistani legal authorities (cite by [n]) ---\n"
         f"{context_block}\n"
         "--- End authorities ---\n\n"
@@ -170,17 +197,57 @@ def _ms_since(t0: float) -> int:
     return int((time.perf_counter() - t0) * 1000)
 
 
-def retrieve_passages(message: str, search_query: str) -> list[dict]:
+def answer_flags(citations: list[dict] | None) -> dict:
+    """Per-answer flags the page shows, derived from the stored citations
+    so a reloaded history shows the same as the live reply:
+      confidence    "low" when settings.LOW_CONFIDENCE_NOTE is on and the
+                    best passage scores below LOW_CONFIDENCE_UPPER; "normal"
+                    otherwise; None for replies with no passages (refusals)
+      family_scope  True when the passages came from the family-law index
+    """
+    if not citations:
+        return {"confidence": None, "family_scope": False}
+    best = max(c.get("relevance") or 0 for c in citations)
+    low = settings.LOW_CONFIDENCE_NOTE and best < settings.LOW_CONFIDENCE_UPPER
+    return {"confidence": "low" if low else "normal",
+            "family_scope": any(c.get("family") for c in citations)}
+
+
+def family_scope_applies(message: str, search_query: str, family: str) -> bool:
+    """family: "auto" (the default; on for questions using a family term
+    of art), "on" (always) or "off" (the user switched it off). Never on
+    while settings.FAMILY_INDEX is off."""
+    if not settings.FAMILY_INDEX or family == "off":
+        return False
+    return family == "on" or family_index.is_family_question(message, search_query)
+
+
+def retrieve_passages(message: str, search_query: str, *, family: str = "auto") -> list[dict]:
     """The passages the model will see: the top RAG_TOP_K for the
     (rewritten) search query that pass the threshold, with contents-list
     chunks replaced by the sections they point to. Empty means refuse.
+
+    In family scope (see family_scope_applies) the family-law side index
+    is searched first, against FAMILY_THRESHOLD; if nothing passes, the
+    full index is searched as before. Family passages carry
+    "family_window".
+
     The evaluation script (scripts/eval_chat_quality.py) replays this
     function offline, so chat and evaluation can't drift apart."""
-    retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
-    passages = [
-        r for r in retrieved
-        if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
-    ]
+    passages: list[dict] = []
+    if family_scope_applies(message, search_query, family):
+        found = family_index.search(
+            search_query, settings.RAG_TOP_K,
+            minority=family_index.names_community(message, search_query),
+        )
+        passages = [r for r in found if r["relevance"] >= settings.FAMILY_THRESHOLD]
+        logger.info(f"Family scope: {len(passages)} of {len(found)} family passages pass")
+    if not passages:
+        retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
+        passages = [
+            r for r in retrieved
+            if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
+        ]
 
     # A table-of-contents chunk often outranks the section text it lists
     # (fixed-size chunks split sections). Follow it to the sections the
@@ -196,6 +263,30 @@ def retrieve_passages(message: str, search_query: str) -> list[dict]:
             if not section_lookup.is_toc(embeddings.record_text(p))
         ] + extra
     return passages
+
+
+def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
+                   strict: bool | None = None):
+    """Ask the model to answer from `passages` (history ends with the
+    question), then ground its citations: every section cited must appear
+    in the passages, and case law (which the statute-only corpus never
+    contains) is removed. Returns the CitationCheck result. Shared with
+    the evaluation script so both send the same prompt."""
+    context_block = "\n\n".join(
+        f"[{i + 1}] Source: {embeddings.record_source(p)}\n"
+        f"{embeddings.record_text(p)}"
+        for i, p in enumerate(passages)
+    )
+    system = build_system_prompt(context_block, lang, strict=strict)
+    raw_text = ai.chat(history, system=system)
+    checked = check_citations(
+        raw_text,
+        [{"source": embeddings.record_source(p), "text": embeddings.record_text(p)}
+         for p in passages],
+        lang=lang,
+    )
+    logger.info(f"Citation check: {checked.summary()}")
+    return checked
 
 
 def _detect_language(text: str) -> str:
@@ -241,8 +332,10 @@ class LegalChatService:
         message: str,
         session_id: uuid.UUID | None = None,
         case_id: uuid.UUID | None = None,
+        family: str = "auto",
     ) -> dict:
-        """Send a message and get the AI reply.
+        """Send a message and get the AI reply. `family` is the page's
+        family-law switch: "auto" (default) or "off".
 
         Returns the spec-mandated shape:
             { "response": str, "sources": list[str], "session_id": str }
@@ -294,7 +387,7 @@ class LegalChatService:
             return self._reply(sid, lang, fixed_reply(INDEX_NOT_READY, lang))
 
         search_query = rewrite_for_search(message)
-        passages = retrieve_passages(message, search_query)
+        passages = retrieve_passages(message, search_query, family=family)
 
         # Out-of-scope refusal — no LLM call, no hallucination risk
         if not passages:
@@ -304,27 +397,10 @@ class LegalChatService:
             return self._reply(sid, lang, fixed_reply(OUT_OF_SCOPE_REFUSAL, lang),
                                response_time_ms=_ms_since(t0))
 
-        context_block = "\n\n".join(
-            f"[{i + 1}] Source: {embeddings.record_source(p)}\n"
-            f"{embeddings.record_text(p)}"
-            for i, p in enumerate(passages)
-        )
         history.append({"role": "user", "content": message})
-        system = build_system_prompt(context_block, lang)
-
         # AIServiceUnavailable propagates -> router returns 503; the user
         # message stays saved without a reply.
-        raw_text = self.ai.chat(history, system=system)
-
-        # Every section cited must appear in the retrieved passages; case
-        # law (which the statute-only corpus never contains) is removed.
-        checked = check_citations(
-            raw_text,
-            [{"source": embeddings.record_source(p), "text": embeddings.record_text(p)}
-             for p in passages],
-            lang=lang,
-        )
-        logger.info(f"Citation check: {checked.summary()}")
+        checked = compose_answer(self.ai, passages, history, lang)
 
         citations_payload = [
             {
@@ -332,6 +408,7 @@ class LegalChatService:
                 "kind": embeddings.record_kind(p),
                 "excerpt": embeddings.record_text(p)[:240],
                 "relevance": round(p.get("relevance", 0), 4),
+                "family": p.get("family_window") is not None,
             }
             for p in passages
         ]
@@ -377,6 +454,7 @@ class LegalChatService:
                 for i, c in enumerate(citations or [])
             ],
             "response_time_ms": response_time_ms,
+            **answer_flags(citations),
         }
 
     def _recent_history(self, session_id: uuid.UUID, *, limit: int) -> list[dict]:

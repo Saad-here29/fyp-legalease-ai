@@ -7,11 +7,13 @@ Primary endpoint per Task 3 spec: POST /chat/message
 """
 
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.db.session import get_db
 from app.middlewares.auth import CurrentUser
 from app.schemas.chat import ChatMessageRead, ChatSessionRead
@@ -24,6 +26,9 @@ class ChatMessageRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     session_id: uuid.UUID | None = None
     case_id: uuid.UUID | None = None
+    # The page's "Family law" switch: "auto" searches the family-law index
+    # first for family questions; "off" never does.
+    family: Literal["auto", "off"] = "auto"
 
 
 class CitationRef(BaseModel):
@@ -38,6 +43,17 @@ class ChatMessageResponse(BaseModel):
     session_id: str
     citations: list[CitationRef] = []
     response_time_ms: int | None = None
+    confidence: Literal["low", "normal"] | None = None   # None for refusals
+    family_scope: bool = False   # passages came from the family-law index
+
+
+class ChatOptions(BaseModel):
+    family_index: bool          # the page shows its "Family law" switch only when on
+
+
+@router.get("/options", response_model=ChatOptions, summary="Chat features switched on")
+def chat_options(_user: CurrentUser):
+    return ChatOptions(family_index=settings.FAMILY_INDEX)
 
 
 @router.get(
@@ -78,5 +94,6 @@ def send_message(
         message=payload.message,
         session_id=payload.session_id,
         case_id=payload.case_id,
+        family=payload.family,
     )
 

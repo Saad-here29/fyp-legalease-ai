@@ -107,6 +107,15 @@ class Settings(BaseSettings):
     # docs/chat_quality_steps_2026-10.md
     # Query rewrite at temperature 0, no statute names added.
     REWRITE_V2: bool = False
+    # Answer prompt: every claim tied to a numbered passage, no analogy,
+    # no consequences from memory, say what the passages don't cover.
+    STRICT_GROUNDING: bool = False
+    # Note on answers whose best passage scores in [threshold, upper).
+    LOW_CONFIDENCE_NOTE: bool = False
+    LOW_CONFIDENCE_UPPER: float = 0.70
+    # Family-law side index (core family statutes re-embedded in windows).
+    FAMILY_INDEX: bool = False
+    FAMILY_THRESHOLD: float = 0.65
 
 
 @lru_cache
