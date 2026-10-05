@@ -15,6 +15,9 @@ export const casesApi = {
     client
       .post(ENDPOINTS.cases.assignClient(id), { client_email })
       .then((r) => r.data),
+  // Details: case number, court, parties, next hearing, summary (assigned lawyer only).
+  update: (id, payload) =>
+    client.patch(ENDPOINTS.cases.byId(id), payload).then((r) => r.data),
   updateStatus: (id, status) =>
     client
       .patch(ENDPOINTS.cases.updateStatus(id), { status })

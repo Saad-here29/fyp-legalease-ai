@@ -6,12 +6,12 @@ import { useAuthStore } from "@/store/authStore";
 import { ROUTES } from "@/constants";
 import { casesApi } from "@/features/case-management/api";
 import StatusTag from "@/features/case-management/StatusTag";
-import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry } from "@/features/case-management/caseMeta";
+import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry, isUpcoming } from "@/features/case-management/caseMeta";
 import { RuledSection, ViewAll, Today } from "./components/DashParts";
 
 // Client dashboard — design system v1, per docs/design_reference page 5.
-// Adapted to what exists: no hearing dates, messages or requested-document
-// checklist (none are built). "Where your case stands" follows the case's
+// Adapted to what exists: no messages or requested-document checklist (not
+// built); the next hearing date is shown when the lawyer has set one. "Where your case stands" follows the case's
 // real status; the stage notes below are fixed text, not AI output.
 
 const STAGES = ["created", "assigned", "in_progress", "hearing_scheduled", "closed"];
@@ -76,10 +76,16 @@ export default function ClientDashboard() {
                 {main.title}
               </Link>
               <p className="ds-body text-ds-text-2 mt-2">
-                {[TYPE_LABEL[main.case_type] || main.case_type, main.court_code, main.filing_date && `filed ${fmtDate(main.filing_date)}`]
+                {[main.case_number, TYPE_LABEL[main.case_type] || main.case_type, main.court_code,
+                  main.filing_date && `filed ${fmtDate(main.filing_date)}`]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
+              {isUpcoming(main.next_hearing_date) && main.status !== "closed" && (
+                <p className="mt-3 font-ds-sans font-semibold text-[17px] text-ds-seal">
+                  Next hearing: {fmtDate(main.next_hearing_date)}
+                </p>
+              )}
             </div>
             <div className="py-7 lg:pl-8 lg:border-l border-ds-rule">
               <p className="ds-body text-ds-text-2">Current stage</p>

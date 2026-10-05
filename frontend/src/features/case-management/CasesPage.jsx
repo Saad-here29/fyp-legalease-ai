@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { ROLES, CASE_TYPES } from "@/constants";
 import { casesApi } from "./api";
 import StatusTag from "./StatusTag";
-import { TYPE_LABEL, fmtDate } from "./caseMeta";
+import { TYPE_LABEL, TYPE_GROUPS, fmtDate, partiesLine, isUpcoming } from "./caseMeta";
 
 // Cases list — design system v1, per the Cases mockup (docs/design_reference
 // page 8): status tabs, search, a ruled table and paging. Adapted to the
@@ -32,6 +32,7 @@ export default function CasesPage() {
   const [showCreate, setShowCreate] = useState(!!location.state?.create);
   const [tab, setTab] = useState("open");
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [page, setPage] = useState(0);
 
   const { data: cases, isLoading, isError, error } = useQuery({
@@ -44,7 +45,9 @@ export default function CasesPage() {
   const q = query.trim().toLowerCase();
   const rows = all
     .filter(TABS.find((t) => t.key === tab).test)
-    .filter((c) => !q || [c.title, c.court_code, c.case_type, c.description].some((v) => v?.toLowerCase().includes(q)));
+    .filter((c) => !typeFilter || c.case_type === typeFilter)
+    .filter((c) => !q || [c.title, c.case_number, c.petitioner, c.respondent, c.court_code, c.description]
+      .some((v) => v?.toLowerCase().includes(q)));
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages - 1);
   const shown = rows.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE);
@@ -92,7 +95,28 @@ export default function CasesPage() {
             );
           })}
         </div>
-        <label className="relative w-full sm:w-[320px] mb-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-3">
+        <label className="w-full sm:w-[180px]">
+          <span className="sr-only">Case type</span>
+          <select
+            value={typeFilter}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(0);
+            }}
+            className="ds-input"
+          >
+            <option value="">All types</option>
+            {TYPE_GROUPS.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.types.map((t) => (
+                  <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <label className="relative w-full sm:w-[320px]">
           <span className="sr-only">Search cases</span>
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-ds-text-2" aria-hidden="true" />
           <input
@@ -101,10 +125,11 @@ export default function CasesPage() {
               setQuery(e.target.value);
               setPage(0);
             }}
-            placeholder="Title, court or type"
+            placeholder="Title, number, party or court"
             className="ds-input pl-12"
           />
         </label>
+        </div>
       </div>
 
       {isLoading && (
@@ -157,9 +182,12 @@ export default function CasesPage() {
                       {c.title}
                     </Link>
                     <span className="ds-meta">
-                      {TYPE_LABEL[c.case_type] || c.case_type}
-                      {c.filing_date && ` · filed ${fmtDate(c.filing_date)}`}
+                      {[c.case_number, TYPE_LABEL[c.case_type] || c.case_type, partiesLine(c),
+                        c.filing_date && `filed ${fmtDate(c.filing_date)}`].filter(Boolean).join(" · ")}
                     </span>
+                    {isUpcoming(c.next_hearing_date) && c.status !== "closed" && (
+                      <span className="ds-meta block font-semibold text-ds-seal">Next hearing {fmtDate(c.next_hearing_date)}</span>
+                    )}
                   </td>
                   <td className="py-4 pr-6 ds-body hidden md:table-cell">{c.court_code || <span className="text-ds-text-2">—</span>}</td>
                   <td className="py-4 pr-6 ds-body text-ds-text-2 whitespace-nowrap hidden sm:table-cell">{fmtDate(c.updated_at)}</td>
@@ -196,8 +224,12 @@ function CreateCaseForm({ onDone }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [caseType, setCaseType] = useState(CASE_TYPES.DIVORCE);
+  const [caseType, setCaseType] = useState(CASE_TYPES.CIVIL);
   const [courtCode, setCourtCode] = useState("");
+  const [caseNumber, setCaseNumber] = useState("");
+  const [petitioner, setPetitioner] = useState("");
+  const [respondent, setRespondent] = useState("");
+  const [nextHearing, setNextHearing] = useState("");
   const [filingDate, setFilingDate] = useState("");
   const [clientEmail, setClientEmail] = useState("");
 
@@ -224,6 +256,10 @@ function CreateCaseForm({ onDone }) {
       case_type: caseType,
       court_code: courtCode || null,
       filing_date: filingDate || null,
+      case_number: caseNumber.trim() || null,
+      petitioner: petitioner.trim() || null,
+      respondent: respondent.trim() || null,
+      next_hearing_date: nextHearing || null,
       client_email: clientEmail.trim() || null,
     });
   };
@@ -237,20 +273,41 @@ function CreateCaseForm({ onDone }) {
       <form onSubmit={submit} className="grid gap-6 sm:grid-cols-2 mt-6 max-w-[760px]">
         <div className="sm:col-span-2">
           <label htmlFor="nc-title" className="ds-label">Title</label>
-          <input id="nc-title" placeholder="e.g. Khan v. Khan — Custody" value={title} onChange={(e) => setTitle(e.target.value)}
+          <input id="nc-title" placeholder="e.g. Khan v. The State — bail" value={title} onChange={(e) => setTitle(e.target.value)}
             required minLength={3} className="ds-input" />
         </div>
         <div>
           <label htmlFor="nc-type" className="ds-label">Case type</label>
           <select id="nc-type" value={caseType} onChange={(e) => setCaseType(e.target.value)} className="ds-input">
-            {Object.values(CASE_TYPES).map((t) => (
-              <option key={t} value={t}>{TYPE_LABEL[t] || t}</option>
+            {TYPE_GROUPS.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.types.map((t) => (
+                  <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
         <div>
+          <label htmlFor="nc-number" className="ds-label">Case number <span className="font-normal text-ds-text-2">(optional)</span></label>
+          <input id="nc-number" placeholder="e.g. Crl.P. 187-P/2026" value={caseNumber} onChange={(e) => setCaseNumber(e.target.value)}
+            maxLength={64} className="ds-input" />
+        </div>
+        <div>
+          <label htmlFor="nc-petitioner" className="ds-label">Petitioner / plaintiff <span className="font-normal text-ds-text-2">(optional)</span></label>
+          <input id="nc-petitioner" value={petitioner} onChange={(e) => setPetitioner(e.target.value)} maxLength={200} className="ds-input" />
+        </div>
+        <div>
+          <label htmlFor="nc-respondent" className="ds-label">Respondent / defendant <span className="font-normal text-ds-text-2">(optional)</span></label>
+          <input id="nc-respondent" value={respondent} onChange={(e) => setRespondent(e.target.value)} maxLength={200} className="ds-input" />
+        </div>
+        <div>
+          <label htmlFor="nc-hearing" className="ds-label">Next hearing <span className="font-normal text-ds-text-2">(optional)</span></label>
+          <input id="nc-hearing" type="date" value={nextHearing} onChange={(e) => setNextHearing(e.target.value)} className="ds-input" />
+        </div>
+        <div>
           <label htmlFor="nc-court" className="ds-label">Court <span className="font-normal text-ds-text-2">(optional)</span></label>
-          <input id="nc-court" placeholder="Family Court, Islamabad" value={courtCode} onChange={(e) => setCourtCode(e.target.value)}
+          <input id="nc-court" placeholder="e.g. Lahore High Court" value={courtCode} onChange={(e) => setCourtCode(e.target.value)}
             maxLength={60} className="ds-input" />
         </div>
         <div>

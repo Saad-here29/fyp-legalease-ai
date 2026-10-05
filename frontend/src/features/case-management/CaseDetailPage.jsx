@@ -11,12 +11,14 @@ import { documentsApi } from "@/features/document-analysis/api";
 import UploadStrip from "@/features/document-analysis/UploadStrip";
 import { useUploadTypes } from "@/features/document-analysis/useUploadTypes";
 import StatusTag from "./StatusTag";
-import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry } from "./caseMeta";
+import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry, partiesLine, isUpcoming } from "./caseMeta";
+import CaseDetailsForm from "./CaseDetailsForm";
 
 // Case detail — design system v1, per the Case detail mockup
-// (docs/design_reference page 9). Adapted to what exists: no hearings,
-// issues framed, next-hearing panel, research or notes tabs (none are
-// built); the one primary action is the real status change, and "Add
+// (docs/design_reference page 9). Adapted to what exists: no issues
+// framed, research or notes tabs (not built); case details (number, court,
+// parties, next hearing) are shown to everyone and edited by the assigned
+// lawyer. The one primary action is the real status change, and "Add
 // document" uploads straight to this case.
 
 const NEXT_STATUS = {
@@ -157,8 +159,8 @@ export default function CaseDetailPage() {
       subtitle={
         <span className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2">
           <StatusTag status={c.status} />
-          {[TYPE_LABEL[c.case_type] || c.case_type, c.court_code, c.filing_date && `Filed ${fmtDate(c.filing_date)}`,
-            c.client_name && `Client: ${c.client_name}`]
+          {[c.case_number, TYPE_LABEL[c.case_type] || c.case_type, c.court_code,
+            c.filing_date && `Filed ${fmtDate(c.filing_date)}`, c.client_name && `Client: ${c.client_name}`]
             .filter(Boolean)
             .map((part, i) => (
               <span key={i} className="flex items-center gap-3">
@@ -247,8 +249,10 @@ function Overview({ c, timeline, docs, isLawyer, onShow, onRefresh }) {
       </div>
 
       <aside className="space-y-10">
+        <CaseFacts c={c} isLawyer={isLawyer} onSaved={onRefresh} />
+
         <section>
-          <h2 className="ds-h4 pb-3 border-b border-ds-rule">Parties</h2>
+          <h2 className="ds-h4 pb-3 border-b border-ds-rule">People</h2>
           <Person role="Lawyer" name={c.lawyer_name} email={c.lawyer_email} />
           <Person role="Client" name={c.client_email ? c.client_name : null} email={c.client_email} empty="Not yet assigned" />
           {isLawyer && <AssignClient caseId={c.id} hasClient={!!c.client_email} onDone={onRefresh} />}
@@ -278,6 +282,48 @@ function Overview({ c, timeline, docs, isLawyer, onShow, onRefresh }) {
         </section>
       </aside>
     </div>
+  );
+}
+
+function CaseFacts({ c, isLawyer, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const canEdit = isLawyer && c.status !== "closed";
+  const upcoming = isUpcoming(c.next_hearing_date) && c.status !== "closed";
+  const rows = [
+    ["Case number", c.case_number],
+    ["Court", c.court_code],
+    ["Parties", partiesLine(c)],
+    ["Filed", c.filing_date && fmtDate(c.filing_date)],
+  ];
+  return (
+    <section>
+      <div className="flex items-end justify-between gap-4 pb-3 border-b border-ds-rule">
+        <h2 className="ds-h4">Case details</h2>
+        {canEdit && !editing && (
+          <button onClick={() => setEditing(true)} className="ds-link text-[15px]">Edit</button>
+        )}
+      </div>
+      {editing ? (
+        <CaseDetailsForm c={c} onDone={(saved) => { setEditing(false); if (saved) onSaved(); }} />
+      ) : (
+        <>
+          <div className="py-4 border-b border-ds-rule">
+            <p className="ds-meta">Next hearing</p>
+            <p className={`font-ds-sans font-semibold text-[17px] leading-[24px] mt-0.5 ${upcoming ? "text-ds-seal" : ""}`}>
+              {c.next_hearing_date ? fmtDate(c.next_hearing_date) : <span className="font-normal text-ds-text-2">Not set</span>}
+            </p>
+          </div>
+          <dl>
+            {rows.map(([k, v]) => (
+              <div key={k} className="py-3 border-b border-ds-rule">
+                <dt className="ds-meta">{k}</dt>
+                <dd className="ds-body mt-0.5 break-words">{v || <span className="text-ds-text-2">—</span>}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
+      )}
+    </section>
   );
 }
 

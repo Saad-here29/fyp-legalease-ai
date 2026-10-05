@@ -2,7 +2,7 @@ import { formatBytes, humanize } from "@/lib/format";
 
 // Shared case labels for the Cases list and Case detail (design system v1).
 // Statuses are the backend's CaseStatus values. No status is shown in Seal:
-// Seal marks action that's due, and cases carry no hearing or due dates.
+// Seal marks action that's due (an upcoming hearing date), not a stage.
 
 export const STATUS = {
   created: { label: "Created", tag: "ds-tag-neutral" },
@@ -13,11 +13,29 @@ export const STATUS = {
 };
 
 export const TYPE_LABEL = {
+  civil: "Civil",
+  criminal: "Criminal",
+  commercial: "Commercial",
+  property: "Property",
+  service: "Service",
   divorce: "Divorce",
   custody: "Custody",
   inheritance: "Inheritance",
   maintenance: "Maintenance",
 };
+
+// For the case-type select: general types first, then family law.
+export const TYPE_GROUPS = [
+  { label: "General", types: ["civil", "criminal", "commercial", "property", "service"] },
+  { label: "Family", types: ["divorce", "custody", "inheritance", "maintenance"] },
+];
+
+// "Ahmed v. The State" from the parties, when both are known.
+export const partiesLine = (c) =>
+  c.petitioner && c.respondent ? `${c.petitioner} v. ${c.respondent}` : c.petitioner || c.respondent || "";
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+export const isUpcoming = (d) => !!d && d >= todayIso();
 
 export const fmtDate = (value) =>
   value ? new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";

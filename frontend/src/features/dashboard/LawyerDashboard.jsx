@@ -7,12 +7,13 @@ import { ROUTES } from "@/constants";
 import { casesApi } from "@/features/case-management/api";
 import { chatApi } from "@/features/chatbot/api";
 import StatusTag from "@/features/case-management/StatusTag";
-import { TYPE_LABEL, fmtDate } from "@/features/case-management/caseMeta";
+import { TYPE_LABEL, fmtDate, isUpcoming } from "@/features/case-management/caseMeta";
 import { Figures, RuledSection, ViewAll, SessionList, Today } from "./components/DashParts";
 
 // Lawyer dashboard — design system v1, per docs/design_reference page 4.
 // Adapted to what exists: no calendar, cause list, deadlines or global
-// search (none are built); figures and lists come from the real caseload.
+// search (none are built); figures and lists come from the real caseload,
+// and upcoming hearings from each case's next hearing date.
 
 export default function LawyerDashboard() {
   const { user } = useAuthStore();
@@ -24,6 +25,9 @@ export default function LawyerDashboard() {
   const all = cases || [];
   const open = all.filter((c) => c.status !== "closed");
   const hearing = all.filter((c) => c.status === "hearing_scheduled");
+  const upcoming = open
+    .filter((c) => isUpcoming(c.next_hearing_date))
+    .sort((a, b) => a.next_hearing_date.localeCompare(b.next_hearing_date));
   const dash = isLoading ? "—" : null;
 
   return (
@@ -39,7 +43,7 @@ export default function LawyerDashboard() {
       <Figures
         items={[
           { label: "Open cases", value: dash ?? open.length, helper: `${all.length} in total` },
-          { label: "Hearing scheduled", value: dash ?? hearing.length, helper: "cases at that stage" },
+          { label: "Upcoming hearings", value: dash ?? upcoming.length, helper: `${hearing.length} at the hearing stage` },
           { label: "Closed", value: dash ?? all.length - open.length, helper: "all time" },
           { label: "AI conversations", value: sessions ? sessions.length : "—", helper: "in AI Chat" },
         ]}
@@ -78,17 +82,20 @@ export default function LawyerDashboard() {
         </RuledSection>
 
         <div className="space-y-12">
-          <RuledSection title="Hearing scheduled">
-            {hearing.length === 0 ? (
-              <p className="ds-body text-ds-text-2 py-5">No cases at the hearing stage.</p>
+          <RuledSection title="Upcoming hearings">
+            {upcoming.length === 0 ? (
+              <p className="ds-body text-ds-text-2 py-5">No hearing dates set. Add one from a case&apos;s details.</p>
             ) : (
               <ul>
-                {hearing.map((c) => (
+                {upcoming.slice(0, 6).map((c) => (
                   <li key={c.id} className="py-4 border-b border-ds-rule">
+                    <p className="font-ds-sans font-semibold text-[15px] text-ds-seal">{fmtDate(c.next_hearing_date)}</p>
                     <Link to={`/cases/${c.id}`} className="font-ds-sans font-semibold text-[17px] leading-[24px] hover:underline decoration-ds-underline decoration-2 underline-offset-4">
                       {c.title}
                     </Link>
-                    <span className="ds-meta block">{c.court_code || TYPE_LABEL[c.case_type]}</span>
+                    <span className="ds-meta block">
+                      {[c.case_number, c.court_code || TYPE_LABEL[c.case_type]].filter(Boolean).join(" · ")}
+                    </span>
                   </li>
                 ))}
               </ul>

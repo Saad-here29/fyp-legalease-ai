@@ -15,7 +15,13 @@ export const ROLES = Object.freeze({
 });
 
 
+// Matches backend/app/models/enums.py CaseType.
 export const CASE_TYPES = Object.freeze({
+  CIVIL: "civil",
+  CRIMINAL: "criminal",
+  COMMERCIAL: "commercial",
+  PROPERTY: "property",
+  SERVICE: "service",
   DIVORCE: "divorce",
   CUSTODY: "custody",
   INHERITANCE: "inheritance",
