@@ -141,7 +141,7 @@ function HeroAnswer() {
   return (
     <div className="relative bg-ds-sheet text-ds-text rounded-ds p-7 shadow-none max-w-[520px] lg:ml-auto w-full">
       <span className="absolute -top-3.5 right-6 rotate-[3deg] border-2 border-ds-pass text-ds-pass bg-ds-sheet px-2.5 py-1 font-ds-sans font-semibold text-[12px] uppercase tracking-[0.12em] rounded-ds-sm">
-        Checked against source
+        No unverified section references
       </span>
       <p className="ds-eyebrow mb-3">Example</p>
       <p className="ds-meta">You asked</p>
@@ -157,7 +157,7 @@ function HeroAnswer() {
         <p className="ds-meta mt-4 flex flex-wrap items-center gap-x-2">
           1 statute · 7.2s ·
           <span className="inline-flex items-center gap-1 font-semibold text-ds-pass">
-            <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" /> Checked against source
+            <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" /> No unverified section references
           </span>
         </p>
         <p className="mt-4 pt-3 border-t border-ds-rule font-ds-sans text-[14px]">
@@ -243,7 +243,7 @@ function Modules() {
           <p className="ds-meta mt-3 flex items-center gap-2">
             1 statute ·
             <span className="inline-flex items-center gap-1 font-semibold text-ds-pass">
-              <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" /> Checked against source
+              <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" /> No unverified section references
             </span>
           </p>
         </>

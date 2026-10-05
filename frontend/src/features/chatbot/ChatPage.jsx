@@ -370,7 +370,7 @@ function Answer({ message }) {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 font-semibold text-ds-pass">
-                · <Check className="h-4 w-4" strokeWidth={2.5} /> Checked against source
+                · <Check className="h-4 w-4" strokeWidth={2.5} /> No unverified section references
               </span>
             ))}
         </p>
