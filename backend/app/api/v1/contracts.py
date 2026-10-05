@@ -91,11 +91,11 @@ def list_versions(
 def check_compliance(
     contract_id: uuid.UUID,
     user: CurrentUser,
-    payload: ContractCheckComplianceRequest = ContractCheckComplianceRequest(),
+    payload: ContractCheckComplianceRequest | None = None,
     db: Session = Depends(get_db),
 ):
     version = ContractService(db).check_compliance(
-        contract_id, user, payload.version_number
+        contract_id, user, payload.version_number if payload else None
     )
     result = version.compliance_result
     return ComplianceCheckResponse(

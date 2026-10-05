@@ -70,3 +70,16 @@ def test_compliance_passes_a_filled_draft(db_session, contract):
     result = _check(db_session, contract, _all_clauses_text() + " Address: 12 Mall Road, Lahore.")
     assert result["unfilled_placeholders"] == []
     assert result["all_passed"] is True
+
+
+# The compliance endpoint's body is optional: none means the latest version.
+# (It used to default to a request model built once at import time, B008.)
+@pytest.mark.parametrize("body", [None, {}, {"version_number": 1}])
+def test_compliance_endpoint_body_is_optional(client, db_session, contract, body):
+    lawyer, c = contract
+    r = client.post("/api/v1/auth/login", json={"email": lawyer.email, "password": "x"})
+    headers = {"Authorization": "Bearer " + r.json()["tokens"]["access_token"]}
+    kwargs = {} if body is None else {"json": body}
+    r = client.post(f"/api/v1/contracts/{c.id}/check-compliance", headers=headers, **kwargs)
+    assert r.status_code == 200, r.text
+    assert r.json()["version_number"] == 1

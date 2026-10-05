@@ -133,7 +133,7 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     scores, ids = _INDEX.search(qvec, min(top_k * 3, _INDEX.ntotal))
     raw = [
         (_META[i], float(s))
-        for s, i in zip(scores[0], ids[0])
+        for s, i in zip(scores[0], ids[0], strict=True)
         if 0 <= i < len(_META)
     ]
 

@@ -57,7 +57,7 @@ class _Tagger:
             batch = chunks[i:i + batch_size]
             spans = [word_spans(c) for c in batch]
             enc = self.tokenizer(
-                [[c[s:e] for s, e in sp] for c, sp in zip(batch, spans)],
+                [[c[s:e] for s, e in sp] for c, sp in zip(batch, spans, strict=True)],
                 is_split_into_words=True, truncation=True, max_length=512,
                 padding=True, return_tensors="pt",
             )
@@ -89,9 +89,11 @@ def word_spans(text: str) -> list[tuple[int, int]]:
         s, e = m.start(), m.end()
         lead, trail = [], []
         while s < e and text[s] in _LEAD:
-            lead.append((s, s + 1)); s += 1
+            lead.append((s, s + 1))
+            s += 1
         while e > s and text[e - 1] in _TRAIL:
-            trail.append((e - 1, e)); e -= 1
+            trail.append((e - 1, e))
+            e -= 1
         spans.extend(lead)
         if s < e:
             spans.append((s, e))
@@ -105,7 +107,7 @@ def _decode_bio(spans: list[tuple[int, int]], tags: list[tuple[str, float]]) -> 
     Score = mean word probability."""
     ents: list[dict] = []
     cur = None
-    for (s, e), (tag, p) in zip(spans, tags):
+    for (s, e), (tag, p) in zip(spans, tags, strict=True):
         kind, _, typ = tag.partition("-")
         if tag == "O":
             cur = None
@@ -364,7 +366,7 @@ def extract_entities(text: str) -> NerResult:
     chunks = chunk_text(text, count_tokens)
     outputs = ner([c for _, c in chunks], batch_size=8)
     raw = []
-    for (offset, _), preds in zip(chunks, outputs):
+    for (offset, _), preds in zip(chunks, outputs, strict=True):
         for p in preds:
             raw.append({
                 "entity_group": p["entity_group"],
