@@ -56,7 +56,7 @@ The search library holds **statutes only**, with no court judgments.
 | **Backend** | Python 3.11, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2, PyJWT, bcrypt |
 | **Database** | PostgreSQL (Supabase in development) |
 | **AI** | Groq `openai/gpt-oss-120b` (OpenAI and Gemini as optional fallbacks), `sentence-transformers` multilingual MiniLM embeddings, FAISS, a fine-tuned DistilBERT legal NER model (PyTorch, CPU) |
-| **Documents** | PyMuPDF, PyPDF2, python-docx; Tesseract and Poppler optional, for scanned files |
+| **Documents** | PyMuPDF, PyPDF2, python-docx; Tesseract OCR (English + Urdu) for scanned PDFs and images, with pages rendered by PyMuPDF (no Poppler needed) |
 | **Testing** | pytest (213 backend tests), ruff, ESLint |
 
 ---
@@ -90,7 +90,10 @@ DEMO_BRIEF.md        what to show and say in the demo
   - **the legal NER model**, `backend/storage/models/legal_ner/` (without it,
     set `NER_ENABLED=false`; document analysis then runs without entities);
   - **the raw data** under `data/` (needed only to rebuild the index).
-- **Optional:** Tesseract OCR and Poppler, for scanned PDFs and images.
+- **For scanned PDFs and images:** Tesseract OCR with the English and Urdu
+  language data, and `TESSERACT_CMD` in `backend/.env` pointing at
+  `tesseract.exe`. Poppler isn't needed. Without Tesseract, PDF, DOCX and TXT
+  uploads still work and image uploads are turned off.
 
 ### Backend
 

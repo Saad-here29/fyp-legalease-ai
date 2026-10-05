@@ -148,7 +148,7 @@ The "Sign-in" column says whether a valid access token is needed.
 - **`/auth/register` for a still-unverified email** only re-sends a code.
   It never changes that pending account's password, name or role.
 - **`/documents/upload`:**
-  - accepts PDF, DOCX and TXT, plus PNG/JPG when OCR is installed (see
+  - accepts PDF, DOCX and TXT, plus PNG/JPG when Tesseract is set up (see
     `/documents/capabilities`);
   - files are stored under generated names;
   - if no text could be extracted, the response's `extraction_warning` says

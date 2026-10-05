@@ -101,10 +101,7 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
 - Backend confirmed booting cleanly end-to-end: `uvicorn app.main:app
   --reload` starts with no errors, connects to the live DB, auto-seeds the
   legal corpus, and serves `GET /` and `GET /health` with 200 responses.
-- Known gap: **Tesseract OCR is not installed locally** — `TESSERACT_CMD` in
-  `.env` points to a path that doesn't exist on this machine. The backend
-  still boots fine (it only logs a warning), but scanned-image/PDF OCR will
-  not work until Tesseract is actually installed and the path is corrected.
+- ~~Tesseract not installed~~ — resolved 2026-10-05: Tesseract 5.5 (English + Urdu) reads scanned PDFs and PNG/JPG; PyMuPDF renders the pages, so Poppler isn't needed. Verified 2026-10-05 on a scanned Supreme Court judgment: 0.6-1.6% character errors, about 3 s a page; an Urdu test page 1.5%.
 
 ## Git / repository status (confirmed 2026-09-13)
 - Project had **no git repository at all** before this session — `git init`
@@ -473,10 +470,7 @@ during the audit except the ones approved (commit `8a02485`).
   are only logged server-side (`[DEV OTP] email -> code`). Fix: a Gmail App
   Password (needs 2-Step Verification) in those two variables, `SMTP_FROM`
   = the same Gmail address, restart; the log then shows `Email sent to …`.
-- **Scanned files need Tesseract and Poppler.** `TESSERACT_CMD` points to
-  `C:\Program Files\Tesseract-OCR\tesseract.exe`, which doesn't exist, and
-  `pdftoppm` isn't installed; scanned PDFs / images extract 0 characters (the
-  UI says so and disables Analyse; the API now refuses with 422).
+- ~~Scanned files need Tesseract and Poppler~~ — resolved 2026-10-05: Tesseract 5.5 (English + Urdu) reads scanned PDFs and PNG/JPG; PyMuPDF renders the pages, so Poppler isn't needed. Verified 2026-10-05 on a scanned Supreme Court judgment: 0.6-1.6% character errors, about 3 s a page; an Urdu test page 1.5%.
 - **Research quality is uneven on some queries.** Strong: "bail in a
   non-bailable offence" (Cr.P.C. s. 497 first, 0.81). Weak: "khula
   procedure" (dower / short-title chunks and a "Page 4 of 5" junk chunk;
@@ -572,7 +566,7 @@ during the audit except the ones approved (commit `8a02485`).
   (`docs/retrieval_redesign.md`), and the gold set is awaiting review.
 - **Database latency:** 3–8 s per API call, from the Singapore region.
 - **No frontend tests.**
-- **SMTP and OCR** are not configured.
+- **SMTP** is not configured (OCR is, since 2026-10-05).
 - **Test data cleanup (S18/S19), done 2026-10-04:** 37 test accounts and
   their 624 rows deleted in one transaction, then 26 upload files (55.5 MB)
   removed. Kept: `fyplegalease@gmail.com`, `nothing@gmail.com`,

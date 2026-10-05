@@ -12,7 +12,8 @@ work.
 - **Large files that aren't in git:** the FAISS index
   (`backend/storage/faiss/`) and the NER model
   (`backend/storage/models/legal_ner/`); see `ai-services/README.md`.
-- **Optional:** Tesseract OCR and Poppler, only for scanned PDFs and images.
+- **For scanned PDFs and images:** Tesseract OCR with English and Urdu data
+  (`TESSERACT_CMD` in `backend/.env`). Poppler isn't needed.
 
 ## Running both servers
 

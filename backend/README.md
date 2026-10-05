@@ -35,7 +35,8 @@ Every setting in `app/core/config.py` is listed, with defaults, in
 Optional:
 - `OPENAI_*` / `GEMINI_*`: fallback AI providers.
 - `SMTP_*`: real OTP emails; otherwise codes are logged as `[DEV OTP]`.
-- `TESSERACT_CMD`: OCR for scanned files.
+- `TESSERACT_CMD`: path to `tesseract.exe`, for scanned PDFs and images
+  (English + Urdu data needed; Poppler isn't).
 - `NER_ENABLED`: `false` runs document analysis without the NER model.
 
 ## Files this needs that aren't in git

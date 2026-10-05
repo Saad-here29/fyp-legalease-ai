@@ -15,7 +15,7 @@ deployment needs, based on how the app runs today.
 | Uploads | `UPLOAD_DIR` on persistent disk | Files are stored under generated names. Back the folder up alongside the database |
 | AI provider | Groq API key | The free tier allows 200k tokens a day for everything. Use a paid tier for real use |
 | Email | `SMTP_*` settings | Without them, signup and reset codes only appear in the server log |
-| OCR (optional) | Tesseract + Poppler on the server | Needed only for scanned PDFs and images |
+| OCR | Tesseract with English + Urdu data, `TESSERACT_CMD` | Needed for scanned PDFs and images (no Poppler) |
 
 Install the backend with `pip install -r requirements.txt`. It pulls the
 CPU-only PyTorch build.

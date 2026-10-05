@@ -115,4 +115,5 @@ overhead without a scaling benefit.
 - **Retrieval:** quality is limited by fixed 800-character chunks (and the
   embedding model's 128-token window). The section-based redesign is in
   `docs/retrieval_redesign.md`.
-- **OCR:** for scanned files it needs Tesseract and Poppler on the server.
+- **OCR:** scanned files need Tesseract on the server (PyMuPDF renders the
+  pages; no Poppler). OCR runs inside the upload request, about 3 s a page.

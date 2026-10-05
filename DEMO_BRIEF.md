@@ -66,8 +66,8 @@ together:
   - `transformers` and PyTorch (CPU) for the fine-tuned DistilBERT NER
     model;
   - `langdetect` for English/Urdu detection.
-- **Documents:** PyMuPDF and PyPDF2 for PDFs, `python-docx`; Tesseract and
-  Poppler for scanned files, **not installed on the demo machine**.
+- **Documents:** PyMuPDF and PyPDF2 for PDFs, `python-docx`; Tesseract OCR
+  (English + Urdu) for scanned PDFs and images, installed on the demo machine.
 - **Frontend:**
   - React 19 and Vite 5;
   - Tailwind CSS with our own design system (Newsreader and IBM Plex Sans;
@@ -169,10 +169,9 @@ Per question:
 
 - **Upload:**
   - PDF, DOCX or TXT, up to 20 MB;
-  - PNG/JPG are accepted only when OCR is installed;
+  - PNG/JPG and scanned PDFs are read with OCR (Tesseract, English + Urdu);
   - files are stored under a generated name;
-  - if no text comes out, the response says why (e.g. "scanned PDF, OCR not
-    installed").
+  - if no text comes out, the response says why.
 - **Analyse:** sends the document text to the model.
   - The model returns a summary; clauses and risks are taken from its
     sections.
@@ -344,7 +343,6 @@ Details are in `PROJECT_CONTEXT.md`.
 
 **Avoid:**
 - khula or inheritance questions (retrieval gap);
-- scanned PDFs or images (no OCR on this machine);
 - PPC s. 302 and Contract Act s. 10 questions (known misses).
 
 ### Starting the system
@@ -394,7 +392,8 @@ The chat refuses without calling the model, in the question's language.
 
 **What are the limitations?**
 - The statute-only library, with retrieval gaps.
-- No OCR for scanned files on this machine.
+- OCR is good on clean printed scans (about 1% character errors); handwriting
+  and Nastaliq-heavy Urdu are untested.
 - Groq's free-tier limits.
 - Database latency from the Singapore region.
 - No frontend tests.
@@ -403,7 +402,6 @@ The chat refuses without calling the model, in the question's language.
 **What would you do next?**
 1. Build the section-based retrieval redesign.
 2. Configure SMTP for real OTP emails.
-3. Install OCR.
-4. Move the database closer to the users.
+3. Move the database closer to the users.
 5. Add frontend tests.
 6. Build notifications for hearings and deadlines.
