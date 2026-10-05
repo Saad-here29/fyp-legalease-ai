@@ -21,7 +21,6 @@ from app.ai.client import get_ai_client
 from app.ai.query_rewrite import rewrite_for_search
 from app.schemas.research import ResearchResult, StructuredAnalysis
 
-
 # Map raw corpus filenames → human-readable titles. Anything matching a
 # known statute is renamed; other sources keep their title.
 _STATUTE_TITLES: dict[str, str] = {

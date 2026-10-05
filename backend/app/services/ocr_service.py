@@ -12,7 +12,6 @@ Returns extracted text. The caller persists it on the Document row.
 
 from __future__ import annotations
 
-import io
 import os
 from pathlib import Path
 
@@ -108,8 +107,8 @@ class OCRService:
             return ""
 
         try:
-            from pdf2image import convert_from_path
             import pytesseract
+            from pdf2image import convert_from_path
         except ImportError as e:
             logger.warning(f"OCR dependencies missing: {e}")
             return ""

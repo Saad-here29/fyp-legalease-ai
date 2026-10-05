@@ -12,7 +12,7 @@ Two distinct operations, deliberately kept separate:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -21,7 +21,7 @@ from app.ai.contract_templates import get_template
 from app.core.exceptions import NotAuthorized, NotFound, ValidationFailed
 from app.models.case import Case
 from app.models.contract import Contract, ContractVersion
-from app.models.enums import ContractType, UserRole
+from app.models.enums import UserRole
 from app.models.user import User
 from app.schemas.contracts import ContractDraftRequest
 from app.utils.placeholders import find_unfilled_placeholders
@@ -125,7 +125,7 @@ class ContractService:
             "all_passed": all(r["passed"] for r in results) and not placeholders,
             "results": results,
             "unfilled_placeholders": placeholders,
-            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "checked_at": datetime.now(UTC).isoformat(),
         }
         self.db.commit()
         self.db.refresh(version)

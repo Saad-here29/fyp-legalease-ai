@@ -9,7 +9,6 @@ from pydantic import EmailStr, Field
 from app.models.enums import UserRole
 from app.schemas.common import APIModel
 
-
 # ===== Requests =====
 
 class LoginRequest(APIModel):

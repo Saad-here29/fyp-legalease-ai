@@ -8,7 +8,7 @@ research-result-to-case attachment.
 import uuid
 
 from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db

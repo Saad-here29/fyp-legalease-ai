@@ -1,17 +1,18 @@
 """FastAPI application entry point — wires routes, middleware, exception handlers."""
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import DBAPIError
 
+import app.models  # noqa: F401  — registers every ORM class with Base.metadata
 from app.core.config import settings
-from app.core.logging import configure_logging, logger
 from app.core.exceptions import AppException, DatabaseUnavailable
+from app.core.logging import configure_logging, logger
 from app.db.base import Base
 from app.db.session import engine, is_connection_error
-import app.models  # noqa: F401  — registers every ORM class with Base.metadata
 
 
 @asynccontextmanager

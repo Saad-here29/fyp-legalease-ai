@@ -11,7 +11,7 @@ lawyer and the client.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -27,7 +27,6 @@ from app.models.document import Document
 from app.models.enums import CaseStatus, RoleInCase, UserRole
 from app.models.user import User
 from app.schemas.cases import CaseCreate, CaseDetail, CaseTimelineEntry
-
 
 _ALLOWED_TRANSITIONS: dict[CaseStatus, set[CaseStatus]] = {
     CaseStatus.CREATED: {CaseStatus.ASSIGNED, CaseStatus.IN_PROGRESS, CaseStatus.CLOSED},
@@ -347,7 +346,7 @@ class CaseService:
 
         previous = case.status
         case.status = new_status
-        case.updated_at = datetime.now(timezone.utc)
+        case.updated_at = datetime.now(UTC)
         self._log(
             user.id,
             "CASE_STATUS_CHANGED",
@@ -387,7 +386,7 @@ class CaseService:
         )
         self.db.commit()
         return CaseTimelineEntry(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             kind="NOTE",
             title=f"Research saved: {title}",
             description=excerpt,

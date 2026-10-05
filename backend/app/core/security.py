@@ -1,13 +1,12 @@
 """Password hashing (bcrypt) and JWT signing/verification."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
 import jwt
 
 from app.core.config import settings
-
 
 # ===== Passwords =====
 
@@ -26,7 +25,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 # ===== JWT =====
 
 def _now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def create_access_token(

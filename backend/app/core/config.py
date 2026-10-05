@@ -1,6 +1,7 @@
 """Application settings loaded from environment via pydantic-settings."""
 
 from functools import lru_cache
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

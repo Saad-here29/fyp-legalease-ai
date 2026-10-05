@@ -18,7 +18,6 @@ from app.core.config import settings
 from app.core.exceptions import AIServiceUnavailable
 from app.core.logging import logger
 
-
 SYSTEM_PROMPT_LEGAL_CHAT = (
     "You are LegalEase — a Pakistani legal research assistant for lawyers, "
     "clients, and law students. Your output is read by legal professionals, "

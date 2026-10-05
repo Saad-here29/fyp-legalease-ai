@@ -4,17 +4,19 @@
 side effect — see the noqa comment there.
 """
 
-from app.models import audit  # noqa: F401
-from app.models import case  # noqa: F401
-from app.models import chat  # noqa: F401
-from app.models import client  # noqa: F401
-from app.models import contract  # noqa: F401
-from app.models import document  # noqa: F401
-from app.models import enums  # noqa: F401
-from app.models import lawyer  # noqa: F401
-from app.models import legal_corpus  # noqa: F401
-from app.models import student  # noqa: F401
-from app.models import user  # noqa: F401
+from app.models import (
+    audit,  # noqa: F401
+    case,  # noqa: F401
+    chat,  # noqa: F401
+    client,  # noqa: F401
+    contract,  # noqa: F401
+    document,  # noqa: F401
+    enums,  # noqa: F401
+    lawyer,  # noqa: F401
+    legal_corpus,  # noqa: F401
+    student,  # noqa: F401
+    user,  # noqa: F401
+)
 
 __all__ = [
     "audit",

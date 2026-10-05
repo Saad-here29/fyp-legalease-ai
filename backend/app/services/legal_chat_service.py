@@ -36,7 +36,6 @@ from app.models.chat import ChatMessage, ChatSession
 from app.models.enums import SenderType
 from app.models.user import User
 
-
 # Per Task 3 spec — strict scope filter. Outside of Pakistani law the bot
 # must refuse, not hallucinate.
 # The retrieval index is statute-only; this prompt must never claim judgments exist.

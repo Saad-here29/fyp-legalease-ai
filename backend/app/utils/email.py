@@ -16,7 +16,6 @@ from email.mime.text import MIMEText
 from app.core.config import settings
 from app.core.logging import logger
 
-
 _HTML_TEMPLATE = """\
 <!DOCTYPE html>
 <html lang="en">

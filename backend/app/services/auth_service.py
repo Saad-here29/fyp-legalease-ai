@@ -15,7 +15,7 @@ goes inactive (UC-01 alternative flow 2b → HTTP 423).
 
 import random
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from sqlalchemy.exc import IntegrityError, PendingRollbackError, SQLAlchemyError
@@ -103,7 +103,7 @@ class AuthService(BaseService):
             )
 
         otp = _new_otp()
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES)
+        expires_at = datetime.now(UTC) + timedelta(minutes=OTP_TTL_MINUTES)
 
         if existing is None:
             user = User(
@@ -158,7 +158,7 @@ class AuthService(BaseService):
 
         otp = _new_otp()
         user.otp = otp
-        user.otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES)
+        user.otp_expires_at = datetime.now(UTC) + timedelta(minutes=OTP_TTL_MINUTES)
         self.audit("OTP_RESENT", user_id=user.id)
         self.commit()
         send_otp_email(user.email, otp, recipient_name=user.full_name)
@@ -189,8 +189,8 @@ class AuthService(BaseService):
         expires_at = user.otp_expires_at
         if expires_at is not None:
             if expires_at.tzinfo is None:
-                expires_at = expires_at.replace(tzinfo=timezone.utc)
-            if expires_at < datetime.now(timezone.utc):
+                expires_at = expires_at.replace(tzinfo=UTC)
+            if expires_at < datetime.now(UTC):
                 self.audit("OTP_VERIFY_FAILED_EXPIRED", user_id=user.id)
                 raise ValidationFailed(
                     message="Verification code has expired.",
@@ -299,7 +299,7 @@ class AuthService(BaseService):
             return {"message": "If that email is registered, a reset code has been sent."}
         otp = _new_otp()
         user.otp = otp
-        user.otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES)
+        user.otp_expires_at = datetime.now(UTC) + timedelta(minutes=OTP_TTL_MINUTES)
         self.audit("PASSWORD_RESET_REQUESTED", user_id=user.id)
         self.commit()
         send_password_reset_email(user.email, otp)
@@ -323,8 +323,8 @@ class AuthService(BaseService):
 
         expires_at = user.otp_expires_at
         if expires_at is not None and expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        if expires_at is None or expires_at < datetime.now(timezone.utc):
+            expires_at = expires_at.replace(tzinfo=UTC)
+        if expires_at is None or expires_at < datetime.now(UTC):
             raise ValidationFailed(
                 message="Reset code has expired.",
                 hint="Request a new one.",

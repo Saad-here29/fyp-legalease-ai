@@ -23,7 +23,6 @@ from app.core.config import settings
 from app.core.exceptions import DatabaseUnavailable
 from app.core.logging import logger
 
-
 _is_sqlite = settings.DATABASE_URL.startswith("sqlite")
 
 # SQLite needs a different pool configuration than Postgres — it doesn't

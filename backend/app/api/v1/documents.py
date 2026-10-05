@@ -11,7 +11,7 @@ import hashlib
 import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
@@ -22,7 +22,6 @@ from app.ai import ner
 from app.ai.client import get_ai_client
 from app.ai.summary_sections import extract_clauses_and_risks
 from app.core.config import settings
-from app.core.logging import logger
 from app.core.exceptions import (
     FileTooLarge,
     NotAuthorized,
@@ -30,6 +29,7 @@ from app.core.exceptions import (
     UnsupportedMediaType,
     ValidationFailed,
 )
+from app.core.logging import logger
 from app.db.session import SessionLocal, get_db
 from app.middlewares.auth import CurrentUser
 from app.models.document import Document, DocumentAnalysis
@@ -367,7 +367,7 @@ def analyze_document(
         if doc.analysis is None:
             db.add(analysis)
         doc.summary_text = summary_text
-        doc.updated_at = datetime.now(timezone.utc)
+        doc.updated_at = datetime.now(UTC)
         db.commit()
 
     return DocumentAnalysisResult(

@@ -17,7 +17,6 @@ the codebase doesn't care which one is loaded.
 from __future__ import annotations
 
 import json
-import os
 import threading
 from pathlib import Path
 
@@ -26,7 +25,6 @@ from sqlalchemy.orm import Session
 from app.ai.model_loading import MODEL_LOAD_LOCK
 from app.core.config import settings
 from app.core.logging import logger
-
 
 _LOCK = threading.Lock()
 _MODEL = None
@@ -116,7 +114,7 @@ def build_or_load(_db: Session | None = None) -> int:
 
         logger.info(f"Loading FAISS index from {idx_path}")
         _INDEX = faiss.read_index(str(idx_path))
-        with open(meta_path, "r", encoding="utf-8") as f:
+        with open(meta_path, encoding="utf-8") as f:
             _META = json.load(f)
         logger.info(f"FAISS index ready: {_INDEX.ntotal} vectors")
         return _INDEX.ntotal

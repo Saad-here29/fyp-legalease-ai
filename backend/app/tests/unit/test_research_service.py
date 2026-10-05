@@ -6,9 +6,9 @@ pure-Python helpers."""
 import pytest
 
 from app.services.research_service import (
+    ResearchService,
     _friendly_title,
     _trim_to_sentence,
-    ResearchService,
 )
 
 
