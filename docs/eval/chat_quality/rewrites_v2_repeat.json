@@ -1,0 +1,109 @@
+{
+ "arm": "v2",
+ "items": [
+  {
+   "set": "review",
+   "id": "R1",
+   "question": "Why is the Nikah Nama important in a dower dispute?",
+   "model_rewrite": "Nikah Nama importance in mahr dispute",
+   "rewrite": "Nikah Nama importance in mahr dispute",
+   "ms": 2228,
+   "prompt_tokens": 380,
+   "completion_tokens": 64,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:16"
+  },
+  {
+   "set": "review",
+   "id": "R2",
+   "question": "A wife claims that her dowry articles remain in the husband's possession after separation. What remedy may be available?",
+   "model_rewrite": "dahej possession after separation remedy",
+   "rewrite": "dahej possession after separation remedy",
+   "ms": 6269,
+   "prompt_tokens": 389,
+   "completion_tokens": 54,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  },
+  {
+   "set": "review",
+   "id": "R3",
+   "question": "Can a spouse lawfully retain the other's personal property merely because the marriage has ended?",
+   "model_rewrite": "retention of spouse's movable property after divorce",
+   "rewrite": "retention of spouse's movable property after divorce",
+   "ms": 3817,
+   "prompt_tokens": 384,
+   "completion_tokens": 83,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  },
+  {
+   "set": "review",
+   "id": "R4",
+   "question": "What is a suit for restitution of conjugal rights?",
+   "model_rewrite": "petition for restitution of conjugal rights",
+   "rewrite": "petition for restitution of conjugal rights",
+   "ms": 2769,
+   "prompt_tokens": 378,
+   "completion_tokens": 56,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  },
+  {
+   "set": "review",
+   "id": "R5",
+   "question": "Why is territorial jurisdiction important in a Family Court case?",
+   "model_rewrite": "importance of territorial jurisdiction in family court proceedings",
+   "rewrite": "importance of territorial jurisdiction in family court proceedings",
+   "ms": 6707,
+   "prompt_tokens": 378,
+   "completion_tokens": 77,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  },
+  {
+   "set": "review",
+   "id": "R6",
+   "question": "Can a family-law advocate knowingly present false facts before the court merely to secure relief for the client?",
+   "model_rewrite": "advocate knowingly presenting false facts before court to obtain relief – professional misconduct, false statements, perjury",
+   "rewrite": "advocate knowingly presenting false facts before court to obtain relief – professional misconduct, false statements, perjury",
+   "ms": 1465,
+   "prompt_tokens": 387,
+   "completion_tokens": 138,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  },
+  {
+   "set": "review",
+   "id": "R7",
+   "question": "A wife files a suit seeking dissolution of marriage, unpaid dower, maintenance and recovery of dowry articles. The husband denies all allegations and claims that the wife left the matrimonial home without justification. What should the court determine?",
+   "model_rewrite": "talaq suit, unpaid dower, nafaqah, recovery of dowry articles, abandonment of matrimonial home without justification.",
+   "rewrite": "talaq suit, unpaid dower, nafaqah, recovery of dowry articles, abandonment of matrimonial home without justification.",
+   "ms": 1574,
+   "prompt_tokens": 412,
+   "completion_tokens": 115,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  },
+  {
+   "set": "review",
+   "id": "R8",
+   "question": "If a wife claims unpaid dower, who must establish the relevant facts?",
+   "model_rewrite": "burden of proof for unpaid dower claim wife must establish facts",
+   "rewrite": "burden of proof for unpaid dower claim wife must establish facts",
+   "ms": 1995,
+   "prompt_tokens": 382,
+   "completion_tokens": 93,
+   "finish": "stop",
+   "temperature": 0.0,
+   "date": "2026-10-05 17:17"
+  }
+ ]
+}

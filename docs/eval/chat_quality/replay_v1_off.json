@@ -1,0 +1,2593 @@
+{
+ "rewrites": "E:\\Users\\fyp-legalease-ai-main\\fyp-legalease-ai-main\\docs\\eval\\chat_quality\\rewrites_v1.json",
+ "family": "off",
+ "threshold": 0.65,
+ "family_threshold": 0.65,
+ "results": [
+  {
+   "set": "review",
+   "id": "R1",
+   "question": "Why is the Nikah Nama important in a dower dispute?",
+   "rewrite": "Nikah Nama relevance in mahr (dower) dispute",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.608,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "review",
+   "id": "R2",
+   "question": "A wife claims that her dowry articles remain in the husband's possession after separation. What remedy may be available?",
+   "rewrite": "dowry articles possession after separation remedy under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7207,
+   "top_score_any": 0.7207,
+   "passages": [
+    {
+     "pos": 52630,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7207,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7165,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.7021,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49593,
+     "source": "THE MUSLIM FAMILY LAWS ORDINAN CE, 1961",
+     "score": 0.6985,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49615,
+     "source": "THE MUSLIM FAMILY LAWS ORDINAN CE, 1961",
+     "score": 0.6802,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 0,
+   "off_target": 5,
+   "support_chunks": [],
+   "status": "OFF-TARGET"
+  },
+  {
+   "set": "review",
+   "id": "R3",
+   "question": "Can a spouse lawfully retain the other's personal property merely because the marriage has ended?",
+   "rewrite": "possession of spouse’s movable property after dissolution of marriage (talaq) under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7609,
+   "top_score_any": 0.7609,
+   "passages": [
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7512,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7208,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.71,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52632,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7609,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    },
+    {
+     "pos": 825,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.701,
+     "via_toc": "5. Registration of marriage s",
+     "family": false
+    },
+    {
+     "pos": 826,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.701,
+     "via_toc": "5. Registration of marriage s",
+     "family": false
+    },
+    {
+     "pos": 832,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.701,
+     "via_toc": "8. Dissolution of marriage otherwise than by talaq",
+     "family": false
+    }
+   ],
+   "on_target": 1,
+   "off_target": 6,
+   "support_chunks": [],
+   "status": "PARTIAL"
+  },
+  {
+   "set": "review",
+   "id": "R4",
+   "question": "What is a suit for restitution of conjugal rights?",
+   "rewrite": "petition for restitution of conjugal rights under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7261,
+   "top_score_any": 0.7261,
+   "passages": [
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7261,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7124,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49937,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.6925,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29484,
+     "source": "THE HINDU MARRIAGE ACT, 2017",
+     "score": 0.6689,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52638,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7101,
+     "via_toc": "5. Rights to dower not to be affected",
+     "family": false
+    },
+    {
+     "pos": 52639,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7101,
+     "via_toc": "5. Rights to dower not to be affected",
+     "family": false
+    }
+   ],
+   "on_target": 2,
+   "off_target": 4,
+   "support_chunks": [],
+   "status": "PARTIAL"
+  },
+  {
+   "set": "review",
+   "id": "R5",
+   "question": "Why is territorial jurisdiction important in a Family Court case?",
+   "rewrite": "importance of territorial jurisdiction in Family Court proceedings",
+   "answered": true,
+   "best": 0.6717,
+   "top_score_any": 0.6717,
+   "passages": [
+    {
+     "pos": 49940,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.6717,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 1,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "PARTIAL"
+  },
+  {
+   "set": "review",
+   "id": "R6",
+   "question": "Can a family-law advocate knowingly present false facts before the court merely to secure relief for the client?",
+   "rewrite": "advocate false statements to court professional misconduct under Legal Practitioners and Bar Councils Act",
+   "answered": true,
+   "best": 0.6841,
+   "top_score_any": 0.6841,
+   "passages": [
+    {
+     "pos": 13165,
+     "source": "Legal Practitioners & Bar Councils Act, 1973",
+     "score": 0.6841,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 45101,
+     "source": "THE PAKISTAN PENAL CODE",
+     "score": 0.6766,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 6088,
+     "source": "THE PROTECTION OF PORTS (SPECIAL MEASURES) ACT, 1948",
+     "score": 0.6694,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13168,
+     "source": "Legal Practitioners & Bar Councils Act, 1973",
+     "score": 0.6599,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 41031,
+     "source": "THE INCOME TAX ORDINANCE, 2001",
+     "score": 0.6581,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 3,
+   "off_target": 2,
+   "support_chunks": [],
+   "status": "GOOD"
+  },
+  {
+   "set": "review",
+   "id": "R7",
+   "question": "A wife files a suit seeking dissolution of marriage, unpaid dower, maintenance and recovery of dowry articles. The husband denies all allegations and claims that the wife left the matrimonial home without justification. What should the court determine?",
+   "rewrite": "khula maintenance mehr recovery dowry articles court determination",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5419,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "review",
+   "id": "R8",
+   "question": "If a wife claims unpaid dower, who must establish the relevant facts?",
+   "rewrite": "burden of proof unpaid mehr wife must establish facts",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.64,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L01",
+   "question": "My ex-husband divorced me under Sharia law, but I am not a Muslim. How can I legally nullify my marriage? Our marriage certificate already shows the divorce, but since I am not a Muslim, the embassy in Hong Kong refuses to register my new marriage, saying the Sharia divorce does not apply to me. What should I do?",
+   "rewrite": "annulment of marriage for non‑Muslim spouse where divorce recorded under Muslim Family Laws Ordinance (Sharia) not recognized.",
+   "answered": true,
+   "best": 0.7699,
+   "top_score_any": 0.7699,
+   "passages": [
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7552,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7372,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7221,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 32828,
+     "source": "THE SPECIAL MARRIAGE ACT, 1872",
+     "score": 0.7106,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52632,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7699,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L02",
+   "question": "I have been separated from my husband for 9 years because of his bad treatment and interference from his family. He has never cared to see our two children but now wants joint custody or wants them to visit him on weekends. The children are 8 and 10 years old. As their mother, what should I do?",
+   "rewrite": "sole guardianship of minor children under Guardians and Wards Act 1890",
+   "answered": true,
+   "best": 0.7375,
+   "top_score_any": 0.7375,
+   "passages": [
+    {
+     "pos": 44535,
+     "source": "THE GUARDIANS AND WAR DS ACT, 1890",
+     "score": 0.7375,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13545,
+     "source": "THE HINDU WIDOWS´ REMARRIAGE ACT, 1856",
+     "score": 0.7368,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 44534,
+     "source": "THE GUARDIANS AND WAR DS ACT, 1890",
+     "score": 0.7076,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 44531,
+     "source": "THE GUARDIANS AND WAR DS ACT, 1890",
+     "score": 0.6868,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 44533,
+     "source": "THE GUARDIANS AND WAR DS ACT, 1890",
+     "score": 0.6773,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L03",
+   "question": "My parents passed away, and their property hasn’t been fully divided. I inherited the main house, while the rest of the land was divided among my siblings. Now my siblings are arguing about their shares. What are my rights in this situation? I am the only one maintaining the property, living in the house, and taking care of it. No one else lives here.",
+   "rewrite": "succession rights to undivided property inheritance share dispute maintenance of ancestral house",
+   "answered": true,
+   "best": 0.7069,
+   "top_score_any": 0.7069,
+   "passages": [
+    {
+     "pos": 15974,
+     "source": "THE SUCCESSION ACT, 1925",
+     "score": 0.7069,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 24007,
+     "source": "THE TRANSFER OF PROPERTY ACT, 1882",
+     "score": 0.6687,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L04",
+   "question": "I pay my rent yearly. Does the landlord have the right to give me one week to move out just because I asked him to fix a leak in the house where water is gushing out from the sink?",
+   "rewrite": "termination of tenancy notice for repair complaint landlord obligations under Pakistan Tenancy Laws",
+   "answered": true,
+   "best": 0.6895,
+   "top_score_any": 0.6895,
+   "passages": [
+    {
+     "pos": 52608,
+     "source": "THE I SLAMABAD CAPITAL TERRITORY WAQF PROPERTIES ACT, 2020",
+     "score": 0.6895,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 51296,
+     "source": "THE ISLAMABAD RENT RESTRICTION ORDINANCE, 2001",
+     "score": 0.6581,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 51281,
+     "source": "THE ISLAMABAD RENT RESTRICTION ORDINANCE, 2001",
+     "score": 0.658,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L05",
+   "question": "How long will it take to register my company with the CAC, and what are the requirements and costs involved?",
+   "rewrite": "company incorporation requirements, timeline and fees for registration with SECP (Securities and Exchange Commission of Pakistan)",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6055,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L06",
+   "question": "As a buyer or agent, what documents should I ask the seller or the agent in charge of a property to make sure it's legitimate?",
+   "rewrite": "documents required to verify title, ownership and registration in Pakistani property sale.",
+   "answered": true,
+   "best": 0.6529,
+   "top_score_any": 0.6529,
+   "passages": [
+    {
+     "pos": 44346,
+     "source": "THE CAPITAL TERRITORY TRUST ACT, 2020",
+     "score": 0.6529,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 47121,
+     "source": "THE COMP ANIES ORDINANCE, 1984",
+     "score": 0.6505,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L07",
+   "question": "We are the parents of a newborn son and have been waiting for an interview call for 10 months. We have two minor children under the age of 12. Our I-130 petitions were approved and filed separately under the F-41 visa category. Both children are mentioned and included in the main application submitted to USCIS. Since they are minors, how can we accompany them to the United States? Please advise.",
+   "rewrite": "USCIS F-41 visa minor children accompanying parents",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5185,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L08",
+   "question": "Is there any legal justification for my landlord refusing to provide proof of depositing my security deposit into an interest-bearing account, as required under tenancy laws in Pakistan? Please clarify.",
+   "rewrite": "landlord refusal to furnish proof of security deposit interest account under West Pakistan Tenancy Act",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5886,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L09",
+   "question": "The landlord at my former residence agreed to return a portion of my Rs. 11,000 security deposit, retaining Rs. 8,000 for cleaning. While she provided a quotation for Rs. 2,000, no other receipts or proof of expenses have been shared to justify the deductions. I believe the cleaning was unnecessary, as I have photographic evidence of the condition in which I left the property. Additionally, the landlord has not responded to my request for proof that the security deposit was placed in an interest-bearing account. There are no outstanding dues, and all repairs have reportedly been made. Should I proceed through the rent controller under the tenancy laws, or are there alternative legal remedies available to resolve this dispute?",
+   "rewrite": "security deposit deduction dispute tenancy rent controller proof of deposit in interest‑bearing account West Pakistan Premises Rent Control Act.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6371,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L10",
+   "question": "I am writing to inquire about the specific regulatory and licensing requirements for operating cryptocurrency ATMs in Pakistan. Could you please provide detailed information on the type of license or authorization that operators need to obtain under Pakistani law?",
+   "rewrite": "State Bank of Pakistan licensing requirements for digital currency ATMs operating in Pakistan",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6195,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L11",
+   "question": "The mother of my child has left the child with her parents. The mother and I are not married, and she has no intention of adding my name to the child’s birth certificate. Additionally, the grandparents' residence does not have its own electricity and relies on illegal electricity tapping from neighbors. Under Pakistani law, is it possible for me to obtain full or partial custody of the child, given these circumstances?",
+   "rewrite": "guardianship of illegitimate child unmarried parents paternity custody Pakistan",
+   "answered": true,
+   "best": 0.7049,
+   "top_score_any": 0.7049,
+   "passages": [
+    {
+     "pos": 13464,
+     "source": "THE CHRISTIAN MARRIAGE ACT, 1872",
+     "score": 0.7049,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13545,
+     "source": "THE HINDU WIDOWS´ REMARRIAGE ACT, 1856",
+     "score": 0.6949,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29828,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.6857,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L12",
+   "question": "I hope this message finds you well. I am seeking assistance regarding the reinstatement of my immigration case with the National Visa Center (NVC). My case was filed under the F1 category in 2005, but I was unable to proceed after 2017 due to personal circumstances, including my family responsibilities. Could you guide me on how to reinstate my case and what steps are required under Pakistani legal and procedural guidelines for immigration matters?",
+   "rewrite": "reinstatement of F1 immigrant visa petition NVC procedures Pakistan immigration law",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6167,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L13",
+   "question": "My 17-year-old brother has been detained without a search warrant or an arrest warrant and is being asked to provide bail in the amount of Rs. 29,000. Could you please guide me on the legality of this detention under Pakistani law and the appropriate steps we can take to address this situation?",
+   "rewrite": "detention of a minor without warrant bail legality under Section 41 Code of Criminal Procedure Pakistan",
+   "answered": true,
+   "best": 0.8197,
+   "top_score_any": 0.8197,
+   "passages": [
+    {
+     "pos": 14300,
+     "source": "THE EXTRADITION ACT, 1972",
+     "score": 0.8197,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 26081,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.7629,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 795,
+     "source": "Code of Criminal Procedure, 1898",
+     "score": 0.7609,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 48303,
+     "source": "THE VAGRANCY (KARACHI DIVISION) ACT, 1950",
+     "score": 0.7587,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 104,
+     "source": "Code of Criminal Procedure, 1898",
+     "score": 0.7586,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L14",
+   "question": "I am a mother of a 4-month-old baby currently living in Doha. I want to file for divorce from my husband due to his physical abuse, which I can prove with evidence and a police report. Could you please guide me on the steps to initiate divorce proceedings under Pakistani law, my rights regarding custody of my baby, and an estimate of the legal costs involved?",
+   "rewrite": "talaq on grounds of physical abuse, custody of minor child, legal costs under Muslim Family Laws Ordinance 1961",
+   "answered": true,
+   "best": 0.6554,
+   "top_score_any": 0.6554,
+   "passages": [
+    {
+     "pos": 825,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6554,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L15",
+   "question": "For certain reasons, the title documents of the house I built in Nigeria are in my wife’s name (her marital name). She left me while I was in the United States, and now I have returned to Pakistan to stay in the house. Can I claim legal ownership of the house under Pakistani law, given these circumstances?",
+   "rewrite": "husband claim ownership of immovable property titled in wife's name abroad under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.6868,
+   "top_score_any": 0.6868,
+   "passages": [
+    {
+     "pos": 49600,
+     "source": "THE MUSLIM FAMILY LAWS ORDINAN CE, 1961",
+     "score": 0.6868,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 27335,
+     "source": "THE MARRIED WOMEN'S PROPERTY ACT, 1874",
+     "score": 0.6856,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.66,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L16",
+   "question": "Can I file a case against the driver responsible for my sister’s death, even though the company he works for has covered all hospital and burial expenses? What legal actions can I take under Pakistani law to seek justice for my sister? Thank you, and I look forward to your guidance.",
+   "rewrite": "wrongful death claim against driver and employer under Pakistani law, civil liability and criminal negligence provisions.",
+   "answered": true,
+   "best": 0.6561,
+   "top_score_any": 0.6561,
+   "passages": [
+    {
+     "pos": 24687,
+     "source": "THE NATIONAL HIGHWAYS SAFETY ORDINANCE, 2000",
+     "score": 0.6561,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 24685,
+     "source": "THE NATIONAL HIGHWAYS SAFETY ORDINANCE, 2000",
+     "score": 0.6542,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L17",
+   "question": "I have given loan to a family and now they are not paying it back even after 3 years of wait. I need to send them a legal notice to settle the case in court if they will not pay it back. Is ot possible to first use legal notice as a way to compel them to pay my koan back.?",
+   "rewrite": "demand notice for recovery of loan under Civil Procedure Code (CPR) and Recovery of Money Act 1976",
+   "answered": true,
+   "best": 0.6785,
+   "top_score_any": 0.6785,
+   "passages": [
+    {
+     "pos": 10961,
+     "source": "THE TRADE DISPUTE RESOLUTION ACT , 2022",
+     "score": 0.6785,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5179,
+     "source": "THE DEKKHAN AGRICULTURISTS RELIEF ACT, 1879",
+     "score": 0.6736,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 17097,
+     "source": "THE BANKING COMPANIES ORDINANCE, 1962",
+     "score": 0.6559,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L18",
+   "question": "If a company is transprovincial and wants to shut down its plant at KPK, what all are the legal requirements?",
+   "rewrite": "industrial establishment closure requirements Khyber Pakhtunkhwa Provincial Industrial Establishments Act labor law",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6349,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L19",
+   "question": "I want to return the bride price and also seek child support, as I have been taking care of the children single-handedly for the past four years. How can I go about this under Pakistani law, and what would be the expected legal costs involved in filing for the return of the bride price and claiming child support?",
+   "rewrite": "dower (mehr) restitution and child maintenance (nafaqa) claim, procedural costs under Pakistani law",
+   "answered": true,
+   "best": 0.6656,
+   "top_score_any": 0.6656,
+   "passages": [
+    {
+     "pos": 29820,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.6656,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 18196,
+     "source": "THE PAKISTAN ARMY ACT, 1952",
+     "score": 0.6598,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49898,
+     "source": "THE CARRIAGE BY AIR ACT, 2012",
+     "score": 0.6519,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L20",
+   "question": "What legal remedies are available in Pakistan if a brother refuses to share their father's property with a sister, solely on the basis of her gender? What steps can the sister take to claim her rightful inheritance under Pakistani inheritance laws?",
+   "rewrite": "sister inheritance share under Muslim Personal Law Pakistan gender discrimination succession claim steps",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6075,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L21",
+   "question": "My girlfriend is refusing to allow my child to visit and stay with me, even though she is not around and has left the child with her parents while she is away for a one-year service. I am available and willing to care for my child. What legal steps can I take under Pakistani law to establish visitation rights or custody in this situation?",
+   "rewrite": "custody and visitation petition under Guardians and Wards Act 1890 and Family Courts Act 1964 for child of unmarried parents.",
+   "answered": true,
+   "best": 0.6597,
+   "top_score_any": 0.6597,
+   "passages": [
+    {
+     "pos": 32850,
+     "source": "THE SPECIAL MARRIAGE ACT, 1872",
+     "score": 0.6597,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13545,
+     "source": "THE HINDU WIDOWS´ REMARRIAGE ACT, 1856",
+     "score": 0.6585,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5776,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6517,
+     "via_toc": "6. Punishment for parent or guardian concerned in a child marriage",
+     "family": false
+    },
+    {
+     "pos": 5777,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6517,
+     "via_toc": "6. Punishment for parent or guardian concerned in a child marriage",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L22",
+   "question": "My brother moved to Canada in 2023, and for his immigration paperwork, we declared him as unemployed until 2023. He did not pay income tax in Pakistan nor was he registered for it. How can I obtain a certificate of non-income tax for him?",
+   "rewrite": "FBR non‑taxpayer certificate issuance procedure for individuals with no taxable income in Pakistan.",
+   "answered": true,
+   "best": 0.6985,
+   "top_score_any": 0.6985,
+   "passages": [
+    {
+     "pos": 40875,
+     "source": "THE INCOME TAX ORDINANCE, 2001",
+     "score": 0.6985,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 9525,
+     "source": "THE PLANT BREEDERS´ RIGHTS ACT, 2016",
+     "score": 0.6905,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 3071,
+     "source": "THE MERCHANT SHIPPING ORDINANCE, 2001",
+     "score": 0.6503,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L23",
+   "question": "I worked part-time with a company for 1 year and 8 months but quit a week ago due to being in another country longer than expected because of flight cancellations. I informed my manager via message, saying, \"I will not be working with this company anymore, thank you.\"During my employment, I felt undervalued, overworked, and poorly compensated, which led to my decision to leave. If I reapply and work for the company again but later decide to quit after a short period, can I seek compensation for the work I did, given the lack of respect and value I experienced? Is there a way to file a claim or write a formal statement outlining these reasons to seek financial redress for my service and treatment during my employment?",
+   "rewrite": "constructive dismissal claim and recovery of unpaid wages under Pakistan Industrial Relations Act 2012",
+   "answered": true,
+   "best": 0.6732,
+   "top_score_any": 0.6732,
+   "passages": [
+    {
+     "pos": 14033,
+     "source": "INDUSTRIAL RELATIONS ORDINANCE, 2002",
+     "score": 0.6732,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L24",
+   "question": "I have two children born out of wedlock who currently reside in the Philippines. Since their birth, I have not had custody of them, and their surnames follow their father. The children have not wanted me in their lives either. Now, they wish to study abroad, which under the law requires my consent to undertake responsibility.I have been living and working overseas for many years and do not wish to take responsibility for them anymore, as I feel this situation is unfair to me. I would like to know the legal process under Pakistani law to formally sever ties and absolve myself of any legal responsibility for the children.",
+   "rewrite": "termination of parental rights of illegitimate children under Pakistani law",
+   "answered": true,
+   "best": 0.7083,
+   "top_score_any": 0.7083,
+   "passages": [
+    {
+     "pos": 29828,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.7083,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 39278,
+     "source": "THE ZAINAB ALERT, RESPONSE AND RECOVERY ACT, 2020",
+     "score": 0.7068,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49898,
+     "source": "THE CARRIAGE BY AIR ACT, 2012",
+     "score": 0.6998,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13464,
+     "source": "THE CHRISTIAN MARRIAGE ACT, 1872",
+     "score": 0.6831,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49619,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY DOMESTIC WORKERS ACT, 2022",
+     "score": 0.6797,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L25",
+   "question": "My wife and I want to change my stepdaughter's last name. My wife, who is Thai, has taken my last name after marriage, and we would like my stepdaughter to have the same last name as us. My wife has sole custody of the child, and my stepdaughter is 5 years old. What is the legal process in Pakistan for changing the child’s last name under these circumstances?",
+   "rewrite": "procedure for change of name of minor under sole custody in Pakistan",
+   "answered": true,
+   "best": 0.6537,
+   "top_score_any": 0.6537,
+   "passages": [
+    {
+     "pos": 27838,
+     "source": "THE FOREIGNERS ACT, 1946",
+     "score": 0.6537,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L26",
+   "question": "I am a salesman, and our distributor's warehouse was burgled, with goods worth 37 million being stolen. I, along with other staff, was arrested and detained because the distributor suspected us. Before the arrest, I had collected goods worth 350,000 which I have not yet paid for. Should I pay the money owed first, or should I seek legal advice and take legal action regarding the situation?",
+   "rewrite": "theft under Pakistan Penal Code, unlawful detention, debt recovery, seeking legal counsel before payment of outstanding goods.",
+   "answered": true,
+   "best": 0.7309,
+   "top_score_any": 0.7309,
+   "passages": [
+    {
+     "pos": 25469,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.7309,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 397,
+     "source": "Code of Criminal Procedure, 1898",
+     "score": 0.7302,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 791,
+     "source": "Code of Criminal Procedure, 1898",
+     "score": 0.7301,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 26078,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.71,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 788,
+     "source": "Code of Criminal Procedure, 1898",
+     "score": 0.7035,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L27",
+   "question": "My mother was the sole survivor among her large family. The issue is that one of my aunts transferred land to her name, and the other aunt built a house on land that belonged to her sibling. Both aunts are now deceased. However, my aunt's son-in-law is claiming ownership of the land and the house. What legal actions can be taken to resolve this dispute, and how can my mother protect her rights to the property?",
+   "rewrite": "succession dispute title claim adverse possession land inheritance under Pakistan Succession Act and Transfer of Property Act",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.63,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L28",
+   "question": "A buyer purchased a house and lot, paying in full, but the former owner failed to release the title before passing away. It has now been almost 40 years, and the children or survivors of the buyer have been living in the house. What legal steps can be taken now to secure the title of the property, considering the extended period of time?",
+   "rewrite": "remedial suit for specific performance and registration of sale deed to obtain title after seller’s death, limitation period under Limitation Act.",
+   "answered": true,
+   "best": 0.6641,
+   "top_score_any": 0.6641,
+   "passages": [
+    {
+     "pos": 43198,
+     "source": "THE REGISTERED DESIGNS ORDINANCE, 2000",
+     "score": 0.6641,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L29",
+   "question": "I moved into a rental just over a month ago, and since then, there have been nothing but problems with the landlords. The place was infested with rats the day I moved in, and I had to take care of that myself, along with other issues that they won’t fix. Two days ago, they gave me a 30-day notice to move out with a vague excuse. Do you handle these types of situations?",
+   "rewrite": "unlawful notice to vacate landlord duty to repair rat infestation tenancy under Pakistan Rent Restriction Ordinance",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6465,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L30",
+   "question": "If wife applies for khula but after that the husband wants to sort out the matter and doesn't want separation, does khula case be cancelled or khula has already happened?",
+   "rewrite": "revocation of khula after filing under Muslim Family Laws Ordinance when husband seeks reconciliation",
+   "answered": true,
+   "best": 0.6986,
+   "top_score_any": 0.6986,
+   "passages": [
+    {
+     "pos": 52630,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6986,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.6717,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 32848,
+     "source": "THE SPECIAL MARRIAGE ACT, 1872",
+     "score": 0.6509,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6503,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L31",
+   "question": "I have three children, and their mother took them away to marry another man. She changed their names and converted them to Islam. What legal actions can I take to regain custody or address this situation?",
+   "rewrite": "guardianship petition child custody conversion to Islam change of name under Family Courts Act and Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.6568,
+   "top_score_any": 0.6568,
+   "passages": [
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.6568,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6501,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L32",
+   "question": "My husband and I have been separated, and I want to file for divorce. What documents and information do I need to provide?",
+   "rewrite": "documents required for filing talaq petition under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.6522,
+   "top_score_any": 0.6522,
+   "passages": [
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6522,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L33",
+   "question": "Can a marriage be annulled after rukhsati and nikah, even if it has not been consummated?",
+   "rewrite": "nullity of nikah after rukhsati when marriage not consummated",
+   "answered": true,
+   "best": 0.6751,
+   "top_score_any": 0.6751,
+   "passages": [
+    {
+     "pos": 29493,
+     "source": "THE HINDU MARRIAGE ACT, 2017",
+     "score": 0.6751,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 32828,
+     "source": "THE SPECIAL MARRIAGE ACT, 1872",
+     "score": 0.674,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 27065,
+     "source": "THE ANAND MARRIAGE ACT, 1909",
+     "score": 0.6637,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L34",
+   "question": "I require advice regarding a long-term visa for Italy. I am an Israeli citizen, 75 years old, retired, with a capital of approximately five million dollars. I am interested in purchasing residential property in the lake area in northern Italy and am inquiring about obtaining a long-term visa. I do not work and have no need for employment or business in Italy. My wife and I are a couple without children. My average annual income from investments and trading in the capital market exceeds 100 thousand euros. If necessary, I can provide documentation in the prescribed format. I am currently near Verona and would like to schedule a meeting with a lawyer for further advice.",
+   "rewrite": "long‑term Italy visa for Israeli retiree with property purchase intent",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4418,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L35",
+   "question": "My friend has been in the process of having her foreign divorce recognized in Cebu for over three years. The presiding judge keeps requesting additional documentation that seems unnecessary according to the law. What actions can she take to expedite the process, update her NBI status, and proceed with remarrying?",
+   "rewrite": "recognition of foreign divorce decree Cebu procedural remedies for undue document requests and NBI clearance requirements",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6046,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L36",
+   "question": "The land my wife and I purchased, where we built a house, was originally platted based on a provincial road. The provincial road was later straightened, and our property is no longer directly accessible from the new road. Do we have a legal claim to a right of way along the original road alignment?",
+   "rewrite": "easement of way/right of way claim over former provincial road alignment under Pakistani law",
+   "answered": true,
+   "best": 0.6946,
+   "top_score_any": 0.6946,
+   "passages": [
+    {
+     "pos": 52920,
+     "source": "THE SURVEYING AND MAPPING ACT, 2014",
+     "score": 0.6946,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L37",
+   "question": "My wife, a Pakistani citizen, ran away to Qatar and took my son, who is also a Pakistani citizen, with her. I want to file a police complaint against my wife and seek her deportation along with my son. Both are Pakistani citizens",
+   "rewrite": "illegal removal of minor abroad custodial rights police complaint deportation Pakistani citizens",
+   "answered": true,
+   "best": 0.6586,
+   "top_score_any": 0.6586,
+   "passages": [
+    {
+     "pos": 6719,
+     "source": "THE EMIGRATION ORDINANCE, 1979",
+     "score": 0.6586,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L38",
+   "question": "How can I initiate a legal case in Pakistan against a person from Gujrat and their family who committed money fraud? I have proof of my claims. Even though I am not in Pakistan, can a lawyer help me recover my financial losses and pursue legal action to hold them accountable? Additionally, they have committed other crimes, for which I also have evidence. My primary concern is recovering my money, but I want to ensure all crimes are addressed.",
+   "rewrite": "civil suit for recovery of money fraud and criminal complaint under Section 420 IPC against Gujrat residents, filing by overseas plaintiff with advocate assistance.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5743,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L39",
+   "question": "I received threats of termination from my superior, which forced me to resign unwillingly to avoid having a termination record in my career. Do I have the right to sue or seek legal protection in this situation?",
+   "rewrite": "constructive dismissal forced resignation threat of termination employer liability Pakistan employment law",
+   "answered": true,
+   "best": 0.6903,
+   "top_score_any": 0.6903,
+   "passages": [
+    {
+     "pos": 26130,
+     "source": "THE ANTI NARCOTICS FORCE ACT, 1997",
+     "score": 0.6903,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 30607,
+     "source": "THE PAKISTAN AIR FORCE ACT, 1953",
+     "score": 0.6898,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52047,
+     "source": "THE SACKED EMPLOYEES (REINSTATEMENT) ACT, 2010",
+     "score": 0.6804,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 36546,
+     "source": "i For Official Use ESTACODE (EDITION -2021",
+     "score": 0.6713,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52038,
+     "source": "THE SACKED EMPLOYEES (REINSTATEMENT) ACT, 2010",
+     "score": 0.6663,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L40",
+   "question": "I was copied in an email accusing me of promising a tender for supplying a motorbike to my workplace and then short-changing the client. This email was sent to my employer and colleagues. I have not been involved in any tender process, but my job is now at risk. What steps can I take?",
+   "rewrite": "defamation (libel) false accusation of tender misconduct affecting employment under Pakistan Penal Code and civil damages.",
+   "answered": true,
+   "best": 0.6902,
+   "top_score_any": 0.6902,
+   "passages": [
+    {
+     "pos": 1409,
+     "source": "Pakistan Penal Code",
+     "score": 0.6902,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 45101,
+     "source": "THE PAKISTAN PENAL CODE",
+     "score": 0.6902,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 2416,
+     "source": "THE QANUNESHAHADAT , 1984",
+     "score": 0.6694,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L41",
+   "question": "My husband and I are foreigners living in Thailand for six years. We signed a contract outlining our mutual obligations, but it lacks a lawyer's signature and seal. Is it legally binding? What are the costs of formalizing such a contract, and will it hold legal weight in court if a clause is breached?",
+   "rewrite": "enforceability of private contract without notary seal Thailand cost of registration and court admissibility",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6007,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L42",
+   "question": "We are not separated yet, but my husband is planning to initiate separation. I want to know if I can secure custody of my three children, aged 11, 8, and 1. The children mean everything to me. We had a traditional and church wedding but not a court wedding. My husband is a businessman, and I am a civil servant employed by the government. Is it possible for me to retain custody of the children? Also, during our 10-year marriage, he has physically abused me twice on separate occasions.",
+   "rewrite": "custody of minor children after separation, abuse, under Muslim Family Laws Ordinance Pakistan",
+   "answered": true,
+   "best": 0.7073,
+   "top_score_any": 0.7073,
+   "passages": [
+    {
+     "pos": 29828,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.7073,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 39278,
+     "source": "THE ZAINAB ALERT, RESPONSE AND RECOVERY ACT, 2020",
+     "score": 0.6924,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29820,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.6878,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6778,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6671,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L43",
+   "question": "I currently have custody of my children after separating from their father. He is not a fraudster, and I hold a stable, legal job. How can I strengthen my case and fight to ensure my children remain with me?",
+   "rewrite": "strengthen hizanat claim for minor children after separation under Pakistani family law",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6004,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L44",
+   "question": "I purchased a 65' Power Catamaran from a boat builder in Rayong with an agreed completion time of 10 months. Construction started on March 1, 2021, but the boat remains unfinished after 2.5 years. The total cost was $1,400,000, paid in 8 installments of $175,000. I made 7 payments within the first year based on the builder's assurance that 7 stages were complete, which was not accurate. Despite repeated promises of completion within 2 months, the project remains unfinished. Can I reclaim my payments with interest?",
+   "rewrite": "recovery of advance payments and interest under Sale of Goods Act and Contract Act for delayed construction contract.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5994,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L45",
+   "question": "My son, who is 33 years old and holds a U.S. green card valid until 2032, has overstayed in the Philippines for more than a year due to mental illness, making it difficult for him to travel alone. Can he return to the United States despite his overstay, and what legal or procedural steps can I take to assist him? Additionally, are there any requirements under Pakistani law that I must fulfill to facilitate his travel and care?",
+   "rewrite": "U.S. lawful permanent resident overstay reentry waiver mental illness; Pakistani passport issuance and guardian consent requirements.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6238,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L46",
+   "question": "I am planning to work abroad but am concerned about leaving my three children (ages 20, 18, and 10) with their father, who is an alcoholic and verbally abusive when drunk. I fear for their safety and well-being as he has a history of prioritizing drinking over his responsibilities and often creates a toxic environment at home. Can I establish a legal agreement in Pakistan to limit his access to the children, particularly my 10-year-old daughter, to supervised visits on specific days, ensuring he is not under the influence of alcohol? If he violates this agreement, can restrictions be placed, such as maintaining a set distance from the children at home or school? Should I approach the Family Court, Social Welfare Department, or seek legal advice to ensure my children’s safety?",
+   "rewrite": "guardianship restriction visitation order for child where father intoxicated, family court petition, child welfare protection.",
+   "answered": true,
+   "best": 0.6506,
+   "top_score_any": 0.6506,
+   "passages": [
+    {
+     "pos": 29840,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.6506,
+     "via_toc": "17. Application to t he Court and its procedure",
+     "family": false
+    },
+    {
+     "pos": 29841,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.6506,
+     "via_toc": "17. Application to t he Court and its procedure",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L47",
+   "question": "I am 25 years old and planning to create a fictional work as a franchise, potentially including artwork and video games. I want to ensure my ideas and creations are protected before sharing them with freelancers to avoid theft or leaks. How can I file for copyright in Pakistan? Does Pakistani copyright law protect my work internationally? Who should I contact for legal advice on this matter, and what are the requirements and costs associated with registering and owning a franchise or brand?",
+   "rewrite": "copyright registration Pakistan requirements fees under Copyright Ordinance 1967 and international protection; trademark registration for franchise/brand.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6338,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L48",
+   "question": "I want to leave my marriage due to my husband’s abuse, including physical violence and threats. He also threatens to take my children away from me after sending me out of the house because I caught him cheating. What legal steps can I take in Pakistan to protect myself and secure custody of my children?",
+   "rewrite": "khula, domestic violence protection order, guardianship of minor children, custody under Muslim Family Laws Ordinance, Pakistan.",
+   "answered": true,
+   "best": 0.6878,
+   "top_score_any": 0.6878,
+   "passages": [
+    {
+     "pos": 29820,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY CHILD PROTECTION ACT, 2018",
+     "score": 0.6878,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6829,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49619,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY DOMESTIC WORKERS ACT, 2022",
+     "score": 0.6768,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6729,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 51376,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY PROHIBITION OF CORPORAL PUNISHMENT ACT, 2021",
+     "score": 0.6713,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L49",
+   "question": "I had a traditional marriage with my wife on March 6, 2021, and we signed an agreement on March 5, 2021, stating, \"There shall be no divorce.\" Recently, without seeking a customary or legal divorce, my wife secretly entered into a court marriage with another man. This occurred two weeks ago, and I wish to nullify her court marriage, as it breaches our agreement and the laws of Pakistan. What legal steps can I take to address this situation?",
+   "rewrite": "bigamy annulment under Muslim Family Laws Ordinance, nullify second nikah, enforce marriage contract prohibition of divorce.",
+   "answered": true,
+   "best": 0.77,
+   "top_score_any": 0.77,
+   "passages": [
+    {
+     "pos": 32844,
+     "source": "THE SPECIAL MARRIAGE ACT, 1872",
+     "score": 0.77,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29506,
+     "source": "THE HINDU MARRIAGE ACT, 2017",
+     "score": 0.7044,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.704,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6994,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.721,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    },
+    {
+     "pos": 52632,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.721,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    },
+    {
+     "pos": 52637,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.721,
+     "via_toc": "4. Effect of conversion to another faith",
+     "family": false
+    },
+    {
+     "pos": 52638,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.721,
+     "via_toc": "4. Effect of conversion to another faith",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L50",
+   "question": "I have been admitted to a Master's program at Nova SBE in Portugal. However, I have a history of visa rejections from the USA (tourist and student), Canada (tourist and student), and Sweden (study permit). What steps can I take to strengthen my case for a Portuguese student visa, given my prior rejections? Would hiring a lawyer to review my application and provide guidance improve my chances?",
+   "rewrite": "strengthening Portuguese student visa application after prior visa rejections, hiring lawyer advice",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4587,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L51",
+   "question": "I am looking for a lawyer experienced in handling Portuguese student visa applications, particularly for individuals with prior visa rejections. My case involves acceptance to Nova SBE and previous denials from the USA, Canada, and Sweden. What specific concerns should be addressed in my application to mitigate the impact of my prior rejections? Do you specialize in Portuguese student visas and have experience with similar cases?",
+   "rewrite": "Portuguese student visa application concerns after prior visa rejections",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4928,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L52",
+   "question": "I have been separated from my husband for over 15 years. I was a battered wife, as he would often physically hurt me, especially when drunk, which led me to leave him. After the separation, I took custody of our four children, and he has not provided any financial support since then. The only assistance I receive is 4,000 PKR per month from his mother. If I file for a nullity of marriage, is it likely to be approved under Pakistani law? Additionally, how much would the legal process cost me?",
+   "rewrite": "nullity of marriage petition on grounds of cruelty and abandonment, eligibility and costs under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7681,
+   "top_score_any": 0.7681,
+   "passages": [
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7681,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7645,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49937,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7485,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49930,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7261,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7598,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    },
+    {
+     "pos": 52632,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7598,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L53",
+   "question": "What are the official documents and titles I should receive after purchasing land in Pakistan to ensure the transaction is legally complete and secure?",
+   "rewrite": "required documents for land purchase Pakistan title deed sale deed mutation patta khasra certificate of possession",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6095,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L54",
+   "question": "I need an experienced lawyer to support a divorce initiated by a woman. The couple is of Indian origin, and they are unable to reach an agreement for divorce. The woman seeks to file for divorce under Pakistani law. What are the legal steps involved, and how can a lawyer assist in ensuring the process is completed effectively?",
+   "rewrite": "khula procedure under Muslim Family Laws Ordinance 1961 for Indian nationals in Pakistan",
+   "answered": true,
+   "best": 0.7704,
+   "top_score_any": 0.7704,
+   "passages": [
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.7704,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7498,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5779,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.7166,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29485,
+     "source": "THE HINDU MARRIAGE ACT, 2017",
+     "score": 0.7109,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5774,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.7087,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L55",
+   "question": "I am planning to marry my Thai girlfriend soon. Her brother owns the land on which I wish to build a house. What are my rights and legal standing under Pakistani laws in this situation?",
+   "rewrite": "foreign marriage property rights land acquisition immovable property Pakistan law",
+   "answered": true,
+   "best": 0.6709,
+   "top_score_any": 0.6709,
+   "passages": [
+    {
+     "pos": 12644,
+     "source": "THE DOWRY AND BRIDAL GIFTS (RESTRICTION) ACT, 1976",
+     "score": 0.6709,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 4770,
+     "source": "THE ENFORCEMENT OF WOMEN’S PROPERTY RIGHTS ACT, 2020",
+     "score": 0.6572,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L56",
+   "question": "We are married, and my husband has another woman (mistress) with whom he has fathered a child. He claims that his only obligation is to provide for the child he has with the mistress, and that he has no further obligation towards me. How does this situation affect my rights and what legal recourse do I have, especially considering my difficulty in finding employment?",
+   "rewrite": "wife's right to maintenance and dower when husband has extramarital child under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7941,
+   "top_score_any": 0.7941,
+   "passages": [
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7941,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7455,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6884,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6797,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52637,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7107,
+     "via_toc": "4. Effect of conversion to another faith",
+     "family": false
+    },
+    {
+     "pos": 52638,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7107,
+     "via_toc": "4. Effect of conversion to another faith",
+     "family": false
+    },
+    {
+     "pos": 52639,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7107,
+     "via_toc": "5. Rights to dower not to be affected",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L57",
+   "question": "My boyfriend was accused of sexually assaulting a female in 2020. A week ago he was found guilty of the assault and he's waiting for his sentence. How can he get help, any help.?",
+   "rewrite": "appeal conviction under Pakistan Penal Code for rape sentencing assistance",
+   "answered": true,
+   "best": 0.6752,
+   "top_score_any": 0.6752,
+   "passages": [
+    {
+     "pos": 2547,
+     "source": "JUVENILE JUSTICE SYSTEM ACT, 2018",
+     "score": 0.6752,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L58",
+   "question": "The defendant has fled illegally to Sri Lanka and is working there. Despite having assets and bank accounts, the court order and flight ban in the UAE are no longer effective. We now need to pursue the case in Sri Lankan courts. What legal options do we have to enforce the court’s decision in Sri Lanka, and can we compel the defendant to pay the required amount?",
+   "rewrite": "recognition and enforcement of UAE foreign judgment in Sri Lanka; exequatur procedure; execution of foreign decree; mutual legal assistance for asset recovery.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6269,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L59",
+   "question": "What are the necessary legal requirements and licensing needed to set up a dispatch rider business within Rawalpindi, Pakistan?",
+   "rewrite": "commercial motor vehicle licence and permit requirements for dispatch rider business Rawalpindi",
+   "answered": true,
+   "best": 0.6664,
+   "top_score_any": 0.6664,
+   "passages": [
+    {
+     "pos": 24585,
+     "source": "THE NATIONAL HIGHWAYS SAFETY ORDINANCE, 2000",
+     "score": 0.6664,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 24579,
+     "source": "THE NATIONAL HIGHWAYS SAFETY ORDINANCE, 2000",
+     "score": 0.6568,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L60",
+   "question": "Can I file for an annulment based on her financial irresponsibility, deceitful behavior, and psychological incapacity?",
+   "rewrite": "annulment on grounds of fraud and psychological incapacity under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7135,
+   "top_score_any": 0.7135,
+   "passages": [
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7135,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.702,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6765,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52630,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6689,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49593,
+     "source": "THE MUSLIM FAMILY LAWS ORDINAN CE, 1961",
+     "score": 0.6599,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L61",
+   "question": "Does her being financially irresponsible, deceitful, and exhibiting narcissistic traits constitute grounds for fraud or psychological incapacity under Pakistani law?",
+   "rewrite": "psychological incapacity and fraud as grounds for dissolution of marriage under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.7674,
+   "top_score_any": 0.7674,
+   "passages": [
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.73,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.721,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7083,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52632,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7674,
+     "via_toc": "2. Grounds for decree for dissolution of marriage",
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L62",
+   "question": "Can these behaviors be used as a basis for custody of our children if we separate, especially since she is not financially capable or responsible for their upbringing?",
+   "rewrite": "guardianship of minor children on grounds of mother’s financial incapacity and irresponsibility",
+   "answered": true,
+   "best": 0.6718,
+   "top_score_any": 0.6718,
+   "passages": [
+    {
+     "pos": 13545,
+     "source": "THE HINDU WIDOWS´ REMARRIAGE ACT, 1856",
+     "score": 0.6718,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 44535,
+     "source": "THE GUARDIANS AND WAR DS ACT, 1890",
+     "score": 0.6679,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L63",
+   "question": "What legal steps can I take to protect my interests and ensure that the money I send abroad is used solely for the welfare of my children?",
+   "rewrite": "overseas remittance protection for child welfare under guardianship and trust provisions.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5808,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L64",
+   "question": "Can I file a claim for financial abuse due to her misuse of funds and deceitful behavior?",
+   "rewrite": "economic abuse claim under Protection of Women against Violence Act 2006",
+   "answered": true,
+   "best": 0.6901,
+   "top_score_any": 0.6901,
+   "passages": [
+    {
+     "pos": 41904,
+     "source": "THE PROTECTION AGAINST HARASSMENT OF WOMEN AT THE WORK PLACE ACT, 2010",
+     "score": 0.6901,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L65",
+   "question": "What evidence do I need to present to the court to support my claims of financial irresponsibility and deception?",
+   "rewrite": "evidence required to establish fraud and financial mismanagement in Pakistani civil proceedings",
+   "answered": true,
+   "best": 0.6883,
+   "top_score_any": 0.6883,
+   "passages": [
+    {
+     "pos": 22816,
+     "source": "THE PAKISTAN SINGLE WINDOW ACT , 2021",
+     "score": 0.6883,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 36211,
+     "source": "i For Official Use ESTACODE (EDITION -2021",
+     "score": 0.6879,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29919,
+     "source": "THE SINDH INCUMBERED ESTATES ACT, 1896",
+     "score": 0.6875,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13405,
+     "source": "THE MUTUAL LEGAL ASSISTANCE (CRIMINAL MATTERS) ACT, 2020",
+     "score": 0.6652,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13387,
+     "source": "THE MUTUAL LEGAL ASSISTANCE (CRIMINAL MATTERS) ACT, 2020",
+     "score": 0.6611,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L66",
+   "question": "What are the possible legal consequences for my wife if these claims are proven in court?",
+   "rewrite": "legal consequences for wife upon conviction in Pakistani courts",
+   "answered": true,
+   "best": 0.7033,
+   "top_score_any": 0.7033,
+   "passages": [
+    {
+     "pos": 25458,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.7033,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 32844,
+     "source": "THE SPECIAL MARRIAGE ACT, 1872",
+     "score": 0.6963,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5777,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.6759,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 25415,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.6634,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 23037,
+     "source": "THE PARSI MARRIAGE AND DIVORCE ACT, 1936",
+     "score": 0.6552,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L67",
+   "question": "What factors does the court consider when deciding custody of children in a contested divorce?",
+   "rewrite": "court factors for guardianship (hizanat) of minor children in contested divorce",
+   "answered": true,
+   "best": 0.6727,
+   "top_score_any": 0.6727,
+   "passages": [
+    {
+     "pos": 18904,
+     "source": "THE DIVORCE ACT,1869",
+     "score": 0.6727,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 23064,
+     "source": "THE PARSI MARRIAGE AND DIVORCE ACT, 1936",
+     "score": 0.6656,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L68",
+   "question": "How is the issue of a parent’s financial irresponsibility and manipulative behavior weighed by the court when determining custody?",
+   "rewrite": "court consideration of parental financial mismanagement and manipulative behavior in hazinat decisions",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6248,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L69",
+   "question": "What steps can I take to strengthen my case for custody, especially in light of her financial deception and inability to provide for our children?",
+   "rewrite": "guardianship application evidence financial misrepresentation inability to provide for children",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6423,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L70",
+   "question": "What are my legal obligations for spousal and child maintenance if we separate, considering her financial mismanagement and deceit?",
+   "rewrite": "nafaqah (spousal and child maintenance) obligations upon separation under Muslim Family Laws Ordinance when wife’s financial mismanagement is alleged",
+   "answered": true,
+   "best": 0.7437,
+   "top_score_any": 0.7437,
+   "passages": [
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7437,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52630,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6872,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6758,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 835,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6671,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 832,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6667,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L71",
+   "question": "Can I limit or adjust the amount of maintenance due to her financial irresponsibility?",
+   "rewrite": "reduction of nafaqah on grounds of wife’s financial irresponsibility",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5488,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L72",
+   "question": "What legal measures can I take to ensure that any maintenance payments are used appropriately for the children’s benefit?",
+   "rewrite": "enforcement of maintenance payments for child welfare under Muslim Family Laws Ordinance",
+   "answered": true,
+   "best": 0.673,
+   "top_score_any": 0.673,
+   "passages": [
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.673,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 835,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.6529,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L73",
+   "question": "Can I legally pursue action against a girl for making false accusations? She falsely claimed that I said something to her which I did not, thereby tarnishing my reputation. What are my legal rights and options in such a situation under Pakistani law?",
+   "rewrite": "defamation false accusation criminal liability under Pakistan Penal Code for reputation damage",
+   "answered": true,
+   "best": 0.6758,
+   "top_score_any": 0.6758,
+   "passages": [
+    {
+     "pos": 1409,
+     "source": "Pakistan Penal Code",
+     "score": 0.6758,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 45101,
+     "source": "THE PAKISTAN PENAL CODE",
+     "score": 0.6631,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L74",
+   "question": "I have been separated for more than 16 years now. I only have 1 daughter who is now 29 years old. I would like to request an assessment, what are the necessary documents needed? How long would it take to get an annulment and how much would it cost.",
+   "rewrite": "Faskh of marriage documents required, processing time and cost in Pakistan.",
+   "answered": true,
+   "best": 0.6901,
+   "top_score_any": 0.6901,
+   "passages": [
+    {
+     "pos": 7190,
+     "source": "THE MARRIAGE FUNCTIONS (PROHIBITION OF OSTENTATIOUS DISPLAY AND WASTEFUL EXPENSES) ORDINANCE, 2000",
+     "score": 0.6901,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29485,
+     "source": "THE HINDU MARRIAGE ACT, 2017",
+     "score": 0.658,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L75",
+   "question": "My business partner falsely accused me of stealing money from the safe, banned me from the business, and unilaterally decided that I am a silent partner without my consent. Despite my repeated requests, he has refused to apologise for the unproven and distressing allegations. I am now looking to sell my shares in the company back to him. I initially invested 800,000 PKR but he is only offering 350,000 PKR. I have another buyer interested, but he is not proceeding with the purchase. What legal options do I have to recover my investments or protect my rights under Pakistani law?",
+   "rewrite": "minority shareholder oppression buy‑out remedy valuation Companies Act 2017 Pakistan",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6083,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L76",
+   "question": "In cases of divorce, if the husband has sold out all the properties belonging to him before finalizing the divorce, is there any legal provision in Pakistani law that entitles the wife to a share of these properties? Similar to laws in other countries where the wife may be entitled to 50% of the properties as of the last date they stayed together?",
+   "rewrite": "wife's entitlement to husband's immovable property on talaq under Muslim Family Laws Ordinance Pakistan",
+   "answered": true,
+   "best": 0.7336,
+   "top_score_any": 0.7336,
+   "passages": [
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7336,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49600,
+     "source": "THE MUSLIM FAMILY LAWS ORDINAN CE, 1961",
+     "score": 0.7333,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.7139,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7081,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 3867,
+     "source": "THE ENFORCEMENT OF SHARI'AH ACT, 1991",
+     "score": 0.6982,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L77",
+   "question": "My ex-partner is refusing to sell assets or finalize the divorce, which is preventing me from achieving a fair financial order. What legal options do I have under Pakistani law to address this situation and ensure a fair division of assets during the divorce process?",
+   "rewrite": "application for financial relief and division of matrimonial assets under Muslim Family Laws Ordinance 1961 during divorce proceedings",
+   "answered": true,
+   "best": 0.7802,
+   "top_score_any": 0.7802,
+   "passages": [
+    {
+     "pos": 52630,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.7802,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49938,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.7344,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 833,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.7253,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 52631,
+     "source": "THE DISSOLUTION OF MUSLIM MARRIAGES ACT, 1939",
+     "score": 0.6978,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49930,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.692,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "lawyers",
+   "id": "L78",
+   "question": "My wife constantly insults and abuses me during misunderstandings, leading to hatred and bitterness between us. Strong words have been exchanged, and both of us find it difficult to reconcile even with the intervention of a third party. The marriage has become toxic for both of us, and we are both now in agreement that we want to end the marriage. We have a son who is less than a year old. What are my legal options under Pakistani law for ending this marriage and addressing custody and financial matters for our child?",
+   "rewrite": "talaq khula, child custody (hizanat), maintenance, guardianship under Muslim Family Laws Ordinance Pakistan",
+   "answered": true,
+   "best": 0.7097,
+   "top_score_any": 0.7097,
+   "passages": [
+    {
+     "pos": 5783,
+     "source": "THE CHILD MARRIAGE RESTRAINT ACT, 1929",
+     "score": 0.7097,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 822,
+     "source": "Muslim Family Laws Ordinance, 1961",
+     "score": 0.696,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 12052,
+     "source": "For official use only RULES OF BUSINESS 1973",
+     "score": 0.6794,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 49602,
+     "source": "THE MUSLIM FAMILY LAWS ORDINAN CE, 1961",
+     "score": 0.6772,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 13464,
+     "source": "THE CHRISTIAN MARRIAGE ACT, 1872",
+     "score": 0.6718,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O01",
+   "question": "What is the capital of Australia and how many people live there?",
+   "rewrite": "capital of Australia population",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5006,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O02",
+   "question": "What is the weather forecast for Lahore tomorrow?",
+   "rewrite": "weather forecast Lahore tomorrow",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4619,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O03",
+   "question": "Give me a recipe for chocolate cake.",
+   "rewrite": "chocolate cake recipe",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.29,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O04",
+   "question": "Who won the Cricket World Cup in 1992?",
+   "rewrite": "Cricket World Cup 1992 winner",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.3625,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O05",
+   "question": "How do I reset my Wi-Fi router?",
+   "rewrite": "reset Wi-Fi router",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.3487,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O06",
+   "question": "What is the best smartphone under 50,000 rupees?",
+   "rewrite": "best smartphone under 50000 rupees",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5636,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O07",
+   "question": "Explain how photosynthesis works.",
+   "rewrite": "photosynthesis process explanation",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4697,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O08",
+   "question": "Write a poem about the monsoon.",
+   "rewrite": "poem about the monsoon",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4047,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O09",
+   "question": "How many calories are in a plate of biryani?",
+   "rewrite": "calories in a plate of biryani",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.3245,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O10",
+   "question": "What is the exchange rate of the US dollar today?",
+   "rewrite": "exchange rate US dollar today",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5304,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O11",
+   "question": "How do I register a company with the Corporate Affairs Commission in Nigeria?",
+   "rewrite": "company registration with Corporate Affairs Commission Nigeria",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5678,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O12",
+   "question": "Is a verbal contract enforceable in Thailand?",
+   "rewrite": "oral contract enforceability under Thai law",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5858,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O13",
+   "question": "How do I file for divorce in California?",
+   "rewrite": "file for divorce in California",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5475,
+   "passages": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O14",
+   "question": "What is the punishment for murder under the Indian Penal Code?",
+   "rewrite": "Section 302 IPC punishment for murder",
+   "answered": true,
+   "best": 0.694,
+   "top_score_any": 0.694,
+   "passages": [
+    {
+     "pos": 10157,
+     "source": "THE ISLAMABAD CAPITAL TERRITORY LOCAL GOVERNMENT ACT, 2015",
+     "score": 0.694,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 26077,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.6928,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 784,
+     "source": "Code of Criminal Procedure, 1898",
+     "score": 0.692,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 25118,
+     "source": "THE CODE OF CRIMINAL PROCEDURE , 1898",
+     "score": 0.69,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 8399,
+     "source": "THE PRISONS ACT, 1894",
+     "score": 0.6804,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "status": "ANSWERED"
+  },
+  {
+   "set": "offtopic",
+   "id": "O15",
+   "question": "How do I apply for a UK student visa?",
+   "rewrite": "UK student visa application",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.4615,
+   "passages": [],
+   "status": "REFUSED"
+  }
+ ]
+}

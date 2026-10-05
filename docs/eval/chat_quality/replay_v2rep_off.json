@@ -1,0 +1,201 @@
+{
+ "rewrites": "E:\\Users\\fyp-legalease-ai-main\\fyp-legalease-ai-main\\docs\\eval\\chat_quality\\rewrites_v2_repeat.json",
+ "family": "off",
+ "threshold": 0.65,
+ "family_threshold": 0.65,
+ "results": [
+  {
+   "set": "review",
+   "id": "R1",
+   "question": "Why is the Nikah Nama important in a dower dispute?",
+   "rewrite": "Nikah Nama importance in mahr dispute",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5917,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "review",
+   "id": "R2",
+   "question": "A wife claims that her dowry articles remain in the husband's possession after separation. What remedy may be available?",
+   "rewrite": "dahej possession after separation remedy",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5548,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "review",
+   "id": "R3",
+   "question": "Can a spouse lawfully retain the other's personal property merely because the marriage has ended?",
+   "rewrite": "retention of spouse's movable property after divorce",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.6182,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "review",
+   "id": "R4",
+   "question": "What is a suit for restitution of conjugal rights?",
+   "rewrite": "petition for restitution of conjugal rights",
+   "answered": true,
+   "best": 0.7785,
+   "top_score_any": 0.7785,
+   "passages": [
+    {
+     "pos": 18895,
+     "source": "THE DIVORCE ACT,1869",
+     "score": 0.7785,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 29491,
+     "source": "THE HINDU MARRIAGE ACT, 2017",
+     "score": 0.7261,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 23054,
+     "source": "THE PARSI MARRIAGE AND DIVORCE ACT, 1936",
+     "score": 0.6702,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 0,
+   "off_target": 3,
+   "support_chunks": [],
+   "status": "OFF-TARGET"
+  },
+  {
+   "set": "review",
+   "id": "R5",
+   "question": "Why is territorial jurisdiction important in a Family Court case?",
+   "rewrite": "importance of territorial jurisdiction in family court proceedings",
+   "answered": true,
+   "best": 0.6691,
+   "top_score_any": 0.6691,
+   "passages": [
+    {
+     "pos": 49940,
+     "source": "THE WEST PAKISTAN FAMILY COURTS ACT, 1964",
+     "score": 0.6691,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 1,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "PARTIAL"
+  },
+  {
+   "set": "review",
+   "id": "R6",
+   "question": "Can a family-law advocate knowingly present false facts before the court merely to secure relief for the client?",
+   "rewrite": "advocate knowingly presenting false facts before court to obtain relief – professional misconduct, false statements, perjury",
+   "answered": true,
+   "best": 0.6802,
+   "top_score_any": 0.6802,
+   "passages": [
+    {
+     "pos": 1053,
+     "source": "Pakistan Penal Code",
+     "score": 0.6802,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 45081,
+     "source": "THE PAKISTAN PENAL CODE",
+     "score": 0.6787,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 1044,
+     "source": "Pakistan Penal Code",
+     "score": 0.6765,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 2311,
+     "source": "THE QANUNESHAHADAT , 1984",
+     "score": 0.6751,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 1046,
+     "source": "Pakistan Penal Code",
+     "score": 0.6665,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 4,
+   "off_target": 1,
+   "support_chunks": [],
+   "status": "GOOD"
+  },
+  {
+   "set": "review",
+   "id": "R7",
+   "question": "A wife files a suit seeking dissolution of marriage, unpaid dower, maintenance and recovery of dowry articles. The husband denies all allegations and claims that the wife left the matrimonial home without justification. What should the court determine?",
+   "rewrite": "talaq suit, unpaid dower, nafaqah, recovery of dowry articles, abandonment of matrimonial home without justification.",
+   "answered": false,
+   "best": null,
+   "top_score_any": 0.5986,
+   "passages": [],
+   "on_target": 0,
+   "off_target": 0,
+   "support_chunks": [],
+   "status": "REFUSED"
+  },
+  {
+   "set": "review",
+   "id": "R8",
+   "question": "If a wife claims unpaid dower, who must establish the relevant facts?",
+   "rewrite": "burden of proof for unpaid dower claim wife must establish facts",
+   "answered": true,
+   "best": 0.6676,
+   "top_score_any": 0.6676,
+   "passages": [
+    {
+     "pos": 2255,
+     "source": "THE QANUNESHAHADAT , 1984",
+     "score": 0.6676,
+     "via_toc": null,
+     "family": false
+    },
+    {
+     "pos": 2403,
+     "source": "THE QANUNESHAHADAT , 1984",
+     "score": 0.6537,
+     "via_toc": null,
+     "family": false
+    }
+   ],
+   "on_target": 0,
+   "off_target": 2,
+   "support_chunks": [],
+   "status": "OFF-TARGET"
+  }
+ ]
+}
