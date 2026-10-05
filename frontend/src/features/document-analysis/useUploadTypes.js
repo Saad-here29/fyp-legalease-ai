@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { documentsApi } from "./api";
 
 // File types this server can extract text from. Images are listed only when
-// OCR is installed; until the server says so, assume it isn't.
+// OCR (Tesseract) is set up on the server; until it says so, assume it isn't.
 const BASE_TYPES = ["PDF", "DOCX", "TXT"];
 const EXTENSIONS = { PDF: ".pdf", DOCX: ".docx", TXT: ".txt", PNG: ".png", JPG: ".jpg,.jpeg" };
 

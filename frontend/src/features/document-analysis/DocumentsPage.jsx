@@ -135,7 +135,7 @@ export default function DocumentsPage() {
             </summary>
             <div className="bg-ds-sheet border border-ds-rule rounded-ds p-5 max-h-96 overflow-y-auto">
               {doc.extracted_text ? (
-                <pre className="font-ds-sans text-[14px] leading-[22px] whitespace-pre-wrap text-ds-text-2">
+                <pre dir="auto" className="font-ds-sans text-[14px] leading-[22px] whitespace-pre-wrap text-ds-text-2">
                   {doc.extracted_text}
                 </pre>
               ) : (
@@ -145,7 +145,7 @@ export default function DocumentsPage() {
                     <p>No text extracted from this file.</p>
                     <p className="ds-meta mt-1">
                       {doc.extraction_warning ||
-                        "Likely a scanned or image-only file. Reading these needs text recognition (OCR) installed on the server."}
+                        "The file may be blank, or a scan too faint to read. Try a clearer scan, or a PDF with selectable text."}
                     </p>
                   </div>
                 </div>
