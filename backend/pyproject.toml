@@ -18,6 +18,16 @@ exclude = ["alembic/versions"]
 select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
 ignore = ["E501"]
 
+[tool.ruff.lint.flake8-bugbear]
+# B008 (function call in a default argument) is how FastAPI declares
+# dependencies and request parameters (`db: Session = Depends(get_db)`).
+# Mark FastAPI's helpers as safe so B008 still catches any other call.
+extend-immutable-calls = [
+    "fastapi.Depends", "fastapi.File", "fastapi.Form", "fastapi.Query",
+    "fastapi.Body", "fastapi.Path", "fastapi.Header", "fastapi.Cookie",
+    "fastapi.Security",
+]
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]
