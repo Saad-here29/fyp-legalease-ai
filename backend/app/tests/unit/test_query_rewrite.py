@@ -133,3 +133,15 @@ def test_v2_prompt_names_no_statute():
     assert "(Muslim Family Laws Ordinance)" in client_mod.REWRITE_PROMPT_V1
     assert "Muslim Family Laws Ordinance" not in client_mod.REWRITE_PROMPT_V2
     assert "Never add the name of an Act" in client_mod.REWRITE_PROMPT_V2
+
+
+def test_every_model_call_logs_token_usage(monkeypatch):
+    from types import SimpleNamespace
+    logged = []
+    monkeypatch.setattr(client_mod.logger, "info", logged.append)
+    resp = SimpleNamespace(
+        usage=SimpleNamespace(prompt_tokens=300, completion_tokens=45),
+        choices=[SimpleNamespace(finish_reason="stop", message=SimpleNamespace(content="ok"))],
+    )
+    assert client_mod._content(resp) == "ok"
+    assert logged == ["LLM usage: prompt=300 completion=45 total=345"]

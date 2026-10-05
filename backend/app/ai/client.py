@@ -132,6 +132,14 @@ REWRITE_PROMPT_V2 = (
 
 
 def _content(resp, max_tokens: int = CHAT_MAX_TOKENS) -> str:
+    usage = getattr(resp, "usage", None)
+    if usage is not None:
+        # One line per model call, so a day's token use can be totalled
+        # from the log (Groq's free tier is 200k tokens a day per org).
+        logger.info(
+            f"LLM usage: prompt={usage.prompt_tokens} completion={usage.completion_tokens} "
+            f"total={usage.prompt_tokens + usage.completion_tokens}"
+        )
     choice = resp.choices[0]
     if choice.finish_reason == "length":
         logger.warning(f"LLM reply hit max_tokens={max_tokens} and was cut off")
