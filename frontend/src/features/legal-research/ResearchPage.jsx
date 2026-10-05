@@ -145,6 +145,12 @@ export default function ResearchPage() {
             <p className="ds-meta">Most relevant first</p>
           </div>
 
+          {data.weak_matches && (
+            <p className="mt-4 bg-ds-review-tint text-ds-review px-4 py-3 rounded-ds font-ds-sans font-semibold text-[15px] leading-[22px]" role="note">
+              No strong match in the statute library. These are the closest passages and may not be relevant; try more
+              specific legal terms.
+            </p>
+          )}
           {data.results.length === 0 ? (
             <p className="ds-body text-ds-text-2 py-8">
               No passage in the statute library is close enough to this query. Try different or more specific words.

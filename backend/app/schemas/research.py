@@ -35,6 +35,10 @@ class ResearchSearchResponse(APIModel):
     query: str
     total: int
     results: list[ResearchResult]
+    # True when no passage reaches the chat's relevance threshold: results are
+    # still listed (filtering them would empty valid searches such as "khula
+    # procedure", best 0.55), but the page says they may not be relevant.
+    weak_matches: bool = False
 
 
 class StructuredAnalysisRequest(APIModel):
