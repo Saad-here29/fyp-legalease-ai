@@ -3,6 +3,8 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import DBAPIError
@@ -67,6 +69,31 @@ async def app_exception_handler(_, exc: AppException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": {"code": exc.code, "message": exc.message, "hint": exc.hint}},
+    )
+
+
+def _field_name(loc) -> str:
+    parts = [str(p) for p in loc if p not in ("body", "query", "path", "form")]
+    return ".".join(parts).replace("_", " ") or "request"
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(_, exc: RequestValidationError):
+    # FastAPI's own 422s had only Pydantic's "detail" list, so the UI could
+    # show no message or hint (USE-04). Same shape as every other error now;
+    # "detail" is kept for API clients that read it.
+    errors = exc.errors()
+    first = errors[0] if errors else {}
+    message = f"{_field_name(first.get('loc', ()))}: {first.get('msg', 'invalid value')}"
+    if len(errors) > 1:
+        message += f" (and {len(errors) - 1} more)"
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {"code": "validation_error", "message": message,
+                      "hint": "Correct the highlighted field and try again."},
+            "detail": jsonable_encoder(errors),
+        },
     )
 
 
