@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Check, List, Loader2, X } from "lucide-react";
+import { AlertTriangle, Check, List, Loader2, Scale, X } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { ArchMark } from "@/components/common/Wordmark";
 import Markdown from "@/lib/Markdown";
@@ -45,6 +45,33 @@ const splitShortAnswer = (content) => {
 
 const clock = (d) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+// Answers whose best passage only just passed the relevance threshold
+// (backend answer_flags, LOW_CONFIDENCE_NOTE). Shown in the answer's language.
+const WEAK_MATCH = {
+  en: "Weak match: the closest passages in the library only partly match this question. Check the cited sections before relying on this answer.",
+  ur: "کمزور مطابقت: لائبریری کے قریب ترین اقتباسات اس سوال سے جزوی طور پر ہی مطابقت رکھتے ہیں۔ اس جواب پر انحصار سے پہلے حوالہ شدہ دفعات دیکھ لیں۔",
+};
+const isUrdu = (text) => {
+  const letters = (text || "").replace(/[^\p{L}]/gu, "");
+  return letters.length > 0 && (letters.match(/[\u0600-\u06FF]/g) || []).length > letters.length / 2;
+};
+
+// The page's "Family law" switch (remembered per browser): on = the backend
+// searches the family-law statutes first for family questions ("auto").
+const FAMILY_KEY = "legalease.chat.familyLaw";
+const readFamilyPref = () => {
+  try {
+    return localStorage.getItem(FAMILY_KEY) !== "off";
+  } catch {
+    return true;
+  }
+};
+const toMessage = (m, extra = {}) => ({
+  confidence: m.confidence ?? null,
+  familyScope: Boolean(m.family_scope),
+  ...extra,
+});
+
 const dayLabel = (iso) => {
   const d = new Date(iso);
   const today = new Date();
@@ -75,12 +102,31 @@ export default function ChatPage() {
   // about a concept") is pre-filled, not sent — the user presses Ask.
   const [input, setInput] = useState(location.state?.question || "");
   const [listOpen, setListOpen] = useState(false); // conversations, below lg
+  const [familyLaw, setFamilyLaw] = useState(readFamilyPref);
   const scrollRef = useRef(null);
 
   const { data: sessions } = useQuery({
     queryKey: ["chat-sessions"],
     queryFn: chatApi.listSessions,
   });
+  // The switch exists only when the backend has the family-law index on.
+  const { data: options } = useQuery({
+    queryKey: ["chat-options"],
+    queryFn: chatApi.options,
+    staleTime: Infinity,
+  });
+  const familyAvailable = Boolean(options?.family_index);
+
+  const toggleFamily = () => {
+    setFamilyLaw((on) => {
+      try {
+        localStorage.setItem(FAMILY_KEY, on ? "off" : "on");
+      } catch {
+        /* private mode: the choice lasts until reload */
+      }
+      return !on;
+    });
+  };
 
   useEffect(() => {
     if (!sessionId) {
@@ -91,15 +137,17 @@ export default function ChatPage() {
       .history(sessionId)
       .then((history) => {
         setMessages(
-          history.map((m) => ({
-            id: m.id,
-            // API sends "ai" / "user" (lowercase).
-            role: String(m.sender_type).toLowerCase() === "ai" ? "assistant" : "user",
-            content: normalizeMarkers(m.content),
-            citations: numbered(m.citations),
-            elapsedMs: m.response_time_ms ?? null,
-            time: clock(new Date(m.created_at)),
-          }))
+          history.map((m) =>
+            toMessage(m, {
+              id: m.id,
+              // API sends "ai" / "user" (lowercase).
+              role: String(m.sender_type).toLowerCase() === "ai" ? "assistant" : "user",
+              content: normalizeMarkers(m.content),
+              citations: numbered(m.citations),
+              elapsedMs: m.response_time_ms ?? null,
+              time: clock(new Date(m.created_at)),
+            })
+          )
         );
       })
       .catch(() => setMessages([]));
@@ -121,14 +169,14 @@ export default function ChatPage() {
       if (data.session_id) setSessionId(data.session_id);
       setMessages((prev) => [
         ...prev,
-        {
+        toMessage(data, {
           id: `ai-${Date.now()}`,
           role: "assistant",
           content: normalizeMarkers(data.response),
           citations: numbered(data.citations),
           elapsedMs: data.response_time_ms ?? clientMs,
           time: clock(new Date()),
-        },
+        }),
       ]);
       qc.invalidateQueries({ queryKey: ["chat-sessions"] });
     },
@@ -147,7 +195,11 @@ export default function ChatPage() {
       { id: `me-${Date.now()}`, role: "user", content: trimmed, citations: [], time: clock(new Date()) },
     ]);
     setInput("");
-    sendMutation.mutate({ message: trimmed, session_id: sessionId });
+    sendMutation.mutate({
+      message: trimmed,
+      session_id: sessionId,
+      ...(familyAvailable ? { family: familyLaw ? "auto" : "off" } : {}),
+    });
   };
 
   const openSession = (id) => {
@@ -231,9 +283,38 @@ export default function ChatPage() {
             >
               <List className="h-5 w-5" />
             </button>
-            <h1 className="font-ds-sans font-semibold text-[20px] leading-[28px] truncate" dir="auto">
+            <h1 className="flex-1 min-w-0 font-ds-sans font-semibold text-[20px] leading-[28px] truncate" dir="auto">
               {threadTitle}
             </h1>
+            {familyAvailable && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={familyLaw}
+                onClick={toggleFamily}
+                title={
+                  familyLaw
+                    ? "Family-law questions search the family statutes first (MFLO, Family Courts Act, Dowry Act…)"
+                    : "Family-law focus is off: every question searches the whole library"
+                }
+                className="shrink-0 min-h-[44px] inline-flex items-center gap-2 px-3 rounded-ds font-ds-sans font-semibold text-[15px]
+                  text-ds-text hover:bg-ds-sheet focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`relative h-6 w-10 rounded-full border-2 transition-colors ${
+                    familyLaw ? "bg-ds-ink border-ds-ink" : "bg-ds-paper border-ds-rule"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
+                      familyLaw ? "left-[18px] bg-ds-paper" : "left-0.5 bg-ds-text-2"
+                    }`}
+                  />
+                </span>
+                Family law
+              </button>
+            )}
           </header>
 
           <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
@@ -320,6 +401,7 @@ function Answer({ message }) {
   const flagged = UNVERIFIED_FLAG.test(message.content);
   const { label, short, rest } = splitShortAnswer(message.content);
 
+  const weak = message.confidence === "low";
   const meta = [
     statutes ? `${statutes} statute${statutes === 1 ? "" : "s"}` : null,
     message.elapsedMs != null ? `${(message.elapsedMs / 1000).toFixed(1)}s` : null,
@@ -335,6 +417,16 @@ function Answer({ message }) {
   return (
     <article>
       <AiLabel />
+      {weak && (
+        <p
+          className="mt-4 flex items-start gap-2 bg-ds-review-tint text-ds-review px-4 py-3 rounded-ds font-ds-sans font-semibold text-[15px] leading-[22px]"
+          dir="auto"
+          role="note"
+        >
+          <AlertTriangle className="h-4 w-4 mt-[3px] shrink-0" strokeWidth={2.25} aria-hidden="true" />
+          {WEAK_MATCH[isUrdu(message.content) ? "ur" : "en"]}
+        </p>
+      )}
       {label ? (
         <>
           <div className="mt-4 border-t-2 border-ds-ink border-x border-b border-x-ds-rule border-b-ds-rule bg-ds-sheet px-6 py-5" dir="auto">
@@ -362,6 +454,11 @@ function Answer({ message }) {
       <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <p className="ds-meta flex flex-wrap items-center gap-x-2">
           <span>{meta.join(" · ")}</span>
+          {message.familyScope && (
+            <span className="inline-flex items-center gap-1.5 font-semibold text-ds-text">
+              · <Scale className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" /> Family-law statutes
+            </span>
+          )}
           {/* Only answers that cite sources went through the check with something to check. */}
           {sources.length > 0 &&
             (flagged ? (

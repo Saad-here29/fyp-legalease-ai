@@ -33,6 +33,7 @@ export const ENDPOINTS = {
   chat: {
     sessions: "/chat/sessions",
     message: "/chat/message",
+    options: "/chat/options",
     history: (sessionId) => `/chat/sessions/${sessionId}/history`,
   },
   research: {
