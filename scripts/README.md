@@ -10,15 +10,25 @@ scripts use `requests` and the other packages in
 | `eval_research_retrieval.py` | Sends the 78 lawyer questions to `/research/search` on a **running** backend and reports how many top results pass the similarity threshold. Writes `data/processed/qa_eval/retrieval_eval_results.json` |
 | `setup.ps1` | One-time Windows setup: backend `venv`, `pip install -r requirements-dev.txt`, `npm install`, and `.env` files copied from the examples |
 
-## Known issues with `eval_research_retrieval.py`
+## `eval_research_retrieval.py`
 
-- **Model use:** every question costs one Groq call (the query rewrite),
-  about 400 tokens.
-- **Stale threshold:** it uses `THRESHOLD = 0.7`, but the app uses 0.65.
-- **Brittle self-signup:** it signs in as `researcheval@example.com`. If that
-  account doesn't exist, it signs up and looks for the code in a hardcoded
-  old log path (`backend_groq2.log`), which no longer exists. Create the
-  account by hand first, or change the path.
+```powershell
+backend\venv\Scripts\python scripts\eval_research_retrieval.py              # all 78; writes the results file
+backend\venv\Scripts\python scripts\eval_research_retrieval.py --limit 5    # quick check; writes nothing
+backend\venv\Scripts\python scripts\eval_research_retrieval.py --out my.json
+```
+
+- **Authentication:**
+  - With `LEGALEASE_TOKEN` set, it uses that access token.
+  - Otherwise it creates a throwaway `eval.<time>@example.com` student
+    account, reading the signup code from the database, and deletes the
+    account and its rows when it finishes, even after an error.
+- **Settings:**
+  - `LEGALEASE_API` overrides the API URL (default
+    `http://127.0.0.1:8000/api/v1`);
+  - the pass threshold is the app's `RAG_SIMILARITY_THRESHOLD`.
+- **Cost:** every question costs one Groq call (the query rewrite), about
+  400 tokens, so a full run is about 31k.
 
 The planned replacement records the query rewrites once and replays them
 offline against old and new indexes; see `docs/retrieval_redesign.md`,
