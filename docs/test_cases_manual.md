@@ -52,6 +52,8 @@ Run them sparingly.
 | MT-CM-08 | Cases | FR-CM05 timeline | Open a case with documents, research and status changes | All events in time order with actor names | Shown | Pass (Oct QA) |
 | MT-CM-09 | Cases | FR-CM07 client read-only | Log in as the linked client, open the case | Can view; no edit, status or upload controls; write API calls 403 | Read-only; writes 403 | Pass (Oct QA) |
 | MT-CM-10 | Cases | FR-CM07 client list | Client opens Cases | Only their own cases listed | Only own cases | Pass (Sept audit) |
+| MT-CM-11 | Cases | General case types | Create a civil and a criminal case | Created with that type; family types still listed | civil and criminal cases created live; existing 10 cases unchanged by the migration (same hash before/after) | Pass (2026-10-06) |
+| MT-CM-12 | Cases | Case number, court, parties, next hearing | Create with all fields; change the hearing date; open as the client | Fields saved and shown; hearing change on the timeline; client reads, cannot edit | Fields shown on list, detail and both dashboards; timeline "Next hearing: 2026-10-20" → "2026-10-27"; client PATCH 403. Detail endpoint dropped the fields: fixed `ccf90e1` | Pass (2026-10-06) after fix |
 
 ## 3. Documents and analysis (FR-CM03, FR-DOC-01–04, FR-OCR-03)
 
@@ -65,6 +67,7 @@ Run them sparingly.
 | MT-DOC-06 | Documents | Scanned PDF (OCR) | Upload a scanned (image-only) PDF | Text extracted by OCR; no warning | 4-page scanned judgment: 6,650 characters, 0.9% character errors, 11.5 s; no warning; Analyse enabled | Pass (2026-10-05) |
 | MT-DOC-07 | Documents | Images (OCR) | Upload a PNG and a JPG | Text extracted; PNG/JPG listed in the upload strip | PNG 1.6%, JPG 0.6% character errors, about 3 s each; strip lists PDF, DOCX, TXT, PNG, JPG | Pass (2026-10-05) |
 | MT-DOC-12 | Documents | Urdu OCR | Upload a scanned Urdu page (Naskh font) | Urdu text extracted, shown right to left | 262 characters, 1.5% character errors (5.8% before the per-page Urdu re-read, fixed `2d530fa`); RTL display fixed `3e47b16`. Nastaliq not tested | Pass (2026-10-05) |
+| MT-DOC-13 † | Analysis | Analyse an OCR'd image | Upload a PNG and a JPG of a judgment page, Analyse | Summary and entities from the OCR text | PNG 10 s, JPG 16 s: summaries correct; NER parties include OCR misreads ("Aqeel Anmed Abbasi") | Pass (2026-10-06) |
 | MT-DOC-08 † | Analysis | FR-DOC-02/03/04 | Analyse the Crl.P. 187-P/2026 petition | Summary, key clauses, risks, parties, dates, references (NER) | Full analysis, about 8 s | Pass (Sept audit) |
 | MT-DOC-09 | Analysis | No text to analyse | Analyse a document with no extracted text | 422 with hint, no AI call | 422 | Pass (Oct QA) |
 | MT-DOC-10 | Documents | RBAC | Outsider lawyer tries to view/analyse the document | 403/404 | Blocked | Pass (Oct QA) |
@@ -77,11 +80,11 @@ Run them sparingly.
 | MT-AI-01 † | Chat | FR-AI-02/04 statute answer | Ask "What is the procedure for talaq in Pakistan?" | Short answer box, cited answer with `[n]` markers, numbered sources (MFLO) | Cited answer | Pass (Sept audit) |
 | MT-AI-02 † | Chat | FR-AI-04 section answer | Ask "What is the punishment for theft?" | Cites PPC s. 379 | Cited s. 379 | Pass (Sept audit) |
 | MT-AI-03 † | Chat | FR-AI-03 refusal | Ask "How do I make a cricket bat?" | Polite refusal; no sources; no invented law | Refused | Pass (Sept audit) |
-| MT-AI-04 † | Chat | FR-AI-01 Urdu | Ask a legal question in Urdu script | Answer in Urdu, with citations | to run | to run |
-| MT-AI-05 † | Chat | FR-AI-01 Urdu refusal | Ask an off-topic question in Urdu | Refusal in Urdu | Oct QA found the English refusal; fixed and unit-tested (`test_quality_pass_fixes.py`) | to run (live re-check) |
-| MT-AI-06 † | Chat | FR-AI-04 no case law | Ask for "leading Supreme Court judgments on bail" | Answer from statutes only; no invented case citations | to run | to run |
-| MT-AI-07 † | Chat | FR-AI-05 follow-up | Ask a question, then "what about the appeal?" | Follow-up understood from context | to run | to run |
-| MT-AI-08 | Chat | FR-AI-05 history | Reload the page, reopen the session | Every earlier message shown in order | to run | to run |
+| MT-AI-04 † | Chat | FR-AI-01 Urdu | Ask a legal question in Urdu script | Answer in Urdu, with citations | Urdu answer starting مختصر جواب, citing MFLO and the Family Courts Act; 31 s. It says the passages lack the full text of s.7 (the known retrieval gap) | Pass (2026-10-06) |
+| MT-AI-05 † | Chat | FR-AI-01 Urdu refusal | Ask an off-topic question in Urdu | Refusal in Urdu | Urdu off-topic question refused in Urdu, no sources | Pass (2026-10-06) |
+| MT-AI-06 † | Chat | FR-AI-04 no case law | Ask for "leading Supreme Court judgments on bail" | Answer from statutes only; no invented case citations | "LegalEase's statute library does not contain Supreme Court judgments…"; CrPC passages cited; no case citations (PLD/SCMR etc.) | Pass (2026-10-06) |
+| MT-AI-07 † | Chat | FR-AI-05 follow-up | Ask a question, then "what about the appeal?" | Follow-up understood from context | Not run: a follow-up answer costs about 8k tokens, past this run's Groq cap | to run |
+| MT-AI-08 | Chat | FR-AI-05 history | Reload the page, reopen the session | Every earlier message shown in order | History endpoint returns question then answer, in order (API level) | Pass (2026-10-06, API level) |
 | MT-AI-09 | Chat | Session privacy | Another user requests the session's history via the API | 404 | 404 | Pass (Oct QA) |
 | MT-AI-10 | Chat | REL-04 AI down | Use an invalid Groq key (or exhausted budget), ask a question | 503 "AI unavailable" message; rest of app works | 503; app usable | Pass (Sept audit) |
 
@@ -91,10 +94,10 @@ Run them sparingly.
 |---|---|---|---|---|---|---|
 | MT-RES-01 † | Research | FR-RES-01 search | Search "bail in non-bailable offences" | CrPC s. 497 among top results, with titles and scores | s. 497 found | Pass (Sept audit) |
 | MT-RES-02 † | Research | Result detail | Open a result | Full passage, statute title and section | to run | to run |
-| MT-RES-03 † | Research | Save to case | Save a result to a case | Appears on the case timeline | to run | to run |
-| MT-RES-04 † | Research | Off-topic search | Search a non-legal phrase | "No relevant results" rather than weak matches | to run | to run |
+| MT-RES-03 † | Research | Save to case | Save a result to a case | Appears on the case timeline | Saved CrPC result to the case: 201; appears on the case timeline as "Research saved" | Pass (2026-10-06) |
+| MT-RES-04 † | Research | Off-topic search | Search a non-legal phrase | "No relevant results" rather than weak matches | Was: 10 weak passages, no warning. Fixed `e822fc5`: results kept, note "No strong match…" (best 0.43) | Pass (2026-10-06) after fix |
 | MT-RES-05 | Research | Empty query | Submit an empty search | Validation message, no request | Search button disabled; submitting sends no request | Pass (2026-10-05) |
-| MT-RES-06 † | Research | FR-RES-03 latency | Time five searches | Record the times (target ≤2 s; about 3 s expected) | to run | to run |
+| MT-RES-06 † | Research | FR-RES-03 latency | Time five searches | Record the times (target ≤2 s; about 3 s expected) | "bail in a non-bailable offence": 1.8 s including the rewrite (one timed search; Groq cap) | Pass (2026-10-06), 1 sample |
 
 ## 6. Contracts (FR-CON-01, 03, 04)
 
@@ -103,7 +106,7 @@ Run them sparingly.
 | MT-CON-01 † | Contracts | FR-CON-01 NDA | Lawyer drafts an NDA with party names and terms | Full draft with required clauses | Drafted | Pass (Sept audit) |
 | MT-CON-02 † | Contracts | FR-CON-01 employment, service | Draft the other two templates | Both drafted | Drafted | Pass (Oct QA) |
 | MT-CON-03 | Contracts | FR-CON-03 compliance | Run the compliance check on MT-CON-01 | Pass/fail per required clause; unfilled placeholders listed | Report shown | Pass (Sept audit) |
-| MT-CON-04 | Contracts | FR-CON-03 missing clause | Remove the confidentiality clause text, re-check | That clause marked missing | to run | to run |
+| MT-CON-04 | Contracts | FR-CON-03 missing clause | Remove the confidentiality clause text, re-check | That clause marked missing | Not runnable: contracts can't be edited (only version 1 exists; FR-CON-04 partial) | Not runnable |
 | MT-CON-05 | Contracts | RBAC | Client or student opens Contracts / calls the API | Not available; API 403 | Client and student can't draft | Pass (Oct QA) |
 | MT-CON-06 | Contracts | FR-CON-04 versions | Open a draft's versions | Version 1 listed | Draft → compliance → versions passed | Pass (Oct QA) |
 
@@ -117,7 +120,8 @@ Run them sparingly.
 | MT-PLT-04 | Platform | USE-04 error hints | Trigger a 409, 415 and 422 | Message plus hint shown in the UI | 415 toast "Files of type .exe are not supported. Allowed: …"; 409 shows message + hint; 422 now has message + hint (was missing: fixed `00bae27`) | Pass (2026-10-05) after fix |
 | MT-PLT-05 | Platform | Database down | Stop the network, load a page | 503 "database unavailable" with hint; no stack trace | Live network outage at 20:50: uploads returned 503 "database unavailable" after one retry; no stack trace; recovered when the network returned | Pass (2026-10-05, unplanned) |
 | MT-PLT-06 | Platform | USE-01 clicks | Count clicks from the dashboard to a created case | ≤3 | 2 clicks: dashboard "New case", then "Create case" (plus typing the title) | Pass (2026-10-05) |
-| MT-PLT-07 | Platform | PER-01 page time | Time the dashboard, case list and case detail loads | Record (target ≤2 s) | to run | to run |
+| MT-PLT-07 | Platform | PER-01 page time | Time the dashboard, case list and case detail loads | Record (target ≤2 s) | Warm loads: cases 1.0–1.2 s, case detail 1.5–1.8 s, client dashboard 1.4–1.6 s; first load of a page up to 6–10 s (Vite dev compile + Singapore DB) | Pass (2026-10-06) warm; first load slow |
+| MT-PLT-08 | Platform | Desktop and phone width | Lawyer: dashboard, cases, case, chat, contract; client: dashboard, case at 1440 and 390 px | Content shown, no horizontal overflow, no family-only hint | 22/22 views pass at both widths (screenshots s5-*.png); "Timeline 0" while loading fixed `192d68e` | Pass (2026-10-06) |
 
 ## Not testable yet (not implemented)
 

@@ -5,7 +5,7 @@ legal assistance platform.
 **Scope:** auth, case management, AI chat, legal research, document
 analysis (with OCR/text extraction), and contract drafting and compliance.
 **Reference:** Final Report § 4.3 (Test Strategy), Tables 4.2–4.5.
-**Updated:** October 2026: 213 automated backend tests, 85% line coverage.
+**Updated:** 6 October 2026: 306 automated backend tests; full live run before the mock presentation (§ 13).
 
 ---
 
@@ -81,7 +81,13 @@ real browser, for each role. Results are in § 9.
 | `unit/test_ner.py` | 25 | Legal NER grouping and post-processing; the real model |
 | `unit/test_db_unavailable.py` | 7 | One retry, then 503; other DB errors stay 500 |
 | `unit/test_email_validator.py` | 5 | UT-EMAIL-001…002 |
-| **Total** | **213** | |
+| `unit/test_query_rewrite.py` | 18 | Rewrite v2 (off), statute-name backstop, per-call token-usage log |
+| `unit/test_chat_quality_steps.py` | 40 | Strict prompt, low-confidence flag, family index and fallback (all off) |
+| `unit/test_ocr_scanned.py` | 11 | Scanned PDFs without Poppler; Urdu re-read; real Tesseract |
+| `unit/test_validation_errors.py` | 3 | 422s carry code, message and hint |
+| `unit/test_case_fields.py` | 18 | General case types; number, parties, next hearing; PATCH rules; timeline |
+| `unit/test_research_weak.py` | 3 | Weak-match flag on research searches |
+| **Total** | **306** | |
 
 ---
 
@@ -215,3 +221,47 @@ test files themselves).
   `docs/retrieval_redesign.md`.
 - **Not built, so not tested:** the Practice Simulator and Notifications.
 - **Load testing:** not done.
+
+---
+
+## 13. Pre-presentation live run (2026-10-06)
+
+Real HTTP and a real browser, with fresh throwaway accounts (the two demo
+accounts' passwords aren't recorded, so they weren't used). Groq: 19,222
+tokens over 17 model calls, read from the backend's per-call usage log.
+
+**Journey (16/16 pass):**
+- sign in;
+- create a criminal case with number, court, parties and next hearing;
+- link the client (created → assigned);
+- move to in progress (an illegal move is a 409);
+- upload and analyse Crl.P. 187-P (7.7 s, NER entities);
+- chat, a minute apart: talaq (cited MFLO), theft (PPC s.379) and an
+  off-topic question (refused);
+- Research "bail in a non-bailable offence" (CrPC s.497 first, 1.8 s) and
+  save the result to the case;
+- draft an NDA and run its compliance check;
+- the timeline shows all of it;
+- sign out (old access and refresh tokens both 401);
+- the client sees only their case, with every field, and gets 403 on writes.
+
+**Views:** 22 views at 1440 and 390 px, for lawyer and client: content
+shown, no horizontal overflow, no family-only hint.
+
+**OCR:**
+- PNG and JPG of a judgment page analysed end to end (10 s and 16 s).
+- A scanned 4-page PDF: 0.9% character errors.
+- An Urdu page: 1.5% character errors.
+
+**Fixed during the run:**
+- the case detail endpoint dropped the new fields (`ccf90e1`);
+- an off-topic research search showed weak passages with no warning
+  (`e822fc5`);
+- "Timeline 0" was shown while the timeline loaded (`192d68e`);
+- 422 errors had no hint (`00bae27`).
+
+**Not run:**
+- MT-AI-07 (a follow-up question, about 8k tokens, past the cap);
+- MT-RES-02 (needs one more search through the UI);
+- MT-CON-04 (contracts can't be edited);
+- email (SMTP not configured).

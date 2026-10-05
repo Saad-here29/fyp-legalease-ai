@@ -5,7 +5,7 @@
 
 ## What this project is
 LegalEase AI — an AI-powered legal case management + research platform for
-Pakistani law (Family Law scope). FYP for NUCES Islamabad, Software Engineering,
+Pakistani law: general scope (supervisor's decision, 2026-10-06); case types cover family and general matters. FYP for NUCES Islamabad, Software Engineering,
 Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
 
 ## Current status (fill in / correct before first session)
@@ -715,3 +715,49 @@ SMTP_*
      (`rbac.py` was removed on 2026-10-04.)
    - **Notifications: confirmed not implemented** — see "Current status"
      above.
+---
+
+## State on 2026-10-06 (before the mock presentation)
+
+- **Scope:** the chatbot is general Pakistani law (supervisor's decision);
+  the family-law filter and switch stay off, and no UI hints at a
+  family-only mode.
+- **Migration `e7b3c9d14a02` applied:**
+  - case types now include civil, criminal, commercial, property and
+    service, alongside the four family types;
+  - new nullable columns: case_number, petitioner, respondent,
+    next_hearing_date;
+  - the court (court_code) and the summary (description) already existed;
+  - tested up and down on a throwaway schema (`alembic -x schema=…`);
+  - the 10 existing cases are unchanged (same hash before and after).
+- **Editing cases:** `PATCH /cases/{id}` edits details. Only the assigned
+  lawyer can, and not once the case is closed. A hearing change is a
+  timeline entry.
+- **Feature switches:**
+
+| Feature | In the running app | Why |
+|---|---|---|
+| OCR (Tesseract eng+urd; scanned PDFs, PNG, JPG) | **On** | Verified live 2026-10-05/06 |
+| Legal NER in document analysis | **On** | Entities returned live on the Crl.P. 187-P PDF and OCR'd images |
+| Sign-out revokes access + refresh tokens | **On** | Old tokens 401 live |
+| Chat history cap (last 10 messages, 2,000 tokens) | **On** | Unit tests; not exercised live (would need a long conversation) |
+| Case types (family + general) and case fields | **On** | Migration `e7b3c9d14a02` applied 2026-10-06 |
+| Research weak-match note | **On** | Off-topic search shows it live |
+| `REWRITE_V2` (rewrite at temperature 0, no statute names) | Off | Made 17 of the 78 lawyer questions go unanswered (`docs/chat_quality_steps_2026-10.md`) |
+| `STRICT_GROUNDING` (stricter answer prompt) | Off | Not measured yet; waiting for approval of a ~15k-token run |
+| `LOW_CONFIDENCE_NOTE` (0.65–0.70) | Off | Measured and ready; waiting for approval to switch on |
+| `FAMILY_INDEX` (family-law side index + switch) | Off | Mixed results; and the chatbot is general Pakistani law (supervisor's decision) |
+| Email (SMTP) | Off | `SMTP_USERNAME`/`SMTP_PASSWORD` not set; codes go to the server log |
+
+- **Groq accounting:** the backend logs `LLM usage: prompt=… completion=…`
+  for every model call. The 2026-10-06 run used 19,222 tokens; live model
+  calls were then stopped.
+- **Tests:** 306 backend tests pass; ruff 21 (all of them existed before);
+  frontend lint and build clean.
+- **Live run:** `docs/TEST_PLAN.md` § 13.
+- **Open:**
+  - email (SMTP);
+  - MT-AI-07 and MT-RES-02 not run;
+  - contracts can't be edited (MT-CON-04);
+  - throwaway test accounts `eval.*@example.com` from 2026-10-05/06 are
+    still in the database, awaiting a yes to delete.

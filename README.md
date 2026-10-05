@@ -57,7 +57,7 @@ The search library holds **statutes only**, with no court judgments.
 | **Database** | PostgreSQL (Supabase in development) |
 | **AI** | Groq `openai/gpt-oss-120b` (OpenAI and Gemini as optional fallbacks), `sentence-transformers` multilingual MiniLM embeddings, FAISS, a fine-tuned DistilBERT legal NER model (PyTorch, CPU) |
 | **Documents** | PyMuPDF, PyPDF2, python-docx; Tesseract OCR (English + Urdu) for scanned PDFs and images, with pages rendered by PyMuPDF (no Poppler needed) |
-| **Testing** | pytest (213 backend tests), ruff, ESLint |
+| **Testing** | pytest (306 backend tests), ruff, ESLint |
 
 ---
 
@@ -121,6 +121,24 @@ copy .env.example .env    # VITE_API_BASE_URL defaults to http://localhost:8000/
 
 ---
 
+## What is switched on
+
+| Feature | In the running app | Why |
+|---|---|---|
+| OCR (Tesseract eng+urd; scanned PDFs, PNG, JPG) | **On** | Verified live 2026-10-05/06 |
+| Legal NER in document analysis | **On** | Entities returned live on the Crl.P. 187-P PDF and OCR'd images |
+| Sign-out revokes access + refresh tokens | **On** | Old tokens 401 live |
+| Chat history cap (last 10 messages, 2,000 tokens) | **On** | Unit tests; not exercised live (would need a long conversation) |
+| Case types (family + general) and case fields | **On** | Migration `e7b3c9d14a02` applied 2026-10-06 |
+| Research weak-match note | **On** | Off-topic search shows it live |
+| `REWRITE_V2` (rewrite at temperature 0, no statute names) | Off | Made 17 of the 78 lawyer questions go unanswered (`docs/chat_quality_steps_2026-10.md`) |
+| `STRICT_GROUNDING` (stricter answer prompt) | Off | Not measured yet; waiting for approval of a ~15k-token run |
+| `LOW_CONFIDENCE_NOTE` (0.65–0.70) | Off | Measured and ready; waiting for approval to switch on |
+| `FAMILY_INDEX` (family-law side index + switch) | Off | Mixed results; and the chatbot is general Pakistani law (supervisor's decision) |
+| Email (SMTP) | Off | `SMTP_USERNAME`/`SMTP_PASSWORD` not set; codes go to the server log |
+
+Flags live in `backend/.env`; see `backend/.env.example`.
+
 ## Running
 
 Start each server **in its own terminal window**, and leave both open:
@@ -152,7 +170,7 @@ npm run dev
 
 ```powershell
 cd backend
-pytest                    # 213 tests, offline (no AI calls)
+pytest                    # 306 tests, offline (no AI calls)
 ruff check app
 
 cd ..\frontend

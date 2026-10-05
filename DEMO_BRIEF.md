@@ -292,7 +292,7 @@ database, and holds no case law.
 | **Reliability** | A failed database connection is retried once, then a clear 503; text-less documents refused before any model call; chat history capped at 2,000 tokens so requests stay under Groq's 8,000 tokens a minute |
 | **Performance** | **Weak spot:** the database is on Supabase in Singapore. Each query takes 0.2–0.4 s and a new connection about 4 s, so API calls take about 3–8 s. Chat answers took 9–27 s in testing, document analysis about 8 s, contract drafting about 7 s |
 | **Usability** | Design system v1 on every page, at desktop and phone width; role-specific dashboards; a 404 page for unknown addresses |
-| **Tests** | 213 backend tests (unit and HTTP); no frontend tests |
+| **Tests** | 306 backend tests (unit and HTTP); no frontend tests; full live run 2026-10-06 (`docs/TEST_PLAN.md` § 13) |
 
 ---
 
@@ -317,8 +317,14 @@ Details are in `PROJECT_CONTEXT.md`.
 1. **Sign in** as a pre-verified lawyer. SMTP isn't configured, so signup
    codes appear only in the backend window.
 2. **Cases:**
-   - **New case** "Khan v. Khan — Custody", then link the client by email.
-     It becomes Assigned automatically, and the timeline says so.
+   - **New case** "Nadar Khan v. The State — bail": type Criminal, case
+     number Crl.P. 187-P/2026, court, petitioner and respondent, next
+     hearing date. Then link the client by email. It becomes Assigned
+     automatically, and the timeline says so.
+   - Open the case: the **Case details** panel shows the number, court,
+     parties and next hearing (in red when upcoming). **Edit** a hearing
+     date and the timeline records it. The dashboard lists it under
+     **Upcoming hearings**.
    - **Mark as in progress.**
 3. **Documents:**
    - Upload `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
@@ -405,3 +411,29 @@ The chat refuses without calling the model, in the question's language.
 3. Move the database closer to the users.
 5. Add frontend tests.
 6. Build notifications for hearings and deadlines.
+
+---
+
+## Before the mock presentation (state on 2026-10-06)
+
+**Scope:**
+- The chatbot covers general Pakistani law (the supervisor's decision).
+- Cases come in general types (civil, criminal, commercial, property,
+  service) and family types (divorce, custody, inheritance, maintenance).
+- No family-only mode is shown.
+
+**Switched on:** OCR (English + Urdu), NER, token revocation, case fields,
+and the research weak-match note.
+
+**Switched off,** and why:
+- the rewrite change (it cost answers on the lawyer questions);
+- the stricter prompt (not measured);
+- the low-confidence note (ready, awaiting approval);
+- the family index (scope);
+- email (SMTP not set; signup codes appear in the backend window).
+
+**Say if asked:**
+- Research always lists its closest passages. When none is a strong match,
+  the page says so rather than hiding them.
+- First page loads can take 6–10 s: Vite compiles each page on first visit,
+  and the database is in Singapore.
