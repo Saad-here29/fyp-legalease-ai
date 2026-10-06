@@ -519,3 +519,47 @@ on 2026-10-06, and it wasn't investigated further.
 **5. If the AI is slow or returns "unavailable":** Groq's free tier allows
 8,000 tokens a minute and 200k a day. Wait a minute and ask again. Cases,
 documents and research keep working without it.
+
+---
+
+## Cold-start rehearsal (run it once before the mock)
+
+Start from nothing running: close every terminal, then time the whole run.
+
+1. **Terminal 1, backend:**
+   `cd backend` → `venv\Scripts\activate` → `set HF_HUB_OFFLINE=1` →
+   `set TRANSFORMERS_OFFLINE=1` → `uvicorn app.main:app --port 8000`.
+   Wait for `Application startup complete`.
+2. **Terminal 2, frontend:** `cd frontend` → `npm run dev`. Wait for
+   `Local: http://localhost:5173/`.
+3. **Health checks:**
+   - http://localhost:8000/health shows `{"status":"ok"}`;
+   - http://localhost:5173 shows the landing page;
+   - signing in works, which confirms the database (first sign-in can
+     take about 5 s).
+4. **Warm-up pages** (each compiles on its first visit):
+   - as the lawyer: dashboard, Cases, one case with its Timeline and
+     Documents tabs, Documents, AI Chat, Research, Contracts and one
+     contract;
+   - as the client: dashboard and their case.
+5. **One chat question:** *"What is the punishment for theft under the
+   Pakistan Penal Code?"* Expect a cited answer with s.379 and no
+   weak-match note. Then start a new conversation.
+6. **Demo order:**
+   1. dashboard;
+   2. new criminal case with number, court, parties and hearing; link the
+      client; mark as in progress;
+   3. upload and analyse Crl.P. 187-P;
+   4. chat, one question a minute: DMMA grounds, theft, cricket bat
+      (refused);
+   5. Research: "bail in a non-bailable offence", then Save to case;
+   6. NDA, compliance check, Edit draft (save as version 2), check again;
+   7. case timeline;
+   8. sign out, then the client view.
+7. **If a panelist's question is refused:** "It only answers from the
+   Pakistani statute text it can find. When nothing is close enough, it
+   refuses rather than guess." Then rephrase it with the legal term, or
+   offer the theft or DMMA question.
+8. **If the weak-match note shows:** "The closest passage only just passed
+   the relevance threshold, so the page warns the reader to check the
+   cited sections. It flags uncertainty instead of hiding it."
