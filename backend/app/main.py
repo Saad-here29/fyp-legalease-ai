@@ -21,6 +21,13 @@ from app.db.session import engine, is_connection_error
 async def lifespan(_: FastAPI):
     configure_logging()
     logger.info(f"Starting {settings.APP_NAME} (env={settings.APP_ENV})")
+    mode = run_mode()
+    logger.info(
+        f"Search mode: KB_V2={mode['kb_v2']} | v1 index {settings.FAISS_INDEX_PATH} "
+        f"({mode['v1_index_chunks']} chunks) | v2 index "
+        f"{settings.KB_V2_INDEX_PATH + ' (' + str(mode['v2_index_chunks']) + ' chunks)' if settings.KB_V2 else 'off'} "
+        f"| threshold {mode['threshold']}"
+    )
 
     # Auto-create tables on startup when running on SQLite (demo mode).
     # Production Postgres uses Alembic migrations and skips this branch.
@@ -117,9 +124,35 @@ async def root():
     }
 
 
+def _faiss_ntotal(path: str) -> int | None:
+    """Vectors in a saved flat FAISS index, read from its header (bytes 8-16)
+    without loading the index; None if the file is missing or not flat."""
+    import struct
+    from pathlib import Path
+    p = Path(path)
+    try:
+        with p.open("rb") as f:
+            head = f.read(16)
+    except OSError:
+        return None
+    if len(head) < 16 or not head.startswith(b"IxF"):
+        return None
+    return struct.unpack("<q", head[8:16])[0]
+
+
+def run_mode() -> dict:
+    """Which search mode this server runs in (see docs/DEMO_RUNBOOK.md)."""
+    return {
+        "kb_v2": settings.KB_V2,
+        "v1_index_chunks": _faiss_ntotal(settings.FAISS_INDEX_PATH),
+        "v2_index_chunks": _faiss_ntotal(settings.KB_V2_INDEX_PATH) if settings.KB_V2 else None,
+        "threshold": settings.KB_V2_THRESHOLD if settings.KB_V2 else settings.RAG_SIMILARITY_THRESHOLD,
+    }
+
+
 @app.get("/health", tags=["health"])
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", **run_mode()}
 
 
 from app.api.v1 import auth as auth_router
