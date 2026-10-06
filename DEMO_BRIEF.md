@@ -437,3 +437,83 @@ and the research weak-match note.
   the page says so rather than hiding them.
 - First page loads can take 6–10 s: Vite compiles each page on first visit,
   and the database is in Singapore.
+
+---
+
+## Demo start checklist (one page)
+
+**1. Start the servers, each in its own terminal, and leave both open.**
+
+```powershell
+# Terminal 1: backend (http://localhost:8000)
+cd backend
+venv\Scripts\activate
+set HF_HUB_OFFLINE=1
+set TRANSFORMERS_OFFLINE=1
+uvicorn app.main:app --port 8000
+
+# Terminal 2: frontend (http://localhost:5173)
+cd frontend
+npm run dev
+```
+
+Wait for the backend to log `Application startup complete`, then check that
+http://localhost:8000/health shows `{"status":"ok"}`.
+
+**2. Warm up, about 10 minutes before.** The dev server compiles each page
+on its first visit (6–10 s), so open every page once. `vite preview` (the
+production build) isn't used: login didn't go through in an automated test
+on 2026-10-06, and it wasn't investigated further.
+
+1. **As the lawyer:**
+   - `/login` → sign in;
+   - `/lawyer/dashboard`;
+   - `/cases`, then open one case and click its Timeline and Documents tabs;
+   - `/documents`;
+   - `/chatbot`;
+   - `/research`;
+   - `/contracts`, then open one contract.
+2. **One chat question,** to load the AI models and check Groq: *"What is the
+   punishment for theft under the Pakistan Penal Code?"* (best match 0.85).
+   Expect a cited answer with s.379. Start a new conversation afterwards.
+3. **Sign out, then as the client:** `/client/dashboard`, then open their
+   case.
+4. **Sign out,** and sign back in as the lawyer.
+
+**3. Demo order.**
+1. **Lawyer dashboard:** open cases and upcoming hearings.
+2. **New case:** type Criminal, "Nadar Khan v. The State — bail", number
+   Crl.P. 187-P/2026, Supreme Court of Pakistan, petitioner and respondent,
+   next hearing. Link the client by email (it becomes Assigned
+   automatically), then **Mark as in progress**.
+3. **Case → Add document:** upload
+   `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`. Then **Documents →
+   Analyse** (about 8 s).
+4. **AI Chat,** one question a minute:
+   1. *"What is the procedure for a husband to pronounce talaq in
+      Pakistan?"* (MFLO s.7);
+   2. *"What is the punishment for theft under the Pakistan Penal Code?"*
+      (PPC s.379);
+   3. *"Can you recommend a good cricket bat?"* (refused, on purpose).
+5. **Research:** *"bail in a non-bailable offence"* (CrPC s.497 first). Open
+   it and **Save to case**.
+6. **Contracts:** an NDA for the case, then the compliance check.
+7. **Case timeline:** everything above in order.
+8. **Sign out,** then sign in as the client: they see their case
+   read-only.
+9. **Optional:** a scanned page (PNG/JPG) in Documents shows OCR.
+
+**4. If a question is refused, or shows the "Weak match" note,** say:
+- "The assistant only answers from the Pakistani statute text it can find.
+  When no passage is close enough, it refuses rather than guess. That's the
+  design, not an error."
+- Then rephrase it with the legal term (e.g. "talaq notice to the Chairman
+  under section 7"), or use the theft question, which always finds PPC
+  s.379.
+- The "Weak match" note appears when the best passage only just passes
+  (0.65–0.70). The talaq question scored 0.71–0.73 in tests, so it can show
+  the note.
+
+**5. If the AI is slow or returns "unavailable":** Groq's free tier allows
+8,000 tokens a minute and 200k a day. Wait a minute and ask again. Cases,
+documents and research keep working without it.
