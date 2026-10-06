@@ -16,6 +16,11 @@ class ContractDraftRequest(APIModel):
     title: str | None = Field(default=None, max_length=200)
 
 
+class ContractEditRequest(APIModel):
+    """Edited contract text; saved as the next version."""
+    content: str = Field(min_length=20, max_length=100_000)
+
+
 class ContractCheckComplianceRequest(APIModel):
     # Defaults to the latest version when omitted.
     version_number: int | None = None

@@ -13,6 +13,7 @@ from app.schemas.contracts import (
     ContractCheckComplianceRequest,
     ContractDetail,
     ContractDraftRequest,
+    ContractEditRequest,
     ContractRead,
     ContractVersionRead,
 )
@@ -81,6 +82,21 @@ def list_versions(
     db: Session = Depends(get_db),
 ):
     return ContractService(db).list_versions(contract_id, user)
+
+
+@router.post(
+    "/{contract_id}/versions",
+    response_model=ContractVersionRead,
+    status_code=201,
+    summary="Save edited text as a new version, then re-run the compliance and placeholder checks",
+)
+def edit_contract(
+    contract_id: uuid.UUID,
+    payload: ContractEditRequest,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    return ContractService(db).edit(contract_id, payload.content, user)
 
 
 @router.post(

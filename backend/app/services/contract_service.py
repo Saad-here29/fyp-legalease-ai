@@ -95,6 +95,32 @@ class ContractService:
         self.db.refresh(contract)
         return contract
 
+    # ----- Edit ------------------------------------------------------------
+
+    def edit(self, contract_id: uuid.UUID, content: str, user: User) -> ContractVersion:
+        """Save edited text as the next version (earlier versions are kept),
+        then re-run the compliance and placeholder checks on it. Same access
+        rule as the compliance check: a lawyer who created the contract or
+        is the assigned lawyer on its case."""
+        contract = self._get_for_action(contract_id, user, action="edit this contract")
+        latest = contract.versions[-1] if contract.versions else None
+        text = content.strip()
+        if latest is not None and text == latest.content.strip():
+            raise ValidationFailed(
+                message="No changes to save.",
+                hint="Edit the text, then save it as a new version.",
+            )
+        version = ContractVersion(
+            contract_id=contract.id,
+            version_number=(latest.version_number if latest else 0) + 1,
+            content=text,
+        )
+        self.db.add(version)
+        contract.updated_at = datetime.now(UTC)
+        self.db.commit()
+        self.db.refresh(contract)
+        return self.check_compliance(contract.id, user, version.version_number)
+
     # ----- Compliance --------------------------------------------------
 
     def check_compliance(
@@ -174,7 +200,9 @@ class ContractService:
                 return v
         raise NotFound(f"Contract has no version {version_number}.")
 
-    def _get_for_action(self, contract_id: uuid.UUID, user: User) -> Contract:
+    def _get_for_action(
+        self, contract_id: uuid.UUID, user: User, action: str = "run a compliance check"
+    ) -> Contract:
         """Access check for actions (check-compliance), stricter than plain
         viewing: the acting user must be a lawyer with a real stake in the
         contract (its creator, or the assigned lawyer on its linked case)."""
@@ -182,7 +210,7 @@ class ContractService:
         if contract is None:
             raise NotFound("Contract not found.")
         if user.role != UserRole.LAWYER:
-            raise NotAuthorized("Only a lawyer can run a compliance check.")
+            raise NotAuthorized(f"Only a lawyer can {action}.")
         if contract.created_by_id == user.id:
             return contract
         if contract.case_id is not None:

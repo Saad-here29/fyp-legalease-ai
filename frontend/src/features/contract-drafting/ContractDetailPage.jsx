@@ -27,6 +27,7 @@ export default function ContractDetailPage() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState(null);
   const [fresh, setFresh] = useState(null);
+  const [draftText, setDraftText] = useState(null); // non-null while editing
 
   const contractQuery = useQuery({ queryKey: ["contract", id], queryFn: () => contractsApi.get(id) });
   const versionsQuery = useQuery({
@@ -49,6 +50,24 @@ export default function ContractDetailPage() {
     },
     onError: (e) =>
       toast.error(e?.response?.data?.error?.message || "Could not run the compliance check.", {
+        description: e?.response?.data?.error?.hint,
+      }),
+  });
+
+  const save = useMutation({
+    mutationFn: (content) => contractsApi.edit(id, content),
+    onSuccess: (v) => {
+      setDraftText(null);
+      setSelected(v.version_number);
+      setFresh(null);
+      qc.invalidateQueries({ queryKey: ["contract", id] });
+      qc.invalidateQueries({ queryKey: ["contract-versions", id] });
+      const r = v.compliance_result;
+      if (r?.all_passed) toast.success(`Saved as version ${v.version_number}. All required clauses found.`);
+      else toast.warning(`Saved as version ${v.version_number}. The compliance check found problems; see the panel.`);
+    },
+    onError: (e) =>
+      toast.error(e?.response?.data?.error?.message || "Could not save the edit.", {
         description: e?.response?.data?.error?.hint,
       }),
   });
@@ -86,6 +105,23 @@ export default function ContractDetailPage() {
       subtitle={`${label} · version ${active.version_number} · ${fmtDateTime(active.created_at)}`}
       headerActions={
         isLawyer && (
+          <>
+          {draftText === null ? (
+            <button className="ds-btn-secondary" onClick={() => setDraftText(active.content)}>
+              Edit draft
+            </button>
+          ) : (
+            <>
+              <button className="ds-btn-secondary" onClick={() => setDraftText(null)} disabled={save.isPending}>
+                Cancel
+              </button>
+              <button className="ds-btn-primary" onClick={() => save.mutate(draftText)}
+                disabled={save.isPending || draftText.trim() === active.content.trim()}>
+                {save.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Saving" /> : "Save as new version"}
+              </button>
+            </>
+          )}
+          {draftText === null && (
           <button
             className={compliance ? "ds-btn-secondary" : "ds-btn-primary"}
             disabled={check.isPending}
@@ -101,10 +137,26 @@ export default function ContractDetailPage() {
               "Check compliance"
             )}
           </button>
+          )}
+          </>
         )
       }
     >
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
+        {draftText !== null ? (
+          <div className="min-w-0">
+            <label htmlFor="contract-edit" className="ds-label">
+              Editing version {active.version_number}. Saving creates version {versions[versions.length - 1].version_number + 1} and re-runs the checks.
+            </label>
+            <textarea
+              id="contract-edit"
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              rows={28}
+              className="ds-input py-3 font-mono text-[14px] leading-[22px]"
+            />
+          </div>
+        ) : (
         <article className="bg-ds-sheet border border-ds-rule rounded-ds px-6 sm:px-12 py-10 min-w-0">
           <Markdown
            
@@ -114,6 +166,7 @@ export default function ContractDetailPage() {
             {active.content}
           </Markdown>
         </article>
+        )}
 
         <aside className="space-y-10">
           <Compliance result={compliance} isLawyer={isLawyer} />
