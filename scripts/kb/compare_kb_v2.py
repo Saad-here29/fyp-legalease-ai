@@ -162,8 +162,26 @@ def gold_rank(hits: list[dict], accepted, guess) -> int | None:
     return None
 
 
+LAWYER_CSV = ROOT.parent / "fyp-legalease-ai-main" / "data" / "processed" / "qa_eval" / \
+    "Legal_QA_dataset_From_lawyers_clean.csv"
+SWEEP = (0.60, 0.62, 0.65)
+
+
+def lawyer_questions() -> list[str]:
+    import csv
+    with LAWYER_CSV.open(encoding="utf-8") as f:
+        return [r["Query"].strip() for r in csv.DictReader(f) if r["Query"].strip()]
+
+
 def main() -> int:
+    import argparse
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="kb_v2_comparison_2026-10-06.md")
+    ap.add_argument("--sweep", action="store_true", help="also run the 78 lawyer questions and a threshold sweep")
+    args = ap.parse_args()
+    global OUT_NAME
+    OUT_NAME = args.out
     n1 = embeddings.build_or_load()
     n2 = index_v2._V2_INDEX.load()
     print(f"v1 {n1} chunks, v2 {n2} chunks")
@@ -179,10 +197,49 @@ def main() -> int:
                      "off_rank": gold_rank(off, acc, guess) if acc else None,
                      "on_rank": gold_rank(on, acc, guess) if acc else None})
         print(qid, rows[-1]["off_rank"], rows[-1]["on_rank"], f"{off[0]['relevance']:.3f}", f"{on[0]['relevance']:.3f}")
+    lawyers = []
+    if args.sweep:
+        for n, q in enumerate(lawyer_questions(), 1):
+            off, on = run(q, False), run(q, True)
+            lawyers.append({"id": f"L{n:02d}", "q": q, "off": off[0]["relevance"] if off else 0.0,
+                            "on": on[0]["relevance"] if on else 0.0})
+        print(f"{len(lawyers)} lawyer questions")
     settings.KB_V2 = False
     write_baseline(rows, guess)
-    write_comparison(rows, guess, n1, n2)
+    write_comparison(rows, guess, n1, n2, lawyers)
     return 0
+
+
+OUT_NAME = "kb_v2_comparison_2026-10-06.md"
+
+
+def sweep_section(rows, lawyers) -> list[str]:
+    gold = [r for r in rows if r["id"].startswith("G")]
+    off_t = [r for r in rows if r["id"].startswith("O")]
+
+    def gold_ok(r, t):
+        k = r["on_rank"]
+        return k is not None and r["on"][k - 1]["relevance"] >= t
+
+    out = ["## Threshold under KB_V2 (KB_V2_THRESHOLD; default left at 0.65)\n\n"
+           f"Same raw-question retrieval, KB_V2 ON. **Answered** = the top passage scores at or above the threshold "
+           f"(otherwise the chat refuses). The {len(lawyers)} lawyer questions have no section labels, so for them "
+           "only answered/refused is measured, not correctness; several are foreign-law questions (e.g. the "
+           "Nigerian CAC one) that *should* be refused.\n\n"
+           "| Threshold | Lawyer questions answered / refused | Gold answered from the right section (top 5) | "
+           "Off-topic that would pass |\n|---|---|---|---|\n"]
+    n = len(lawyers)
+    a = sum(x["off"] >= 0.65 for x in lawyers)
+    g = sum(1 for r in gold if r["off_rank"] and r["off"][r["off_rank"] - 1]["relevance"] >= 0.65)
+    o = [r["id"] for r in off_t if r["off"] and r["off"][0]["relevance"] >= 0.65]
+    out.append(f"| OFF (v1) at 0.65, for reference | {a} / {n - a} | {g}/26 | {len(o)}/15 {', '.join(o)} |\n")
+    for t in SWEEP:
+        a = sum(x["on"] >= t for x in lawyers)
+        g = sum(gold_ok(r, t) for r in gold)
+        o = [r["id"] for r in off_t if r["on"] and r["on"][0]["relevance"] >= t]
+        out.append(f"| ON at {t:.2f} | {a} / {n - a} | {g}/26 | {len(o)}/15 {', '.join(o)} |\n")
+    out.append("\n")
+    return out
 
 
 def fmt_hits(hits, guess, n=3) -> str:
@@ -206,7 +263,7 @@ def write_baseline(rows, guess) -> None:
     path.write_text("".join(lines), encoding="utf-8")
 
 
-def write_comparison(rows, guess, n1, n2) -> None:
+def write_comparison(rows, guess, n1, n2, lawyers=()) -> None:
     gold = [r for r in rows if r["id"].startswith("G")]
     off_t = [r for r in rows if r["id"].startswith("O")]
     fam = [r for r in rows if r["id"].startswith("CR")]
@@ -220,7 +277,8 @@ def write_comparison(rows, guess, n1, n2) -> None:
 
     worse = [r for r in gold + fam if r["accepted"] and (
         (r["off_rank"] and not r["on_rank"]) or (r["off_rank"] and r["on_rank"] and r["on_rank"] > r["off_rank"]))]
-    lines = [f"# Knowledge base v2: retrieval before/after (2026-10-06)\n\n"
+    phase = " after Phase B3 (schedule items, community gating)" if "b3" in OUT_NAME else ""
+    lines = [f"# Knowledge base v2: retrieval before/after{phase} (2026-10-06)\n\n"
          f"Retrieval only, no model calls. Raw question (no LLM rewrite), top 5, threshold {THRESHOLD} (unchanged). "
          f"**OFF** = live v1 index ({n1} chunks). **ON** = `KB_V2`: faiss_v2 ({n2} section chunks) first, then v1 "
          "without the v1 chunks of any law v2 holds, merged by score. A `~` section on a v1 hit is inferred from "
@@ -243,9 +301,11 @@ def write_comparison(rows, guess, n1, n2) -> None:
     lines.append("**Got worse** (gold found OFF but lower or missing ON): "
              + (", ".join(f"{r['id']} (rank {r['off_rank']} → {r['on_rank'] or 'not in top 5'})" for r in worse)
                 or "none") + ".\n\n")
-    lost = [r["id"] for r in gold if hit5(r, "off") and not hit5(r, "on")]
+    lost = [r["id"] for r in gold + fam if r["accepted"] and hit5(r, "off") and not hit5(r, "on")]
     if lost:
         lines.append(f"Gold hits lost at the threshold: {', '.join(lost)}.\n\n")
+    if lawyers:
+        lines += sweep_section(rows, lawyers)
 
     # score distribution
     gs = sorted(top1(r, "on") for r in gold)
@@ -275,11 +335,11 @@ def write_comparison(rows, guess, n1, n2) -> None:
             for i, h in enumerate(r[side], 1):
                 t, s = guess(h)
                 if t == FCA and s and s.startswith("Schedule"):
-                    return i, h["relevance"]
-            return None, None
-        ro, _ = sched_rank("off")
-        rn, sn = sched_rank("on")
-        lines.append(f"| {r['id']} | {ro or '–'} | {rn or '–'} | {f'{sn:.3f}' if sn else '–'} | "
+                    return i, h["relevance"], s
+            return None, None, None
+        ro, _, _ = sched_rank("off")
+        rn, sn, which = sched_rank("on")
+        lines.append(f"| {r['id']} | {ro or '–'} | {f'{rn} ({which})' if rn else '–'} | {f'{sn:.3f}' if sn else '–'} | "
                  f"{r['sched_rank50'] or '> 50'} |\n")
 
     # per question
@@ -289,12 +349,12 @@ def write_comparison(rows, guess, n1, n2) -> None:
                                             + ("" if r["on_rank"] else f" (ON top 50: {r['on_rank50'] or '> 50'})"))
         lines.append(f"| **{r['id']}** {r['q'][:70]}{'…' if len(r['q']) > 70 else ''} | {fmt_hits(r['off'], guess)} | "
                  f"{fmt_hits(r['on'], guess)} | {gr} |\n")
-    (DOCS / "kb_v2_comparison_2026-10-06.md").write_text("".join(lines), encoding="utf-8")
+    (DOCS / OUT_NAME).write_text("".join(lines), encoding="utf-8")
     raw = [{k: v for k, v in r.items() if k not in ("off", "on")} | {
         "off": [{"source": h["source"], "section": guess(h)[1], "score": h["relevance"]} for h in r["off"]],
         "on": [{"source": h["source"], "section": guess(h)[1], "score": h["relevance"]} for h in r["on"]]}
         for r in rows]
-    with open(ROOT / "backend" / "storage" / "kb" / "comparison_raw.json", "w", encoding="utf-8") as f:
+    with open(ROOT / "backend" / "storage" / "kb" / OUT_NAME.replace(".md", "_raw.json"), "w", encoding="utf-8") as f:
         json.dump(raw, f, ensure_ascii=False, indent=1, default=str)
 
 
