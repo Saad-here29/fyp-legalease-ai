@@ -1,5 +1,7 @@
 """AI Legal Research request/response schemas."""
 
+from datetime import datetime
+
 from pydantic import Field
 
 from app.schemas.common import APIModel
@@ -26,9 +28,33 @@ class ResearchResult(APIModel):
     relevance: float
 
 
+class SourceUpdate(APIModel):
+    name: str
+    content_type: str | None = None
+    checked: int = 0
+    new: int = 0
+    changed: int = 0
+    errors: int = 0
+
+
+class ScrapeUpdates(APIModel):
+    """Freshness from the latest scraping run (scripts/scrape_laws.py).
+    available is false until the scraping tables exist and a run has finished.
+    New and changed documents are staged for review, not searchable."""
+    available: bool = False
+    last_checked: datetime | None = None
+    last_updated: datetime | None = None
+    pages_checked: int | None = None
+    new: int | None = None
+    changed: int | None = None
+    errors: int | None = None
+    sources: list[SourceUpdate] = []
+
+
 class ResearchIndexStats(APIModel):
     chunks: int       # passages in the FAISS index
     documents: int    # distinct source statutes
+    updates: ScrapeUpdates = ScrapeUpdates()   # additive; the search itself is unchanged
 
 
 class ResearchSearchResponse(APIModel):

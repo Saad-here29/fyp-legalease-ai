@@ -109,6 +109,17 @@ export default function ResearchPage() {
         {stats?.chunks ? ` · ${stats.chunks.toLocaleString()} passages from about ${stats.documents.toLocaleString()} Pakistani legal documents` : ""}.
         No court judgments or case law.
       </p>
+      {stats?.updates?.available && (
+        <p className="mt-2 font-ds-sans text-[14px] text-ds-paper/65">
+          Sources checked{" "}
+          {new Date(stats.updates.last_checked).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}:{" "}
+          {stats.updates.sources.map((s) => s.name).join(", ")}
+          {stats.updates.new + stats.updates.changed > 0
+            ? ` · ${stats.updates.new} new, ${stats.updates.changed} changed, staged for review (not yet searchable)`
+            : " · no changes"}
+          .
+        </p>
+      )}
     </>
   );
 

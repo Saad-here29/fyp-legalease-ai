@@ -25,11 +25,11 @@ RETRIES = 3
 BACKOFF = 2.0  # seconds; doubled on each retry
 
 
-class LimitReached(Exception):
+class LimitReachedError(Exception):
     """The per-run page or PDF cap was hit; the run stops fetching."""
 
 
-class Disallowed(Exception):
+class DisallowedError(Exception):
     """robots.txt doesn't allow our User-Agent to fetch this URL."""
 
 
@@ -103,14 +103,14 @@ class Fetcher:
         return rp.can_fetch(USER_AGENT, url)
 
     def get(self, url: str, *, pdf: bool = False) -> FetchResult:
-        """One page (or PDF). Raises LimitReached before going over a cap, and
+        """One page (or PDF). Raises LimitReachedError before going over a cap, and
         requests.RequestException once the retries are used up."""
         if self.obey_robots and not self.allowed(url):
-            raise Disallowed(f"robots.txt disallows {url}")
+            raise DisallowedError(f"robots.txt disallows {url}")
         if pdf and self.pdfs >= self.max_pdfs:
-            raise LimitReached(f"PDF cap of {self.max_pdfs} reached")
+            raise LimitReachedError(f"PDF cap of {self.max_pdfs} reached")
         if self.pages >= self.max_pages:
-            raise LimitReached(f"page cap of {self.max_pages} reached")
+            raise LimitReachedError(f"page cap of {self.max_pages} reached")
         self.pages += 1
         if pdf:
             self.pdfs += 1

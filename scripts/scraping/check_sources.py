@@ -17,7 +17,7 @@ import sys
 import time
 import urllib.robotparser
 from datetime import UTC, datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import requests
 from lxml import html as lxml_html

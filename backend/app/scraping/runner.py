@@ -23,7 +23,7 @@ import requests
 from sqlalchemy.orm import Session
 
 from app.models.scraping import ScrapedDocument, ScrapeRun
-from app.scraping.fetcher import Disallowed, Fetcher, LimitReached
+from app.scraping.fetcher import DisallowedError, Fetcher, LimitReachedError
 from app.scraping.parse import content_hash, find_pdf_url, normalise_title, parse_listing, pdf_text
 
 
@@ -107,19 +107,19 @@ def run(sources: list[dict], fetcher: Fetcher, *, db: Session | None, corpus_tit
                             status="approved" if kind == "baseline" else "staged",
                             change_kind=kind, in_corpus=kind == "baseline",
                             version=(prev.version + 1) if prev else 1, is_latest=True, run_id=run_row.id))
-                    except LimitReached:
+                    except LimitReachedError:
                         raise
-                    except (requests.RequestException, ValueError, RuntimeError, Disallowed) as e:
+                    except (requests.RequestException, ValueError, RuntimeError, DisallowedError) as e:
                         counts["errors"] += 1
                         if len(counts["error_samples"]) < 3:
                             counts["error_samples"].append(f"{item.url}: {type(e).__name__}: {str(e)[:120]}")
                         log(f"  ERROR {item.url}: {e}")
                 if per_item_quota is not None and done >= per_item_quota:
                     break
-        except LimitReached as e:
+        except LimitReachedError as e:
             counts["status"] = f"stopped: {e}"
             stop = True
-        except (requests.RequestException, Disallowed) as e:
+        except (requests.RequestException, DisallowedError) as e:
             counts["errors"] += 1
             counts["status"] = f"listing failed: {type(e).__name__}"
             counts["error_samples"].append(str(e)[:160])
