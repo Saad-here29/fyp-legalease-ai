@@ -116,7 +116,9 @@ export default function ResearchPage() {
           {stats.updates.sources.map((s) => s.name).join(", ")}
           {stats.updates.new + stats.updates.changed > 0
             ? ` · ${stats.updates.new} new, ${stats.updates.changed} changed, staged for review (not yet searchable)`
-            : " · no changes"}
+            : " · no changes in the latest check"}
+          {stats.updates.last_updated &&
+            ` · last update found ${new Date(stats.updates.last_updated).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
           .
         </p>
       )}

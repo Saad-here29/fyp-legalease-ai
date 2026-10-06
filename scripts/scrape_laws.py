@@ -76,6 +76,9 @@ def main() -> int:
             cur = dbapi_conn.cursor()
             cur.execute(f'SET search_path TO "{args.schema}"')
             cur.close()
+            # Commit, or the pool's rollback-on-return would undo the SET and
+            # later queries would look in the public schema.
+            dbapi_conn.commit()
 
         with engine.connect() as c:
             ok = c.execute(text("select count(*) from information_schema.tables where table_schema=:s "

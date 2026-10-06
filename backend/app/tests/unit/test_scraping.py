@@ -69,7 +69,8 @@ def test_only_built_sources_are_enabled_and_judgments_marked():
     assert SOURCES["Federal Shariat Court"]["content_type"] == "judgment"
     assert SOURCES["Lahore High Court"]["status"] == "blocked"
     for s in SOURCES.values():
-        assert s["status"] in ("blocked", "not reachable", "needs custom parser") or s["enabled"]
+        assert s["status"] in ("blocked", "not reachable", "needs custom parser", "verified")
+        assert (s["status"] == "verified") == s["enabled"]
         assert s["check"]["date"]
 
 
@@ -309,3 +310,10 @@ def test_cli_refuses_to_write_without_a_schema():
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / "scrape_laws.py"), "--limit", "1"],
                        capture_output=True, text=True)
     assert r.returncode == 2 and "Refusing to write without --schema" in r.stderr
+
+
+def test_item_stopped_by_the_cap_is_not_counted_as_checked(db_session):
+    f, _ = fetcher(kp_routes(), max_pages=50, max_pdfs=2)
+    s = runner_mod.run([dict(KP, enabled=True)], f, db=db_session, corpus_titles=set(), log=lambda *_: None)
+    c = s["per_source"]["Khyber Pakhtunkhwa Code"]
+    assert c["checked"] == 2 and c["new"] == 2 and c["status"].startswith("stopped: PDF cap")

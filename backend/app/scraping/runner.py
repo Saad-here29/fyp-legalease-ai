@@ -108,6 +108,7 @@ def run(sources: list[dict], fetcher: Fetcher, *, db: Session | None, corpus_tit
                             change_kind=kind, in_corpus=kind == "baseline",
                             version=(prev.version + 1) if prev else 1, is_latest=True, run_id=run_row.id))
                     except LimitReachedError:
+                        counts["checked"] -= 1   # the cap stopped it before it was checked
                         raise
                     except (requests.RequestException, ValueError, RuntimeError, DisallowedError) as e:
                         counts["errors"] += 1

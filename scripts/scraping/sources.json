@@ -52,7 +52,11 @@
   "pdf_xpath": "//iframe/@src | //a[contains(@href,'/pdffiles/')]/@href",
   "item_is_pdf": false,
   "notes": "Laws listed by letter; each law page embeds its PDF from /pdffiles/ (robots.txt disallows /pdffiles/ only for googlebot).",
-  "status": "built (end-to-end result recorded after the live run)"
+  "status": "verified",
+  "verified": {
+   "date": "2026-10-06",
+   "how": "live run --limit 10 into a throwaway schema: listing, document page, PDF, text, hash, staged row; second run reported every document unchanged; 0 errors"
+  }
  },
  {
   "name": "Ministry of Law and Justice",
@@ -260,7 +264,11 @@
   "pdf_xpath": "//a[contains(@href,'/uploads/') and contains(translate(@href,'PDF','pdf'),'.pdf')]/@href",
   "item_is_pdf": false,
   "notes": "'Recently updated' list -> law page -> watermarked PDF under /uploads/.",
-  "status": "built (end-to-end result recorded after the live run)"
+  "status": "verified",
+  "verified": {
+   "date": "2026-10-06",
+   "how": "live run --limit 10 into a throwaway schema: listing, document page, PDF, text, hash, staged row; second run reported every document unchanged; 0 errors"
+  }
  },
  {
   "name": "Balochistan Code",
@@ -440,7 +448,11 @@
   "title_xpath": "ancestor::tr[1]/td[2]",
   "item_is_pdf": true,
   "notes": "Leading judgments table; each row links straight to the PDF. Judgments stay staged and never reach the UI.",
-  "status": "built (end-to-end result recorded after the live run)"
+  "status": "verified",
+  "verified": {
+   "date": "2026-10-06",
+   "how": "live run --limit 10 into a throwaway schema: listing, document page, PDF, text, hash, staged row; second run reported every document unchanged; 0 errors"
+  }
  },
  {
   "name": "PakLII",
