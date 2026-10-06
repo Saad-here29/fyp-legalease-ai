@@ -93,6 +93,7 @@ def test_stats(kb, authed):
     assert s["laws"] == 4 and s["section_records"] == 5
     assert s["by_category"]["Family Laws"] == 1 and s["by_source_tier"]["2"] == 3
     assert s["jurisdictions"] == ["Pakistan"]
+    assert s["categories"] == ["Civil Laws", "Family Laws"]
     c = s["coverage"]
     assert (c["held"], c["listed"], c["site_badge_total"], c["not_listed"]) == (114, 119, 169, 50)
     assert "counted there but not listed" in c["note"]
@@ -217,6 +218,7 @@ def test_filters_drop_unknown_metadata_and_mismatches(research, filters, expecte
 
 
 def test_filter_coverage_counts(kb, monkeypatch):
+    monkeypatch.setattr(research_service.embeddings, "build_or_load", lambda db=None: 4)
     monkeypatch.setattr(research_service.embeddings, "_META", [
         {"source": "THE CONTRACT ACT, 1872"}, {"source": "THE CONTRACT ACT, 1872"}, {"source": "SOME RULES 1990"},
         {"source": "THE GUARDIANS AND WAR DS ACT, 1890"}])

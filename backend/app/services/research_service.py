@@ -102,6 +102,7 @@ def matches_kb_filters(hit: dict, f: dict) -> bool:
 def filter_coverage() -> dict:
     """Documents in the searchable library whose category and year are known."""
     from app.kb import catalog, index_v2
+    embeddings.build_or_load()          # the old index must be loaded to count its documents
     v1 = {embeddings.record_source(m) for m in embeddings._META}
     excluded = set()
     if settings.KB_V2 and index_v2._V2_INDEX.load():

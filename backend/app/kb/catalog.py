@@ -158,6 +158,9 @@ def stats() -> dict:
         "by_source_tier": count("source_tier"),
         "jurisdictions": sorted({law["jurisdiction"] for law in laws if law.get("jurisdiction")}),
         "coverage": coverage(d["cmap"]),
+        # Every Pakistan Code category with listed Acts: the Research filter's choices
+        # (old-index passages take their category from these listings).
+        "categories": sorted(c["name"] for c in d["cmap"].get("categories", []) if c.get("listed_count")),
         "kb_v2_search": settings.KB_V2,
     }
 
