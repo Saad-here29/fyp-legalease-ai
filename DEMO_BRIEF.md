@@ -20,6 +20,15 @@
 > Every number below was measured on this codebase. Where something is an
 > estimate or a known weakness, it says so.
 
+> **How to start the demo: `docs/DEMO_RUNBOOK.md`** (branch `kb-v2`). It has
+> the exact commands for the primary setup: the `legalease-kb` worktree,
+> with `KB_V2=true` set at launch. It also has the one-minute fallback to
+> master from the main folder, and how to confirm which one is running
+> (`/health` shows `"kb_v2": true`). The live check of that setup, with
+> its recommendation, is `docs/kb_v2_live_check_2026-10-06.md`. The
+> **60-second Knowledge Base path** is in § 7, "Knowledge Base in 60
+> seconds" (kb-v2 only).
+
 ---
 
 ## 1. What we built
@@ -369,6 +378,9 @@ records, with where it came from.
 
 ### Starting the system
 
+> **For the 2026-10-07 demo, use `docs/DEMO_RUNBOOK.md` instead.** The
+> commands below are the master setup, which is now the fallback.
+
 Use two separate windows, so neither server is stopped when another tool
 exits:
 
@@ -459,6 +471,10 @@ and the research weak-match note.
 ## Demo start checklist (one page)
 
 **1. Start the servers, each in its own terminal, and leave both open.**
+
+For the 2026-10-07 demo, start them as in `docs/DEMO_RUNBOOK.md` (kb-v2,
+`KB_V2=true`). Then check http://localhost:8000/health shows `"kb_v2":true`.
+The commands below are the master fallback.
 
 ```powershell
 # Terminal 1: backend (http://localhost:8000)
