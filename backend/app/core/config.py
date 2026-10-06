@@ -119,6 +119,8 @@ class Settings(BaseSettings):
     # Knowledge base v2: section-aware index searched before the v1 index
     # (app/kb/index_v2.py). Off: search is exactly the v1 search.
     KB_V2: bool = False
+    # Similarity threshold used only when KB_V2 is on (RAG_SIMILARITY_THRESHOLD otherwise).
+    KB_V2_THRESHOLD: float = 0.65
     KB_V2_INDEX_PATH: str = "./storage/kb/faiss_v2.faiss"
     KB_V2_METADATA_PATH: str = "./storage/kb/faiss_v2_meta.json"
 

@@ -136,6 +136,12 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     return _search_v1(query, top_k, filters)
 
 
+def similarity_threshold() -> float:
+    """The score a passage needs to reach the model: KB_V2_THRESHOLD when the
+    v2 index is on, RAG_SIMILARITY_THRESHOLD otherwise."""
+    return settings.KB_V2_THRESHOLD if settings.KB_V2 else settings.RAG_SIMILARITY_THRESHOLD
+
+
 def passes_filters(meta: dict, filters: dict | None) -> bool:
     # Filters are *exclusive on contradiction only* — a record with
     # no court / no year metadata is KEPT, because absence of

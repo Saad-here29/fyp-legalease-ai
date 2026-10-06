@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.ai import embeddings
-from app.core.config import settings
 from app.db.session import get_db
 from app.middlewares.auth import CurrentUser
 from app.schemas.research import (
@@ -62,7 +61,7 @@ def search(
         total=len(results),
         results=results,
         weak_matches=bool(results)
-        and max(r.relevance for r in results) < settings.RAG_SIMILARITY_THRESHOLD,
+        and max(r.relevance for r in results) < embeddings.similarity_threshold(),
     )
 
 

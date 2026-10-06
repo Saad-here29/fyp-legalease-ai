@@ -246,7 +246,7 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
         retrieved = embeddings.search(search_query, top_k=settings.RAG_TOP_K)
         passages = [
             r for r in retrieved
-            if r.get("relevance", 0) >= settings.RAG_SIMILARITY_THRESHOLD
+            if r.get("relevance", 0) >= embeddings.similarity_threshold()
         ]
 
     # A table-of-contents chunk often outranks the section text it lists
@@ -392,7 +392,7 @@ class LegalChatService:
         # Out-of-scope refusal — no LLM call, no hallucination risk
         if not passages:
             logger.info(
-                f"Chat refusal — no chunks above {settings.RAG_SIMILARITY_THRESHOLD} threshold"
+                f"Chat refusal — no chunks above {embeddings.similarity_threshold()} threshold"
             )
             return self._reply(sid, lang, fixed_reply(OUT_OF_SCOPE_REFUSAL, lang),
                                response_time_ms=_ms_since(t0))
