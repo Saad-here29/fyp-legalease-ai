@@ -143,6 +143,7 @@ def strip_footnotes(text: str, spans: list[tuple[int, int]] | None = None) -> st
 
 def clean_body(text: str) -> str:
     text = re.sub(r"_{3,}", " ", text)
+    text = re.sub(r"\b(?:RGN Date:|Uploaded on|Update\s?d till|Last Amended on)\s*[\d][\d .\-]*", " ", text)
     text = MARKER.sub("", text)
     text = TRAILING_MARKER.sub("", text)
     text = re.sub(r"\s+([,.;:)\]])", r"\1", text)
@@ -225,7 +226,8 @@ def parse_toc(toc: str) -> list[tuple[str, str]]:
     for i, m in enumerate(picked):
         end = picked[i + 1].start() if i + 1 < len(picked) else len(toc)
         head = toc[m.end(1):end]
-        head = re.split(r"\.\s+(?=(?:THE\s+)?[A-Z]{3,}\b)", head)[0]      # drop a running title after the last entry
+        # drop a running title after the last entry ("... Repeal. THE ACT, 1962" or "Savings THE WEST PAKISTAN ...")
+        head = re.split(r"\.\s+(?=(?:THE\s+)?[A-Z]{3,}\b)|\s+(?=(?:THE\s+)?[A-Z]{3,}(?:\s+[A-Z(),]{2,}){2,})", head)[0]
         head = re.sub(r"\s+\.", ".", head).strip(" .")
         head = re.split(r"\.\s+(?=[A-Z])", head)[0]      # drop a sub-heading listed after it
         out.append((m.group(2).replace(" ", ""), head))
@@ -250,11 +252,12 @@ def _text_start(body: str, start: int, head: str) -> int:
         close = body.find("]", i, i + 300)
         if close > 0:
             return close + 1 + (len(re.match(r"\s*\.?", body[close + 1:]).group(0)))
-    tail = body[i: i + len(head) + 80]
-    d = re.search(r"\.?\s*" + DASH, tail)
+    # The dash must sit at the heading's end, not later in the text ("(1) The
+    # following enactments are hereby repealed:__").
+    d = re.search(r"\.?\s*" + DASH, body[i: i + len(head) + 25])
     if d:
         return i + d.end()
-    p = re.search(r"[.:]\s", tail)
+    p = re.search(r"[.:]\s", body[i: i + len(head) + 80])
     return i + (p.end() if p else 0)
 
 
@@ -396,6 +399,7 @@ def _clean(s: str, vocab: Counter | None) -> str:
     if not s:
         return s
     s = re.sub(r"(?<=[.;:\]])\s?\d{1,2}$", "", s.strip())     # a footnote marker glued to the next number
+    s = re.sub(r"\s*\d{0,2}\[$", "", s)                        # "2[" opening the next section's amendment
     return join_ocr_splits(clean_body(s), vocab).strip(" .:")
 
 
