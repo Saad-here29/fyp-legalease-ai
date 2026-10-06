@@ -563,3 +563,25 @@ Start from nothing running: close every terminal, then time the whole run.
 8. **If the weak-match note shows:** "The closest passage only just passed
    the relevance threshold, so the page warns the reader to check the
    cited sections. It flags uncertainty instead of hiding it."
+
+---
+
+## Frozen state for the mock (2026-10-07)
+
+- **Tag:** `mock-2026-10-07`
+- **Commit:** `ad9935d871d9c99c07ab27367e8858a9ef5a0ebb`
+- Created 2026-10-06; the working tree was clean and everything was pushed
+  to `origin/main`.
+- This note was committed after the tag, so it's one docs-only commit on
+  top of it.
+
+**To return to this state if something breaks later:**
+
+```powershell
+git fetch --tags
+git switch --detach mock-2026-10-07        # look at it, or run it as it was
+git switch -c fix-from-mock mock-2026-10-07  # or branch from it to fix something
+```
+
+The database isn't versioned by the tag. Its schema matches migration
+`e7b3c9d14a02` (`alembic current`).
