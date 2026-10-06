@@ -12,7 +12,7 @@ JURISDICTIONS = {"Pakistan", "Punjab", "Sindh", "KP", "Balochistan", "ICT"}
 STATUSES = {"current", "under_review", "repealed"}
 REQUIRED = ("doc_id", "title", "section", "heading", "text", "source_type", "jurisdiction", "category", "year",
             "act_number", "source", "source_tier", "source_url", "original_file", "scraped_at", "content_hash",
-            "status")
+            "status", "audience")
 OPTIONAL = ("provenance_note", "sectioned", "source_version")
 
 
@@ -63,6 +63,7 @@ def make_records(meta: dict, sections: list[Section] | None, raw_text: str | Non
             "scraped_at": meta["scraped_at"],
             "content_hash": content_hash(text),
             "status": meta["status"],
+            "audience": meta.get("audience") or "general",
             "sectioned": sections is not None,
         }
         for k in ("provenance_note", "source_version"):
@@ -85,7 +86,7 @@ def validate(rec: dict) -> list[str]:
         if not isinstance(rec[k], types):
             errs.append(f"{k} has type {type(rec[k]).__name__}")
 
-    for k in ("doc_id", "title", "text", "source"):
+    for k in ("doc_id", "title", "text", "source", "audience"):
         typ(k, str)
         if isinstance(rec[k], str) and not rec[k].strip():
             errs.append(f"{k} is empty")

@@ -411,6 +411,66 @@ def _clean(s: str, vocab: Counter | None) -> str:
     return join_ocr_splits(clean_body(s), vocab).strip(" .:")
 
 
+ITEM_MAX_CHARS = 400
+
+
+def list_items(text: str) -> tuple[str, list[tuple[str, str]], str] | None:
+    """A schedule that is a reliably numbered list ("1. Dissolution of marriage.
+    2. Dower. ... [9. Personal property ...]"): (lead-in, [(number, item)],
+    remainder), or None. Reliable means: numbered 1, 2, 3 ... with no gap, at
+    least 3 items, each item short (<= ITEM_MAX_CHARS), and the items make up
+    most of the list. A remainder may only be a following PART."""
+    cands = list(re.finditer(r"(?:(?<=[\s\[\]])|^)(\d{1,3})\s?\.\s+(?=[\[\"“A-Z(])", text))
+    picked, want = [], 1
+    for m in cands:
+        if int(m.group(1)) == want:
+            picked.append(m)
+            want += 1
+    if len(picked) < 3:
+        return None
+    tail_start = len(text)
+    part = re.search(r"\bPART\s+[IVX]+\b", text[picked[-1].end():])
+    if part:
+        tail_start = picked[-1].end() + part.start()
+    items = []
+    for i, m in enumerate(picked):
+        end = picked[i + 1].start() if i + 1 < len(picked) else tail_start
+        raw = text[m.end():end]
+        item = re.sub(r"\s+", " ", raw).strip(" .[]")
+        item = re.sub(r"\]\s*$", "", item).strip(" .")
+        item += "]" * max(0, item.count("[") - item.count("]"))      # "[including Khula" -> "[including Khula]"
+        if not item or len(item) > ITEM_MAX_CHARS:
+            return None
+        items.append((m.group(1), item))
+    span = tail_start - picked[0].start()
+    if sum(len(t) for _n, t in items) < 0.6 * span:
+        return None
+    return text[:picked[0].start()].strip(" ["), items, text[tail_start:].strip()
+
+
+def split_schedule_items(sections: list[Section]) -> tuple[list[Section], list[str]]:
+    """Replace each list-style Schedule record by one record per item
+    ("Schedule item 4" / "Schedule 2 item 4", heading = the item's text); a
+    trailing PART stays one record ("Schedule Part II"). Returns the new list
+    and the labels of the schedules split."""
+    out, split_labels = [], []
+    for s in sections:
+        found = list_items(s.text) if s.section and s.section.startswith("Schedule") else None
+        if not found:
+            out.append(s)
+            continue
+        _lead, items, rest = found
+        split_labels.append(s.section)
+        for n, item in items:
+            heading = re.sub(r"\s+([,.;])", r"\1", re.sub(r"[\[\]]", "", item)).strip(" .,")
+            out.append(Section(f"{s.section} item {n}", heading[:150], item))
+        if rest:
+            m = re.match(r"PART\s+([IVX]+)\b\s*", rest)
+            label = f"{s.section} Part {m.group(1)}" if m else f"{s.section} (rest)"
+            out.append(Section(label, None, rest[m.end():] if m else rest))
+    return out, split_labels
+
+
 def windows(text: str, size: int = 1200) -> list[str]:
     """Fallback for unsectioned laws: ~size-character windows cut at whitespace."""
     text = re.sub(r"\s+", " ", text).strip()

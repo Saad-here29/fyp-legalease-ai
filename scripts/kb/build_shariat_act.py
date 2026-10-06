@@ -57,7 +57,7 @@ def main() -> int:
     meta = {
         "title": TITLE, "year": 1962, "category": None, "act_number": "West Pakistan Act No. V of 1962",
         "status": "under_review", "source": "user-supplied PDF", "source_tier": 2, "source_url": None,
-        "original_file": f"backend/storage/kb/raw/{PDF_NAME}", "scraped_at": None, "jurisdiction": "Pakistan",
+        "original_file": f"backend/storage/kb/raw/{PDF_NAME}", "scraped_at": None, "jurisdiction": "Pakistan", "audience": "general",
         "provenance_note": ("Supplied by the user as a PDF (Word export dated 2025-03-24, 'RGN Date: "
                             "24-03-2025'); the original source URL is to be confirmed. Enacted as a West "
                             "Pakistan Act; s.1(2) as amended by P.O. 4 of 1975 extends it to the whole of "

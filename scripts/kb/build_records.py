@@ -19,11 +19,37 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.kb.records import CORPUS_SOURCE, make_records, slugify  # noqa: E402
-from app.kb.sectioner import build_vocab, split  # noqa: E402
+from app.kb.sectioner import build_vocab, split, split_schedule_items  # noqa: E402
 
 DEFAULT_CORPUS = ROOT.parent / "fyp-legalease-ai-main" / "data" / "processed" / "statutes" / "legal_statutes_corpus.json"
 KB = ROOT / "backend" / "storage" / "kb"
 THRESHOLD = 0.90
+
+# Phase B3: who a community-specific law applies to, decided from its own
+# text (see docs/kb_v2_comparison_2026-10-06_b3.md). Every other law is
+# "general". With KB_V2 on, these are searched only when the question names
+# the community or the Act (app/kb/index_v2.py, AUDIENCE_TERMS).
+AUDIENCE = {
+    "Divorce Act, 1869": "Christian",                       # preamble, s.2: a party professes the Christian religion
+    "Christian Marriage Act, 1872": "Christian",
+    "Parsi Marriage and Divorce Act, 1936": "Parsi",
+    "Hindu Disposition of Property Act, 1916": "Hindu",     # extendable to Khojas by notification
+    "Hindu Inheritance (Removal of Disabilities) Act, 1928": "Hindu",
+    "Hindu Marriage Disabilities Removal Act, 1946": "Hindu",
+    "Hindu Married Women's Right to Separate Residence and Maintenance Act, 1946": "Hindu",
+    "Hindu Widows' Re-marriage Act, 1856": "Hindu",
+    "Hindu Women's Rights to Property Act, 1937": "Hindu",
+    "Arya Marriage Validation Act, 1937": "Arya Samaj",     # "a class of Hindus known as Arya Samajists"
+    "Anand Marriage Act, 1909": "Sikh",                     # the Sikh marriage ceremony "Anand"
+    # s.2: neither party professes the Christian, Jewish, Hindu, Muslim, Parsi,
+    # Buddhist, Sikh or Jaina religion, or inter-faith Hindu/Buddhist/Sikh/Jaina.
+    "Special Marriage Act, 1872": "non-Muslim (other faiths)",
+    # s.2: not for a marriage where either spouse professed the Hindu, Muslim,
+    # Buddhist, Sikh or Jaina religion; i.e. Christians, Parsis and others.
+    "Married Women's Property Act, 1874": "non-Muslim (Christian, Parsi and others)",
+    # Marriage Functions Ordinance 2000: applies to all marriage functions
+    # (nikah, rukhsati, walima ...), so general.
+}
 
 # (canonical title, year, [corpus titles, preferred first]). Where we hold two
 # copies, the Pakistan Code PDF text is preferred (it carries the amendments);
@@ -141,7 +167,7 @@ def main() -> int:
             "status": law["status"] if law else "current",
             "source": CORPUS_SOURCE, "source_tier": 1 if law else 2,
             "source_url": None, "original_file": None, "scraped_at": None,
-            "jurisdiction": "Pakistan",
+            "jurisdiction": "Pakistan", "audience": AUDIENCE.get(title, "general"),
         }
         user = None
         if title in USER_PDFS:
@@ -166,15 +192,18 @@ def main() -> int:
                          "provenance_note": "Supplied by the user as a PDF; the original source URL is to be "
                                             "confirmed. Chosen over our corpus copy because it is cleaner and "
                                             "sections at least as well."})
-            recs = make_records(meta, user["result"].sections)
+            secs, split_labels = split_schedule_items(user["result"].sections)
+            recs = make_records(meta, secs)
             mode = "sectioned"
         elif chosen:
             ct, r, res = chosen
-            recs = make_records(meta, res.sections)
+            secs, split_labels = split_schedule_items(res.sections)
+            recs = make_records(meta, secs)
             mode = "sectioned"
         else:
             ct = copies[0]
             recs = make_records(meta, None, raw_text=by[ct]["text"])
+            split_labels = []
             mode = "unsectioned"
         path = out_dir / f"{slugify(title)}.jsonl"
         with path.open("w", encoding="utf-8") as f:
@@ -183,12 +212,14 @@ def main() -> int:
         n_sched = sum(1 for x in recs if (x["section"] or "").startswith("Schedule"))
         report.append({"title": title, "mode": mode, "used": ct, "records": len(recs), "schedules": n_sched,
                        "category": category, "source_tier": meta["source_tier"], "status": meta["status"],
-                       "tried": tried})
+                       "tried": tried, "audience": meta["audience"], "schedules_split": split_labels,
+                       "schedule_items": sum(1 for x in recs if " item " in (x["section"] or ""))})
         t = tried[-1]
         print(f"{mode:11} {t['found']:4}/{t['expected']:<4} {t['detection']:6.1%}  recs {len(recs):5}  "
               f"sch {n_sched}  tier {meta['source_tier']}  {title}"
               + ("" if len(tried) == 1 else f"   [first copy {tried[0]['detection']:.1%}]"))
     (out_dir / "_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
+    print("schedules split:", [(x["title"], x["schedules_split"], x["schedule_items"]) for x in report if x["schedules_split"]])
     print(f"{len(report)} laws; unsectioned: {[x['title'] for x in report if x['mode'] == 'unsectioned']}")
     return 0
 
