@@ -106,7 +106,7 @@ Run them sparingly.
 | MT-CON-01 † | Contracts | FR-CON-01 NDA | Lawyer drafts an NDA with party names and terms | Full draft with required clauses | Drafted | Pass (Sept audit) |
 | MT-CON-02 † | Contracts | FR-CON-01 employment, service | Draft the other two templates | Both drafted | Drafted | Pass (Oct QA) |
 | MT-CON-03 | Contracts | FR-CON-03 compliance | Run the compliance check on MT-CON-01 | Pass/fail per required clause; unfilled placeholders listed | Report shown | Pass (Sept audit) |
-| MT-CON-04 | Contracts | FR-CON-03 missing clause | Remove the confidentiality clause text, re-check | That clause marked missing | Not runnable: contracts can't be edited (only version 1 exists; FR-CON-04 partial) | Not runnable |
+| MT-CON-04 | Contracts | FR-CON-03 missing clause | Remove the confidentiality clause text, re-check | That clause marked missing | Edit draft without the confidentiality clause → saved as version 2; that clause marked missing (automated: `test_contract_edit.py`, incl. HTTP). Not yet clicked through live | Pass (2026-10-06, automated) |
 | MT-CON-05 | Contracts | RBAC | Client or student opens Contracts / calls the API | Not available; API 403 | Client and student can't draft | Pass (Oct QA) |
 | MT-CON-06 | Contracts | FR-CON-04 versions | Open a draft's versions | Version 1 listed | Draft → compliance → versions passed | Pass (Oct QA) |
 

@@ -199,7 +199,7 @@ was changed and no AI calls were made.
       endpoint);
     - no diff;
     - the Mid report's "review and modify drafts" isn't built.
-  - **Contract editing is a requirement** (FR-CON-04 versions only make sense if a draft can be edited; the Mid report asks to "review and modify drafts"). It is **not implemented**: there is no edit or re-draft endpoint, so MT-CON-04 (remove a clause and re-check) can't be run.
+  - **Contract editing is a requirement** (FR-CON-04 versions only make sense if a draft can be edited; the Mid report asks to "review and modify drafts"). **Implemented on 2026-10-06** (`a6f5fdb`): "Edit draft" saves the edited text as the next version and re-runs the compliance and placeholder checks; lawyers only. A diff between versions is still missing.
 
 ### 1.6 OCR (FR-OCR-01–04)
 - **FR-OCR-01** (scanned PDFs and PNG/JPG up to 50 MB): **Partly
@@ -418,7 +418,7 @@ Use the "What to say" column for anything not fully done.
 | FR-CON-02 Clause suggestions | **Not implemented** | — | "Drafts are generated with every required clause included; interactive suggestions are planned." |
 | FR-CON-03 Compliance report | Implemented and tested | 13 tests; 3 live drafts | "Done, deterministic: no AI in the check, plus an unfilled-placeholder check." |
 | FR-CON-04 Versions + diff | Partly | Versions stored; only v1; no diff | "Version storage is in place; editing and diff are the next step." |
-| Contract editing (needed by FR-CON-04 and the Mid report's "review and modify drafts") | **Not implemented** | No edit or re-draft endpoint; manual case MT-CON-04 can't be run (2026-10-06) | "Drafts are generated and compliance-checked; editing a draft and creating a new version is the next step." |
+| Contract editing (needed by FR-CON-04 and the Mid report's "review and modify drafts") | **Implemented 2026-10-06** (no diff yet) | "Edit draft" saves the next version and re-runs the compliance and placeholder checks; lawyers only; 10 tests (`a6f5fdb`) | "Lawyers can edit a draft; each save is a new version with the compliance check re-run. A side-by-side diff is the next step." |
 | FR-OCR-01 Scanned files | Partly | Code present; Tesseract not installed | "The OCR pipeline is built; the demo machine doesn't have Tesseract installed, so we demonstrate with digital PDFs. The app tells the user when OCR isn't available." |
 | FR-OCR-02 OCR accuracy | Not verified | — | "Not benchmarked yet; needs OCR installed." |
 | FR-OCR-03 Keep scan + text | Implemented and tested | File + `extracted_text` | "Done." |
