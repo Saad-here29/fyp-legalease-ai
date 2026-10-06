@@ -246,13 +246,15 @@ def _num_pat(num: str, strict: bool = False) -> str:
     + section 2). strict (number alone): it must not follow a letter or digit."""
     digits = str(num_key(num)[0])
     behind = r"(?<![A-Za-z0-9,/-])" if strict else ""
-    return behind + re.escape(digits) + r"\s?" + re.escape(num[len(digits):])
+    letters = num[len(digits):]
+    # "46A" may be printed "46-A" in the body
+    return behind + re.escape(digits) + (r"\s?-?\s?" + re.escape(letters) if letters else "")
 
 
 def _text_start(body: str, start: int, head: str) -> int:
     """Where a section's text begins: after '[bracketed heading]', else after
     the heading's dash, else after its first full stop."""
-    m = re.match(r"\d{1,3}\s?[A-Z]{0,3}\s?\.?\s*", body[start:])
+    m = re.match(r"\d{1,3}(?:\s?-?\s?[A-Z]{1,3}(?=\s?\.))?\s?\.?\s*", body[start:])
     i = start + (m.end() if m else 0)
     if body.startswith("[", i):
         close = body.find("]", i, i + 300)
@@ -315,7 +317,7 @@ def _locate(body: str, toc: list[tuple[str, str]], heading_first: bool):
         if heading_first:
             pat = fz + r".{0,%d}?" % (len(head) + 10) + r"(?<![0-9])" + _num_pat(num) + r"\s?\.(?!\d)\s*"
         else:
-            pat = _num_pat(num) + r"\s?\.?\s*\[?\s*" + fz
+            pat = _num_pat(num) + r"\s?\.?\s*\[?\s*[\"“'‘]?\s*" + fz      # 10. “Man” “Woman”.
         m = re.compile(pat, re.I).search(body, pos)
         if m:
             hits[i] = (m.start(), m.end() if heading_first else _text_start(body, m.start(), head))

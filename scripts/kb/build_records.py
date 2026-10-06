@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -75,6 +76,30 @@ CORE = [
 ]
 
 
+# Phase B2: cleaner user-supplied PDFs (copied unchanged into kb/raw/). Used only
+# if they section at least as well as the corpus copy.
+USER_PDFS = {
+    "Pakistan Penal Code, 1860": "administratord5622ea3f15bfa00b17d2cf7770a8434.pdf",
+    "Qanun-e-Shahadat Order, 1984": "Qanun Shahdat Order.pdf",
+    "Code of Criminal Procedure, 1898": "Code of Criminal Procedure.pdf",
+}
+VERSION_TEXT = re.compile(r"(?:RGN\s+Dated?\.?|Dated:|Updated?\s?d?\s+till|Uploaded on|Last Amended on|"
+                          r"modified upto)\s*[\w.,\-/ ]{6,24}?(?=\s|$)", re.I)
+
+
+def user_pdf(name: str, vocab) -> dict:
+    import pymupdf
+    doc = pymupdf.open(KB / "raw" / name)
+    text = "\n".join(p.get_text() for p in doc)
+    found = sorted({" ".join(m.group(0).split()) for m in VERSION_TEXT.finditer(text)})
+    created = (doc.metadata or {}).get("creationDate") or ""
+    created = f"{created[2:6]}-{created[6:8]}-{created[8:10]}" if created.startswith("D:") else None
+    version = "; ".join(f"'{v}' in the file" for v in found) or "no version or date text in the file"
+    if created:
+        version += f"; PDF created {created}"
+    return {"result": split(text, "statute_pdf", vocab), "version": version}
+
+
 def listing_for(corpus_titles: list[str], cmap: dict) -> tuple[str | None, dict | None]:
     for c in cmap["categories"]:
         for law in c["laws"]:
@@ -118,7 +143,32 @@ def main() -> int:
             "source_url": None, "original_file": None, "scraped_at": None,
             "jurisdiction": "Pakistan",
         }
-        if chosen:
+        user = None
+        if title in USER_PDFS:
+            user = user_pdf(USER_PDFS[title], vocab)
+            ures = user["result"]
+            corpus_rate = chosen[2].detection if chosen else 0.0
+            tried.append({"corpus_title": None, "user_pdf": USER_PDFS[title], "source_type": "statute_pdf",
+                          "method": ures.method, "expected": ures.expected, "found": ures.found,
+                          "detection": round(ures.detection, 4), "missing": ures.missing,
+                          "used": ures.detection >= corpus_rate,
+                          "note": f"corpus copy {corpus_rate:.1%}"})
+            if ures.detection < corpus_rate:
+                print(f"   user PDF {ures.detection:.1%} < corpus {corpus_rate:.1%}: keeping the corpus records")
+                tried.pop()
+                tried.append({**tried[-1]})
+                user = None
+        if user:
+            ct = USER_PDFS[title]
+            meta.update({"source": "user-supplied PDF", "source_url": None, "status": "under_review",
+                         "original_file": f"backend/storage/kb/raw/{ct}", "scraped_at": None,
+                         "source_version": user["version"],
+                         "provenance_note": "Supplied by the user as a PDF; the original source URL is to be "
+                                            "confirmed. Chosen over our corpus copy because it is cleaner and "
+                                            "sections at least as well."})
+            recs = make_records(meta, user["result"].sections)
+            mode = "sectioned"
+        elif chosen:
             ct, r, res = chosen
             recs = make_records(meta, res.sections)
             mode = "sectioned"
