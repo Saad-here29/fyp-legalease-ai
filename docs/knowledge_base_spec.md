@@ -1,4 +1,4 @@
-# Knowledge base v2: specification (Phase A)
+# Knowledge base v2: specification (Phase A, extended in B1)
 
 Branch `kb-v2`. This defines the records, sources and storage for the next
 knowledge base. Nothing here changes the live app:
@@ -17,8 +17,8 @@ per line).
 |---|---|---|
 | `doc_id` | string | Stable id: `<source>/<act-slug>/<section>`, e.g. `pakistan-code/dissolution-of-muslim-marriages-act-1939/s2` |
 | `title` | string | The Act's title as the source gives it, without status notes |
-| `section` | string | Section number as printed: `"2"`, `"10A"`, `"Schedule"` |
-| `heading` | string | The section heading |
+| `section` | string or null | Section number as printed: `"2"`, `"10A"`, `"Schedule"`; null only for an unsectioned window |
+| `heading` | string or null | The section heading; null for a schedule, preamble or unsectioned window |
 | `text` | string | The section text, cleaned: footnotes, page headers and watermarks removed; amendment brackets like `3[(iia) …]` kept as text without the footnote marker |
 | `source_type` | `"statute"` | Always `statute` for this record type |
 | `jurisdiction` | enum | `Pakistan` (federal), `Punjab`, `Sindh`, `KP`, `Balochistan`, `ICT` |
@@ -27,11 +27,33 @@ per line).
 | `act_number` | string or null | As listed, e.g. `"VIII of 1939"` |
 | `source` | string | Publisher, e.g. `"Pakistan Code"`, `"KP Code"` |
 | `source_tier` | 1, 2 or 3 | See (c) |
-| `source_url` | string | The page the Act was fetched from |
-| `original_file` | string | Path of the saved original under `backend/storage/kb/raw/` (PDF or HTML) |
-| `scraped_at` | ISO 8601 UTC | When the original was fetched |
+| `source_url` | string or null | The page the Act was fetched from; null if unknown |
+| `original_file` | string or null | Path of the saved original under `backend/storage/kb/raw/` (PDF or HTML); null if we hold no original |
+| `scraped_at` | ISO 8601 UTC or null | When the original was fetched; null if unknown |
 | `content_hash` | string | SHA-256 of the whitespace-normalised `text` (the scraper's `content_hash`), for change detection |
 | `status` | enum | `current`, `under_review` or `repealed`, from the source's annotation (e.g. "(Repealed by Act XIV of 2015)", "(Under Review)") |
+| `sectioned` | boolean (optional) | `false` for an unsectioned law's windowed chunk (see below) |
+| `provenance_note` | string (optional) | Anything a reader must know about where the text came from, e.g. "original source URL to be confirmed" |
+
+**Records built from what we already hold (Phase B1).**
+- **Laws from our corpus:**
+  - `source` is "LegalEase corpus (Pakistan Code-derived; original download provenance not recorded)";
+  - `source_tier` is 1 only if the title matched a Pakistan Code category listing in `category_map.json`, otherwise 2;
+  - `category`, `act_number` and `status` come from that listing when it matched (null / `current` otherwise);
+  - `source_url`, `original_file` and `scraped_at` are null, because we don't know them;
+  - `doc_id` starts with `legalease-corpus/`.
+- **User-supplied files:**
+  - `source` is "user-supplied PDF", `source_url` null, `status` `under_review`;
+  - a `provenance_note` until the original source is confirmed;
+  - `original_file` points at the copy in `raw/`.
+- **Section ids:** `section` is the number as printed ("2", "10A"). A
+  Schedule is its own record (`"Schedule"`, or `"Schedule 1"`, `"Schedule 2"`
+  …), and a preamble may be a record (`"Preamble"`, heading null). The
+  Constitution's articles are stored the same way, in `section`.
+- **Unsectioned laws:** if the splitter finds fewer than 90% of the sections
+  the table of contents (or the numbering) implies, the law isn't forced into
+  sections. It's kept as ~1,200-character windows with `section` and
+  `heading` null, `sectioned: false`, and `doc_id` ending `/w1`, `/w2` ….
 
 **Rules:**
 - **Superseded versions:** a section whose `content_hash` changes gets a new
@@ -69,6 +91,29 @@ has not been downloaded in Phase A.
 
 The example text is shortened (`…`); a real record holds the whole section.
 The hash shown is of exactly this example text.
+
+## a2) Index chunks (rule fixed now; nothing is embedded yet)
+
+A record is what we store; a **chunk** is what gets embedded. The embedding
+model (`paraphrase-multilingual-MiniLM-L12-v2`) reads at most **128 tokens**
+and silently ignores the rest. So:
+
+- **Size:** each chunk is a window of **at most 120 tokens**, taken from **one**
+  section record (never across two sections).
+- **Counting:** tokens are counted with **the embedding model's own
+  tokenizer** (`SentenceTransformer(EMBEDDING_MODEL_NAME).tokenizer`), not by
+  words or characters. Its 2 special tokens (start and end) bring the total to
+  at most 122, inside the 128 limit, so no text is ever cut off unseen.
+- **Prefix:** every chunk starts with `"<Title> - s.<N> <Heading>:"`, e.g.
+  `"Dissolution of Muslim Marriages Act, 1939 - s.2 Grounds for decree for
+  dissolution of marriage:"`. **The prefix counts inside the 120.** A
+  schedule uses `"<Title> - Schedule 1:"`; an unsectioned window uses
+  `"<Title>:"`.
+- **Windows:** the section text is split on token boundaries into windows of
+  `120 − prefix tokens`, with an overlap of about 20 tokens, so a sentence cut
+  at one edge is whole in the next window.
+- **Mapping:** each chunk keeps its record's `doc_id` plus a window number, so
+  a hit is always cited as the whole section, not the fragment.
 
 ## b) Judgment record
 
