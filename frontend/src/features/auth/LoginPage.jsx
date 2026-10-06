@@ -69,7 +69,7 @@ export default function LoginPage() {
       heroTitle={<>Your chambers,<br />in order.</>}
       heroSubtitle="Cases, research, documents and contract drafts for Pakistani practice — with every AI answer tied to the statute it came from."
       heroPoints={[
-        "Citations checked against the statute text",
+        "Section references checked against the statute text",
         "Pakistani Acts, Ordinances and Codes, in one search",
       ]}
     >
