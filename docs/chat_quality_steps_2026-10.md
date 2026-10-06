@@ -229,3 +229,32 @@ figure. Groq use has stopped.
    Schedule. Both need your approval, and both would be measured the same
    way.
 4. **Step 2:** go or no-go on the ~15k-token run (§ 5).
+
+---
+
+## Decision, 2026-10-06: STRICT_GROUNDING stays off for the mock presentation
+
+The measurement run is in `docs/strict_grounding_comparison_2026-10-06.md`
+(6 answers on their saved passages; 13,006 tokens).
+
+**Decision:** keep `STRICT_GROUNDING` off for the mock presentation on
+2026-10-07.
+
+**Why:**
+- **Mixed result.** The strict prompt removed the worst unsupported claims
+  (the "by analogy" widow-to-divorced-wife extension in Q3, and the Air
+  Force Act and invented consequences in Q6), and Q4 now says plainly that
+  restitution isn't covered. But Q8 still draws a conclusion the cited
+  article doesn't support. And the talaq control turned into "the passages
+  don't contain the procedure", because its saved passages only list s.7.
+- **Demo questions unverified under it.** None of the questions the demo
+  will use (DMMA grounds, theft under the PPC, the off-topic refusal) has
+  been answered with the strict prompt on the live retrieval. Switching it
+  on untested the day before could turn working answers into "not covered"
+  replies.
+
+**Still on:** the low-confidence note (`LOW_CONFIDENCE_NOTE`). **Still off:**
+`REWRITE_V2` and `FAMILY_INDEX`.
+
+**To revisit after the mock:** run the demo questions and a sample of the
+78 lawyer questions with the strict prompt, then decide.
