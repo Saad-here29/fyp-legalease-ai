@@ -121,6 +121,7 @@ class Settings(BaseSettings):
     KB_V2: bool = False
     # Similarity threshold used only when KB_V2 is on (RAG_SIMILARITY_THRESHOLD otherwise).
     KB_V2_THRESHOLD: float = 0.65
+    KB_DIR: str = "./storage/kb"            # records/, raw/, category_map.json (read-only at runtime)
     KB_V2_INDEX_PATH: str = "./storage/kb/faiss_v2.faiss"
     KB_V2_METADATA_PATH: str = "./storage/kb/faiss_v2_meta.json"
 

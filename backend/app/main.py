@@ -127,6 +127,7 @@ from app.api.v1 import cases as cases_router
 from app.api.v1 import chat as chat_router
 from app.api.v1 import contracts as contracts_router
 from app.api.v1 import documents as documents_router
+from app.api.v1 import kb as kb_router
 from app.api.v1 import research as research_router
 
 app.include_router(
@@ -153,6 +154,11 @@ app.include_router(
     documents_router.router,
     prefix=f"{settings.API_V1_PREFIX}/documents",
     tags=["documents"],
+)
+app.include_router(
+    kb_router.router,
+    prefix=f"{settings.API_V1_PREFIX}/kb",
+    tags=["knowledge base"],
 )
 app.include_router(
     contracts_router.router,
