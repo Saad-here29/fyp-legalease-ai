@@ -30,10 +30,13 @@ router = APIRouter()
     summary="Size of the searchable library (passages and source statutes)",
 )
 def index_stats():
-    # Public: only two counts, shown on the (logged-out) landing page as well
-    # as the Research page. Declared before GET /{entry_id} so "stats" isn't
-    # parsed as an id.
-    return embeddings.index_stats()
+    # Public: two counts, shown on the (logged-out) landing page as well
+    # as the Research page, plus scraping freshness (counts and dates only;
+    # cached, and never fails the endpoint). Declared before GET /{entry_id}
+    # so "stats" isn't parsed as an id.
+    from app.db.session import SessionLocal
+    from app.scraping.stats import cached_scrape_updates
+    return {**embeddings.index_stats(), "updates": cached_scrape_updates(SessionLocal)}
 
 
 @router.post(
