@@ -70,7 +70,12 @@ ai-services/ner_training/trained_model/
 
 # ===== Uploads / Storage =====
 backend/uploads/
-backend/storage/
+backend/storage/*
+# KB v2: only the category map is committed (titles and URLs, no law text);
+# raw/ and records/ (scraped text) stay ignored.
+!backend/storage/kb/
+backend/storage/kb/*
+!backend/storage/kb/category_map.json
 # Family-law side index vectors (rebuilt automatically)
 backend/cache/
 *.pdf.tmp
