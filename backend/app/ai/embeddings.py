@@ -125,11 +125,51 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
 
     `filters` is an optional dict: {court, year_from, year_to, case_type}.
     Filters apply post-search since the corpus is small enough.
+
+    With settings.KB_V2 on, the knowledge-base v2 index is searched first
+    and merged with this one (app/kb/index_v2.py); off, this is exactly the
+    v1 search.
     """
+    if settings.KB_V2:
+        from app.kb import index_v2
+        return index_v2.search(query, top_k, filters)
+    return _search_v1(query, top_k, filters)
+
+
+def passes_filters(meta: dict, filters: dict | None) -> bool:
+    # Filters are *exclusive on contradiction only* — a record with
+    # no court / no year metadata is KEPT, because absence of
+    # metadata in the corpus shouldn't punish the user (the SC
+    # judgment archive ships with no per-judgment year info).
+    if not filters:
+        return True
+    court = (filters.get("court") or "").lower()
+    ym = filters.get("year_from")
+    yM = filters.get("year_to")  # noqa: N806
+    case_type = (filters.get("case_type") or "").lower()
+    if court:
+        rec_court = (meta.get("court") or "").lower()
+        if rec_court and court not in rec_court:
+            return False
+    yr = meta.get("year")
+    if yr is not None:
+        if ym and yr < ym:
+            return False
+        if yM and yr > yM:
+            return False
+    if case_type:
+        rec_kind = record_kind(meta).lower()
+        if rec_kind and case_type not in rec_kind:
+            return False
+    return True
+
+
+def _search_v1(query: str, top_k: int, filters: dict | None = None, *, qvec=None) -> list[dict]:
     if _INDEX is None or _INDEX.ntotal == 0 or not _META:
         return []
 
-    qvec = embed([query])
+    if qvec is None:
+        qvec = embed([query])
     scores, ids = _INDEX.search(qvec, min(top_k * 3, _INDEX.ntotal))
     raw = [
         (_META[i], float(s))
@@ -138,33 +178,7 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     ]
 
     if filters:
-        court = (filters.get("court") or "").lower()
-        ym = filters.get("year_from")
-        yM = filters.get("year_to")
-        case_type = (filters.get("case_type") or "").lower()
-
-        def _ok(meta: dict) -> bool:
-            # Filters are *exclusive on contradiction only* — a record with
-            # no court / no year metadata is KEPT, because absence of
-            # metadata in the corpus shouldn't punish the user (the SC
-            # judgment archive ships with no per-judgment year info).
-            if court:
-                rec_court = (meta.get("court") or "").lower()
-                if rec_court and court not in rec_court:
-                    return False
-            yr = meta.get("year")
-            if yr is not None:
-                if ym and yr < ym:
-                    return False
-                if yM and yr > yM:
-                    return False
-            if case_type:
-                rec_kind = record_kind(meta).lower()
-                if rec_kind and case_type not in rec_kind:
-                    return False
-            return True
-
-        raw = [(m, s) for m, s in raw if _ok(m)]
+        raw = [(m, s) for m, s in raw if passes_filters(m, filters)]
 
     return [{**m, "relevance": s} for m, s in raw[:top_k]]
 
