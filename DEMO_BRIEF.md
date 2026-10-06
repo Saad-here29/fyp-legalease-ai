@@ -490,8 +490,10 @@ on 2026-10-06, and it wasn't investigated further.
    `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`. Then **Documents →
    Analyse** (about 8 s).
 4. **AI Chat,** one question a minute:
-   1. *"What is the procedure for a husband to pronounce talaq in
-      Pakistan?"* (MFLO s.7);
+   1. *"On what grounds can a Muslim wife obtain a decree for dissolution
+      of marriage?"* (Dissolution of Muslim Marriages Act s.2; best match
+      0.84–0.90). It replaced the talaq question, which scored 0.679 live on
+      2026-10-06 and would show the "Weak match" note;
    2. *"What is the punishment for theft under the Pakistan Penal Code?"*
       (PPC s.379);
    3. *"Can you recommend a good cricket bat?"* (refused, on purpose).
@@ -511,8 +513,8 @@ on 2026-10-06, and it wasn't investigated further.
   under section 7"), or use the theft question, which always finds PPC
   s.379.
 - The "Weak match" note appears when the best passage only just passes
-  (0.65–0.70). The talaq question scored 0.71–0.73 in tests, so it can show
-  the note.
+  (0.65–0.70). The talaq question scored 0.679 live on 2026-10-06, so it
+  shows the note; that's why the demo uses the dissolution question.
 
 **5. If the AI is slow or returns "unavailable":** Groq's free tier allows
 8,000 tokens a minute and 200k a day. Wait a minute and ask again. Cases,
