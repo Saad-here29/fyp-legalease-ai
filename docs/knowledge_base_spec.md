@@ -168,14 +168,17 @@ backend/storage/
     ├── raw/                       original files exactly as fetched (gitignored)
     │   ├── pakistancode_categories/   category listing pages (Phase A)
     │   └── <source>/<act-slug>.pdf    Act PDFs (a later phase)
-    ├── records/                   JSONL (gitignored)
-    │   ├── statutes.jsonl         one statute section record per line
+    ├── records/                   JSONL, one file per law (gitignored)
+    │   ├── <act-slug>.jsonl       one statute section record per line
     │   ├── judgments.jsonl        staged only; not indexed
     │   └── archive/               superseded records, by date
-    └── index/
-        ├── faiss_v2.faiss         NEW index file; never overwrites legal_corpus.faiss
-        └── faiss_v2_meta.json     records' doc_id per vector, plus the build manifest
+    ├── faiss_v2.faiss             NEW index (Phase B2); never overwrites legal_corpus.faiss
+    └── faiss_v2_meta.json         per chunk: record id + section fields; section texts; build manifest
 ```
+
+Search uses it only with `KB_V2=true` (default false). It searches v2 first,
+then v1 without the v1 chunks of any law v2 holds. Results are in the v1
+shape, plus `section`, `heading`, `source_tier` and `source_url`.
 
 **Rules:**
 - **The old index is never written to.** v2 is a separate file name. Switching
