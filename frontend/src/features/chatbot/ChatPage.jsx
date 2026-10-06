@@ -7,6 +7,8 @@ import AppShell from "@/components/layout/AppShell";
 import { ArchMark } from "@/components/common/Wordmark";
 import Markdown from "@/lib/Markdown";
 import { citeAnchor, normalizeMarkers } from "@/lib/citations";
+import { KbSourceLink } from "@/features/knowledge-base/kbParts";
+import { sectionLabel } from "@/features/knowledge-base/kbFormat";
 import { chatApi } from "./api";
 import { researchApi } from "@/features/legal-research/api";
 
@@ -91,6 +93,11 @@ const numbered = (citations) =>
     // Stored excerpts start wherever the indexed chunk starts, often
     // mid-sentence (", which amount…"): drop the leading punctuation.
     excerpt: (c.excerpt || "").replace(/^[\s,;:.)\]-]+/, ""),
+    // Knowledge-base v2 passages also say where they come from.
+    section: c.section || null,
+    heading: c.heading || null,
+    sourceUrl: c.source_url || null,
+    recordId: c.doc_id || null,
   }));
 
 export default function ChatPage() {
@@ -492,8 +499,15 @@ function Answer({ message }) {
               >
                 <span className="font-ds-sans font-semibold text-[16px] leading-[24px] text-ds-text">[{c.n}]</span>
                 <span className="min-w-0">
-                  <span className="block font-ds-sans font-semibold text-[16px] leading-[24px] text-ds-text">{c.source}</span>
+                  <span className="block font-ds-sans font-semibold text-[16px] leading-[24px] text-ds-text">
+                    {c.section || c.heading ? `${c.source} - ${sectionLabel(c.section, c.heading)}` : c.source}
+                  </span>
                   {c.excerpt && <span className="ds-meta block mt-1 line-clamp-2" dir="auto">{c.excerpt}</span>}
+                  {(c.sourceUrl || c.recordId) && (
+                    <span className="block mt-2">
+                      <KbSourceLink sourceUrl={c.sourceUrl} recordId={c.recordId} />
+                    </span>
+                  )}
                 </span>
               </li>
             ))}

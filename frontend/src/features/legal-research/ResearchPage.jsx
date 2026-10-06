@@ -5,13 +5,18 @@ import { Search, Loader2, AlertCircle } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { ROUTES } from "@/constants";
 import { researchApi } from "./api";
+import { kbApi } from "@/features/knowledge-base/api";
+import { TierTag, KbSourceLink } from "@/features/knowledge-base/kbParts";
+import { sectionLabel } from "@/features/knowledge-base/kbFormat";
 
 // Legal research — design system v1, per the Research mockup
 // (docs/design_reference page 11): ink search band, then ruled results.
 // Adapted: the library is Pakistani statute text only, so there are no
-// source-type (Judgments), jurisdiction or court filters, and no
-// "Summarise top results" (not built). The query lives in the URL (?q=) so
-// returning from a passage restores the results.
+// source-type (Judgments) or court filters, and no "Summarise top results"
+// (not built). Category, jurisdiction, source tier and year filters (kb-v2)
+// apply only to passages whose law's metadata is known; the page says how
+// many documents that covers. Query and filters live in the URL (?q=&cat=…)
+// so returning from a passage restores the results.
 
 const EXAMPLES = ["khula procedure", "bail in a non-bailable offence", "FIR registration Section 154", "custody of minor children"];
 const TOP_K = 10;
@@ -46,13 +51,38 @@ export default function ResearchPage() {
   const q = params.get("q") || "";
   const k = Number(params.get("k")) || TOP_K;
   const [input, setInput] = useState(q);
+  const filters = {
+    category: params.get("cat") || "",
+    jurisdiction: params.get("jur") || "",
+    source_tier: params.get("tier") || "",
+    year_from: params.get("yf") || "",
+    year_to: params.get("yt") || "",
+  };
+  const activeFilters = Object.fromEntries(
+    Object.entries(filters)
+      .filter(([, v]) => v !== "")
+      .map(([key, v]) => [key, ["source_tier", "year_from", "year_to"].includes(key) ? Number(v) : v])
+  );
+  const setFilter = (key, value) => {
+    const next = new URLSearchParams(params);
+    if (value === "") next.delete(key);
+    else next.set(key, value);
+    next.delete("k");
+    setParams(next, { replace: true });
+  };
+  const clearFilters = () => {
+    const next = new URLSearchParams(params);
+    ["cat", "jur", "tier", "yf", "yt"].forEach((key) => next.delete(key));
+    setParams(next, { replace: true });
+  };
+  const { data: kbStats } = useQuery({ queryKey: ["kb-stats"], queryFn: kbApi.stats, staleTime: 5 * 60 * 1000 });
 
   // Real corpus size from the index, so this text can't go stale after a rebuild.
   const { data: stats } = useQuery({ queryKey: ["research-stats"], queryFn: researchApi.stats, staleTime: Infinity });
 
   const { data, isFetching, isError, error } = useQuery({
-    queryKey: ["research", q, k],
-    queryFn: () => researchApi.search({ query: q, top_k: k }),
+    queryKey: ["research", q, k, activeFilters],
+    queryFn: () => researchApi.search({ query: q, top_k: k, ...activeFilters }),
     enabled: q.length >= 2,
     staleTime: 5 * 60 * 1000,
   });
@@ -61,7 +91,11 @@ export default function ResearchPage() {
     const t = text.trim();
     if (t.length < 2) return;
     setInput(t);
-    setParams(topK === TOP_K ? { q: t } : { q: t, k: String(topK) });
+    const next = new URLSearchParams(params);
+    next.set("q", t);
+    if (topK === TOP_K) next.delete("k");
+    else next.set("k", String(topK));
+    setParams(next);
   };
 
   const terms = queryTerms(q);
@@ -127,6 +161,15 @@ export default function ResearchPage() {
 
   return (
     <AppShell title="Legal research" band={band}>
+      <FilterBar
+        key={`${filters.year_from}-${filters.year_to}`}
+        filters={filters}
+        setFilter={setFilter}
+        clearFilters={clearFilters}
+        categories={kbStats?.categories || []}
+        jurisdictions={kbStats?.jurisdictions || ["Pakistan"]}
+        coverage={stats?.filter_coverage}
+      />
       {!q && (
         <p className="ds-body text-ds-text-2 max-w-[640px]">
           Search in plain words or by section. Results are the statute passages closest in meaning to your query, most
@@ -164,7 +207,14 @@ export default function ResearchPage() {
               specific legal terms.
             </p>
           )}
-          {data.results.length === 0 ? (
+          {data.results.length === 0 && data.filters_active ? (
+            <div className="py-8">
+              <p className="ds-body text-ds-text-2">No passage matches this query with these filters.</p>
+              <button onClick={clearFilters} className="ds-btn-secondary mt-4">
+                Clear filters
+              </button>
+            </div>
+          ) : data.results.length === 0 ? (
             <p className="ds-body text-ds-text-2 py-8">
               No passage in the statute library is close enough to this query. Try different or more specific words.
             </p>
@@ -198,9 +248,13 @@ function ResultRow({ result, query, terms }) {
   return (
     <li className="grid gap-x-8 gap-y-3 md:grid-cols-[minmax(0,1fr)_auto] py-6 border-b border-ds-rule">
       <div className="min-w-0">
-        <p className="flex flex-wrap items-center gap-x-2 font-ds-sans text-[14px]">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-2 font-ds-sans text-[14px]">
           <span className="font-semibold uppercase tracking-[0.12em] text-ds-text-2">Statute</span>
           {usefulCitation(result) && <span className="text-ds-text-2">· {usefulCitation(result)}</span>}
+          {(result.category || result.year) && (
+            <span className="text-ds-text-2">· {[result.category, result.year].filter(Boolean).join(", ")}</span>
+          )}
+          <TierTag tier={result.source_tier} />
         </p>
         <h2 className="mt-1">
           <Link
@@ -212,6 +266,11 @@ function ResultRow({ result, query, terms }) {
             {result.title}
           </Link>
         </h2>
+        {(result.section || result.heading) && (
+          <p className="font-ds-sans font-semibold text-[17px] leading-[24px] text-ds-text mt-1">
+            {sectionLabel(result.section, result.heading)}
+          </p>
+        )}
         <p className="ds-body text-ds-text-2 mt-2 line-clamp-3">
           <Highlighted text={result.excerpt} terms={terms} />
         </p>
@@ -223,10 +282,94 @@ function ResultRow({ result, query, terms }) {
         <Link to={to} state={state} className="ds-link text-[15px]">
           Read passage
         </Link>
+        <KbSourceLink sourceUrl={result.source_url} recordId={result.kb_record_id} />
         <span className="ds-meta tabular-nums" title="Similarity between your query and this passage">
           {score}% match
         </span>
       </div>
     </li>
+  );
+}
+
+function FilterBar({ filters, setFilter, clearFilters, categories, jurisdictions, coverage }) {
+  const [yf, setYf] = useState(filters.year_from);
+  const [yt, setYt] = useState(filters.year_to);
+  const any = Object.values(filters).some((v) => v !== "");
+  const year = (v) => v.replace(/\D/g, "").slice(0, 4);
+  const commit = (key, v) => setFilter(key, v.length === 4 ? v : "");
+  return (
+    <section aria-label="Filters" className="mb-10 pb-6 border-b border-ds-rule">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <FilterSelect
+          label="Category"
+          value={filters.category}
+          onChange={(v) => setFilter("cat", v)}
+          options={[["", "All categories"], ...categories.map((c) => [c, c])]}
+        />
+        <FilterSelect
+          label="Jurisdiction"
+          value={filters.jurisdiction}
+          onChange={(v) => setFilter("jur", v)}
+          options={[["", "All"], ...jurisdictions.map((j) => [j, j])]}
+        />
+        <FilterSelect
+          label="Source tier"
+          value={filters.source_tier}
+          onChange={(v) => setFilter("tier", v)}
+          options={[["", "All tiers"], ["1", "Tier 1"], ["2", "Tier 2"]]}
+        />
+        <label>
+          <span className="ds-label">Year from</span>
+          <input
+            className="ds-input"
+            inputMode="numeric"
+            placeholder="e.g. 1860"
+            value={yf}
+            onChange={(e) => setYf(year(e.target.value))}
+            onBlur={() => commit("yf", yf)}
+            onKeyDown={(e) => e.key === "Enter" && commit("yf", yf)}
+          />
+        </label>
+        <label>
+          <span className="ds-label">Year to</span>
+          <input
+            className="ds-input"
+            inputMode="numeric"
+            placeholder="e.g. 1990"
+            value={yt}
+            onChange={(e) => setYt(year(e.target.value))}
+            onBlur={() => commit("yt", yt)}
+            onKeyDown={(e) => e.key === "Enter" && commit("yt", yt)}
+          />
+        </label>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+        {coverage && (
+          <p className="ds-body text-ds-text-2">
+            Filters cover laws with known metadata ({coverage.known.toLocaleString()} of {coverage.total.toLocaleString()}).
+          </p>
+        )}
+        {any && (
+          <button type="button" onClick={clearFilters} className="ds-link text-[15px] min-h-[44px]">
+            Clear filters
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function FilterSelect({ label, value, onChange, options }) {
+  return (
+    <label>
+      <span className="ds-label">{label}</span>
+      <select className="ds-input pr-8" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map(([v, t]) => (
+          <option key={v} value={v}>
+            {t}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
