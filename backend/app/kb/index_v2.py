@@ -16,7 +16,9 @@ section, heading, source_tier and source_url.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 import threading
 import time
 from pathlib import Path
@@ -30,7 +32,7 @@ MAX_PREFIX = 60          # a very long heading is shortened so the window keeps 
 PASSAGE_CHARS = 1200     # text returned for a hit: the whole section, or this much around the window
 
 CHUNK_FIELDS = ("doc_id", "title", "section", "heading", "source_tier", "category", "year", "jurisdiction",
-                "source_type", "source_url", "status", "source")
+                "source_type", "source_url", "status", "source", "audience")
 
 
 # --------------------------------------------------------------------------- chunking
@@ -92,43 +94,167 @@ def load_records(records_dir: Path) -> list[dict]:
     return recs
 
 
-def build(records_dir: Path, index_path: Path, meta_path: Path, *, tokenizer, embed,
-          excluded_v1_sources: list[str], batch: int = 256) -> dict:
-    """Chunk and embed every record; write a NEW index. Refuses to write over
-    the live v1 index paths."""
-    import faiss
-    import numpy as np
-    live = {Path(settings.FAISS_INDEX_PATH).resolve(), Path(settings.FAISS_METADATA_PATH).resolve()}
-    if index_path.resolve() in live or meta_path.resolve() in live:
-        raise ValueError("refusing to overwrite the live v1 index")
-    t0 = time.perf_counter()
-    recs = load_records(records_dir)
+def vector_key(text: str) -> str:
+    """Cache key of one embedding input: the model name + the exact chunk text."""
+    return hashlib.sha256(f"{settings.EMBEDDING_MODEL_NAME}\n{text}".encode()).hexdigest()
+
+
+class VectorCache:
+    """Embeddings already computed, keyed by vector_key, in shard files under
+    `directory` (shard_00001.npz, ...). A shard is written after every
+    `checkpoint` new vectors, so an interrupted build loses at most one shard."""
+
+    def __init__(self, directory: Path) -> None:
+        import numpy as np
+        self.dir = directory
+        self.vecs: dict[str, np.ndarray] = {}
+        directory.mkdir(parents=True, exist_ok=True)
+        for p in sorted(directory.glob("*.npz")):
+            with np.load(p) as z:
+                for k, v in zip(z["keys"].tolist(), z["vectors"], strict=True):
+                    self.vecs[k] = v
+
+    def add(self, keys: list[str], vectors) -> None:
+        import numpy as np
+        n = len(list(self.dir.glob("shard_*.npz"))) + 1
+        tmp = self.dir / f"shard_{n:05d}.tmp.npz"
+        np.savez(tmp, keys=np.array(keys), vectors=np.asarray(vectors, np.float32))
+        tmp.replace(self.dir / f"shard_{n:05d}.npz")
+        for k, v in zip(keys, vectors, strict=True):
+            self.vecs[k] = v
+
+    def seed_from_index(self, index_path: Path, meta_path: Path) -> int:
+        """Reuse the vectors of an earlier faiss_v2 build (same chunk text =
+        same vector). Returns how many were new to the cache."""
+        import faiss
+        if not (index_path.exists() and meta_path.exists()):
+            return 0
+        chunks = json.loads(meta_path.read_text(encoding="utf-8"))["chunks"]
+        index = faiss.read_index(str(index_path))
+        if index.ntotal != len(chunks):
+            return 0
+        vectors = index.reconstruct_n(0, index.ntotal)
+        keys, vecs = [], []
+        for c, v in zip(chunks, vectors, strict=True):
+            k = vector_key(c["chunk_text"])
+            if k not in self.vecs:
+                keys.append(k)
+                vecs.append(v)
+        if keys:
+            self.add(keys, vecs)
+        return len(keys)
+
+
+def make_chunks(recs: list[dict], tokenizer) -> tuple[list[dict], dict[str, str]]:
     chunks, texts = [], {}
     for rec in recs:
         texts[rec["doc_id"]] = rec["text"]
         for c in chunk_record(rec, tokenizer):
             chunks.append({**{k: rec.get(k) for k in CHUNK_FIELDS}, "window": c["window"],
                            "start": c["start"], "end": c["end"], "chunk_text": c["text"]})
+    return chunks, texts
+
+
+def build(records_dir: Path, index_path: Path, meta_path: Path, *, tokenizer, embed,
+          excluded_v1_sources: list[str], cache_dir: Path | None = None, checkpoint: int = 1000,
+          time_budget: float | None = None) -> dict:
+    """Chunk every record and write a NEW index; refuses the live v1 paths.
+
+    Incremental and resumable: vectors are looked up in the VectorCache
+    (cache_dir, default <index dir>/vector_cache), seeded from the previous
+    faiss_v2 build; only chunks whose text is new or changed are embedded,
+    `checkpoint` at a time, each batch saved before the next. If
+    `time_budget` seconds run out first, nothing is written over the
+    existing index and the manifest says complete=False: run again to
+    continue from the cache."""
+    import faiss
+    import numpy as np
+    live = {Path(settings.FAISS_INDEX_PATH).resolve(), Path(settings.FAISS_METADATA_PATH).resolve()}
+    if index_path.resolve() in live or meta_path.resolve() in live:
+        raise ValueError("refusing to overwrite the live v1 index")
+    t0 = time.perf_counter()
+    cache = VectorCache(cache_dir or index_path.parent / "vector_cache")
+    seeded = cache.seed_from_index(index_path, meta_path)
+    recs = load_records(records_dir)
+    chunks, texts = make_chunks(recs, tokenizer)
     t_chunk = time.perf_counter() - t0
-    vecs = []
-    for i in range(0, len(chunks), batch):
-        vecs.append(embed([c["chunk_text"] for c in chunks[i:i + batch]]))
-    vectors = np.vstack(vecs).astype(np.float32) if vecs else np.zeros((0, 384), np.float32)
-    index = faiss.IndexFlatIP(vectors.shape[1])
-    index.add(vectors)
-    index_path.parent.mkdir(parents=True, exist_ok=True)
-    faiss.write_index(index, str(index_path))
+    keys = [vector_key(c["chunk_text"]) for c in chunks]
+    unique = list(dict.fromkeys(keys))
+    missing = [k for k in unique if k not in cache.vecs]
+    text_of = {k: c["chunk_text"] for k, c in zip(keys, chunks, strict=True)}
+    embedded = 0
+    for i in range(0, len(missing), checkpoint):
+        if time_budget is not None and time.perf_counter() - t0 > time_budget:
+            break
+        part = missing[i:i + checkpoint]
+        cache.add(part, embed([text_of[k] for k in part]))
+        embedded += len(part)
     manifest = {
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "embedding_model": settings.EMBEDDING_MODEL_NAME, "normalised": True, "metric": "inner product",
         "max_tokens": MAX_TOKENS, "overlap": OVERLAP, "records": len(recs), "chunks": len(chunks),
         "laws": sorted({r["title"] for r in recs}),
         "excluded_v1_sources": sorted(excluded_v1_sources),
+        "unique_chunk_texts": len(unique), "reused_vectors": len(unique) - len(missing),
+        "embedded_now": embedded, "still_missing": len(missing) - embedded, "seeded_from_previous": seeded,
+        "complete": embedded == len(missing),
         "chunk_seconds": round(t_chunk, 1), "total_seconds": round(time.perf_counter() - t0, 1),
     }
-    meta_path.write_text(json.dumps({"manifest": manifest, "chunks": chunks, "texts": texts},
-                                    ensure_ascii=False), encoding="utf-8")
+    if not manifest["complete"]:
+        return manifest
+    vectors = np.vstack([cache.vecs[k] for k in keys]).astype(np.float32) if keys else np.zeros((0, 384), np.float32)
+    index = faiss.IndexFlatIP(vectors.shape[1])
+    index.add(vectors)
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_idx, tmp_meta = index_path.with_name(index_path.name + ".tmp"), meta_path.with_name(meta_path.name + ".tmp")
+    faiss.write_index(index, str(tmp_idx))
+    tmp_meta.write_text(json.dumps({"manifest": manifest, "chunks": chunks, "texts": texts}, ensure_ascii=False),
+                        encoding="utf-8")
+    tmp_idx.replace(index_path)
+    tmp_meta.replace(meta_path)
     return manifest
+
+
+# --------------------------------------------------------------------------- community gating
+
+# A law whose audience isn't "general" is searched only when the question
+# names its community (or the Act itself). Deterministic: keyword match, no
+# model call. Urdu names as in app/ai/family_index.py.
+AUDIENCE_TERMS = {
+    "Christian": ("christian", "christians", "church", "مسیحی", "عیسائی"),
+    "Parsi": ("parsi", "parsis", "zoroastrian", "پارسی"),
+    "Hindu": ("hindu", "hindus", "ہندو"),
+    "Sikh": ("sikh", "sikhs", "anand", "سکھ"),
+    "Arya Samaj": ("arya", "hindu", "hindus", "ہندو"),
+    "non-Muslim (other faiths)": ("non-muslim", "non muslim", "nonmuslim", "غیر مسلم", "hindu", "sikh", "buddhist",
+                                  "jain", "jaina", "jewish", "jew", "inter-faith", "interfaith"),
+    "non-Muslim (Christian, Parsi and others)": ("non-muslim", "non muslim", "nonmuslim", "غیر مسلم", "christian",
+                                                 "christians", "parsi", "parsis", "zoroastrian"),
+}
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def names_audience(query: str, audience: str | None, title: str | None) -> bool:
+    """True if a law with this audience may be shown for this question."""
+    if not audience or audience == "general":
+        return True
+    q = (query or "").lower()
+    words = set(re.findall(r"[a-z]+(?:-[a-z]+)?", q))
+    for term in AUDIENCE_TERMS.get(audience, ()):
+        if (" " in term or "-" in term or not term.isascii()) and term in q:
+            return True
+        if term in words:
+            return True
+    # The Act's own title: with its year, or without it if the name has 2+
+    # words besides "Act" ("Special Marriage Act" yes, "Divorce Act" no).
+    t = re.sub(r"^the\s+", "", (title or "").lower())
+    if _norm(t) and _norm(t) in _norm(q):
+        return True
+    stem = re.sub(r",?\s*\d{4}$", "", t)
+    return len([w for w in re.findall(r"[a-z]+", stem) if w != "act"]) >= 2 and _norm(stem) in _norm(q)
 
 
 # --------------------------------------------------------------------------- search
@@ -178,11 +304,14 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     qvec = embeddings.embed([query])
     hits: list[dict] = []
     if _V2_INDEX.load():
-        scores, ids = _V2_INDEX.index.search(qvec, min(_V2_INDEX.index.ntotal, top_k * 10))
+        scores, ids = _V2_INDEX.index.search(qvec, min(_V2_INDEX.index.ntotal, top_k * 30))
         best: dict[str, tuple[float, int]] = {}
         for s, i in zip(scores[0], ids[0], strict=True):
             if 0 <= i < len(_V2_INDEX.chunks):
-                d = _V2_INDEX.chunks[i]["doc_id"]
+                c = _V2_INDEX.chunks[i]
+                if not names_audience(query, c.get("audience"), c["title"]):
+                    continue
+                d = c["doc_id"]
                 if d not in best:
                     best[d] = (float(s), int(i))
         for d, (s, i) in best.items():
@@ -192,7 +321,8 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
                 "text": passage(c, _V2_INDEX.texts.get(d, "")),
                 "section": c["section"], "heading": c["heading"], "source_tier": c["source_tier"],
                 "source_url": c["source_url"], "category": c["category"], "year": c["year"],
-                "jurisdiction": c["jurisdiction"], "doc_id": d, "kb": "v2", "relevance": s,
+                "jurisdiction": c["jurisdiction"], "audience": c.get("audience") or "general",
+                "doc_id": d, "kb": "v2", "relevance": s,
             }
             if embeddings.passes_filters(hit, filters):
                 hits.append(hit)
