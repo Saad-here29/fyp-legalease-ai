@@ -1,0 +1,545 @@
+[
+ {
+  "name": "Pakistan Code",
+  "home": "https://pakistancode.gov.pk/",
+  "listing": "https://pakistancode.gov.pk/english/LGu0xAD.php",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:25:41+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "https://pakistancode.gov.pk/sitemap.xml",
+    "User-agent: googlebot",
+    "Disallow: /pdffiles/"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://pakistancode.gov.pk/english/index.php",
+  "title": "Pakistan Code",
+  "copyright": "© Copyright 2022 - Ministry of Law and Justice Disclaimer: The content available on this Website is for information purpo",
+  "mentions_scraping_ban": false,
+  "terms_links": [
+   {
+    "text": "Disclaimer:",
+    "href": "https://pakistancode.gov.pk/english/Xki72HF.php"
+   }
+  ],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Ministry of Law and Justice",
+  "home": "https://molaw.gov.pk/",
+  "listing": "https://molaw.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:25:47+00:00",
+  "robots": {
+   "status": 404,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://molaw.gov.pk/",
+  "title": "Ministry of Law and Justice",
+  "copyright": "Copyright ©2026, Ministry of Law & Justice",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Law and Justice Commission of Pakistan",
+  "home": "https://ljcp.gov.pk/",
+  "listing": "https://ljcp.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:25:52+00:00",
+  "robots": {
+   "status": 404,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://ljcp.gov.pk/",
+  "title": "Law & Justice Commission Of Pakistan",
+  "copyright": "Copyrights © 2026 All Rights Reserved by Law & Justice Commission of Pakistan",
+  "mentions_scraping_ban": false,
+  "terms_links": [
+   {
+    "text": "National Judicial Policy",
+    "href": "https://ljcp.gov.pk/SiteImage/Misc/files/http___ljcp_gov_pk_nljcp_assets_dist_NJP_njp.pdf"
+   }
+  ],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "National Assembly of Pakistan",
+  "home": "https://na.gov.pk/",
+  "listing": "https://na.gov.pk/en/acts-tenure.php",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:25:56+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "#",
+    "# robots.txt",
+    "#",
+    "# This file is to prevent the crawling and indexing of certain parts",
+    "# of your site by web crawlers and spiders run by sites like Yahoo!",
+    "# and Google. By telling these \"robots\" where not to go on your site,",
+    "# you save bandwidth and server resources.",
+    "#",
+    "# This file will be ignored unless it is at the root of your host:",
+    "# Used:    http://example.com/robots.txt",
+    "# Ignored: http://example.com/site/robots.txt",
+    "#",
+    "# For more information about the robots.txt standard, see:",
+    "# http://www.robotstxt.org/wc/robots.html",
+    "#",
+    "# For syntax checking, see:",
+    "# http://www.sxw.org.uk/computing/robots/check.html",
+    "User-agent: *",
+    "Crawl-delay: 10",
+    "# Directories",
+    "Disallow: /manage/",
+    "Disallow: /_manage/",
+    "# Paths (clean URLs)",
+    "Disallow: /manage/",
+    "Disallow: /_manage/"
+   ],
+   "crawl_delay": 10
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://na.gov.pk/en/index.php",
+  "title": "National Assembly of Pakistan",
+  "copyright": "Copyrights © 2026 All Rights Reserved by National Assembly of Pakistan Last Updated On: 5th October 2026, 03:46 PM $(\"marquee\")",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Senate of Pakistan",
+  "home": "https://senate.gov.pk/",
+  "listing": "https://senate.gov.pk/en/acts.php",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:26:01+00:00",
+  "robots": {
+   "status": 404,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://senate.gov.pk/en/index.php?id=-1&cattitle=Home",
+  "title": "Senate of Pakistan",
+  "copyright": "Copyright © 2019-2026",
+  "mentions_scraping_ban": false,
+  "terms_links": [
+   {
+    "text": "Terms of Use",
+    "href": "https://senate.gov.pk/en/messence.php?id=111&cattitle=TermsOfUse"
+   },
+   {
+    "text": "Disclaimer",
+    "href": "https://senate.gov.pk/en/messence.php?id=112&cattitle=Disclaimer"
+   },
+   {
+    "text": "Privacy Policy",
+    "href": "https://senate.gov.pk/en/messence.php?id=113&cattitle=Privacy"
+   }
+  ],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Printing Corporation of Pakistan (Gazette)",
+  "home": "https://pcp.gov.pk/",
+  "listing": "https://pcp.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:26:06+00:00",
+  "robots": {
+   "status": null,
+   "error": "ConnectTimeout: HTTPSConnectionPool(host='pcp.gov.pk', port=443): Max retries exceeded with url: /robots.txt (Caused by ConnectTimeoutEr"
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": null,
+  "error": "ConnectTimeout: HTTPSConnectionPool(host='pcp.gov.pk', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<HTTPS",
+  "status": "not reachable"
+ },
+ {
+  "name": "Punjab Code",
+  "home": "https://punjabcode.punjab.gov.pk/",
+  "listing": "https://punjabcode.punjab.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:26:53+00:00",
+  "robots": {
+   "status": 403,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://punjabcode.punjab.gov.pk/",
+  "title": "The Punjab Code",
+  "copyright": "© Law and Parliamentary Affairs Department, Government of The Punjab Powered by: Punjab Information Technology Board ",
+  "mentions_scraping_ban": false,
+  "terms_links": [
+   {
+    "text": "Disclaimer",
+    "href": "https://punjabcode.punjab.gov.pk/en/page/disclaimer"
+   },
+   {
+    "text": "Disclaimer",
+    "href": "https://punjabcode.punjab.gov.pk/en/page/disclaimer"
+   }
+  ],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Punjab Laws",
+  "home": "https://punjablaws.gov.pk/",
+  "listing": "https://punjablaws.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:26:57+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Disallow: /cgi-bin/",
+    "Disallow: /temp/",
+    "Sitemap: https://www.punjablaws.gov.pk/sitemap.xml"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://punjablaws.gov.pk/",
+  "title": "Punjab Laws Online",
+  "copyright": null,
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Sindh Laws",
+  "home": "https://sindhlaws.gov.pk/",
+  "listing": "https://sindhlaws.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:27:02+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Disallow: /admin/",
+    "Disallow: /App_Data/",
+    "Disallow: /bin/",
+    "Disallow: /obj/",
+    "Disallow: /scripts/",
+    "Allow: /",
+    "Sitemap: https://www.sindhlaws.gov.pk/sitemap.xml"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://sindhlaws.gov.pk/",
+  "title": "Law, Parliamentary Affairs & Criminal Prosecution Department, Government of Sindh",
+  "copyright": "© Copyrights 2024 Law, Parliamentary Affairs & Criminal Prosecution Department",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Khyber Pakhtunkhwa Code",
+  "home": "https://kpcode.kp.gov.pk/",
+  "listing": "https://kpcode.kp.gov.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:27:07+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Allow: /",
+    "Sitemap: https://kpcode.kp.gov.pk/juth/sitemap.xml"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://kpcode.kp.gov.pk/",
+  "title": "KP CODE",
+  "copyright": "© 2026 Law & Parliamentary Affairs Department, Government of KP $(function() { $( \"",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Balochistan Code",
+  "home": "https://balochistancode.gob.pk/",
+  "listing": "https://balochistancode.gob.pk/",
+  "content_type": "statute",
+  "checked_at": "2026-10-06T02:27:13+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "# As a condition of accessing this website, you agree to abide by the following",
+    "# content signals:",
+    "# (a)  If a content-signal = yes, you may collect content for the corresponding",
+    "#      use.",
+    "# (b)  If a content-signal = no, you may not collect content for the",
+    "#      corresponding use.",
+    "# (c)  If the website operator does not include a content signal for a",
+    "#      corresponding use, the website operator neither grants nor restricts",
+    "#      permission via content signal with respect to the corresponding use.",
+    "# The content signals and their meanings are:",
+    "# search:   building a search index and providing search results (e.g., returning",
+    "#           hyperlinks and short excerpts from your website's contents). Search does not",
+    "#           include providing AI-generated search summaries.",
+    "# ai-input: inputting content into one or more AI models (e.g., retrieval",
+    "#           augmented generation, grounding, or other real-time taking of content for",
+    "#           generative AI search answers).",
+    "# ai-train: training or fine-tuning AI models.",
+    "# ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF",
+    "# RIGHTS UNDER ARTICLE 4 OF THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT",
+    "# AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET."
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://balochistancode.gob.pk/",
+  "title": "Balochistan Code",
+  "copyright": "© Copyright var d = new Date(); document",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Supreme Court of Pakistan",
+  "home": "https://www.supremecourt.gov.pk/",
+  "listing": "https://www.supremecourt.gov.pk/latest-judgements/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:19+00:00",
+  "robots": {
+   "status": 403,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 403,
+  "final_url": "https://www.supremecourt.gov.pk/",
+  "title": "Access Denied",
+  "copyright": null,
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "not reachable"
+ },
+ {
+  "name": "Islamabad High Court",
+  "home": "https://www.ihc.gov.pk/",
+  "listing": "https://www.ihc.gov.pk/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:26+00:00",
+  "robots": {
+   "status": 404,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://www.ihc.gov.pk/",
+  "title": "ISLAMABAD HIGH COURT",
+  "copyright": null,
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Lahore High Court",
+  "home": "https://www.lhc.gov.pk/",
+  "listing": "https://www.lhc.gov.pk/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:30+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Disallow: /"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": false,
+  "robots_allows_listing": false,
+  "home_status": 200,
+  "final_url": "https://www.lhc.gov.pk/",
+  "title": "Lahore High Court",
+  "copyright": "© All photos, graphics and material on this site remain the copyright of Lahore High Court and should not be downloaded w",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "blocked"
+ },
+ {
+  "name": "Sindh High Court",
+  "home": "https://www.shc.gov.pk/",
+  "listing": "https://caselaw.shc.gov.pk/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:35+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Disallow: /causelist/"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://sindhhighcourt.gov.pk/",
+  "title": "Welcome to High Court of Sindh",
+  "copyright": "Copyright 2006, All Rights Reserved High Court of Sindh Scroll to Top ddsmoothmenu",
+  "mentions_scraping_ban": false,
+  "terms_links": [
+   {
+    "text": "National Judicial Policy",
+    "href": "https://sindhhighcourt.gov.pk/#njp"
+   },
+   {
+    "text": "National Judicial Policy 2009",
+    "href": "https://www.ljcp.gov.pk//SiteImage/Misc/files/http___ljcp_gov_pk_nljcp_assets_dist_NJP_njp.pdf"
+   },
+   {
+    "text": "Units Awarding Policy approved by the Administration Committ",
+    "href": "https://sindhhighcourt.gov.pk/news_notifications/source_files/Unit_Awarding_Policy_18.9.2024.pdf"
+   },
+   {
+    "text": "Withdrawal of Circular Regarding Austerity Measures and Work",
+    "href": "https://sindhhighcourt.gov.pk/news_notifications/source_files/notification/Policy_making_for_HC.pdf"
+   },
+   {
+    "text": "Withdrawal of Circular Regarding Austerity Measures and Work",
+    "href": "https://sindhhighcourt.gov.pk/news_notifications/source_files/notification/Policy_making_for_DC.pdf"
+   },
+   {
+    "text": "Units Awarding Policy approved by the Administration Committ",
+    "href": "https://sindhhighcourt.gov.pk/news_notifications/source_files/Unit_Awarding_Policy_18.9.2024.pdf"
+   },
+   {
+    "text": "Order No.Gaz/F.C/Agenda-2/2023 Dated 17-11-2023 regarding 'C",
+    "href": "https://sindhhighcourt.gov.pk/news_notifications/source_files/Order-SHCECRules-2006-17112023.jpeg"
+   },
+   {
+    "text": "Disclaimer",
+    "href": "https://sindhhighcourt.gov.pk/disclaimer.php"
+   }
+  ],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Peshawar High Court",
+  "home": "https://www.peshawarhighcourt.gov.pk/",
+  "listing": "https://www.peshawarhighcourt.gov.pk/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:42+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://www.peshawarhighcourt.gov.pk/",
+  "title": "",
+  "copyright": null,
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Balochistan High Court",
+  "home": "https://bhc.gov.pk/",
+  "listing": "https://bhc.gov.pk/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:47+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Disallow: /_scripts/",
+    "Disallow: /assets/",
+    "Disallow: /blocks/",
+    "Disallow: /lib/",
+    "Disallow: /media/",
+    "Disallow: /pages/"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://bhc.gov.pk/",
+  "title": "High Court of Balochistan",
+  "copyright": "© 2026 High Court of Balochistan",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "Federal Shariat Court",
+  "home": "https://www.federalshariatcourt.gov.pk/",
+  "listing": "https://www.federalshariatcourt.gov.pk/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:27:55+00:00",
+  "robots": {
+   "status": 200,
+   "lines": [
+    "User-agent: *",
+    "Allow: /wp-admin/admin-ajax.php",
+    "Disallow: /wp-admin/",
+    "Sitemap: https://www.federalshariatcourt.gov.pk/sitemap.xml",
+    "Sitemap: https://www.federalshariatcourt.gov.pk/sitemap.rss"
+   ],
+   "crawl_delay": null
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": 200,
+  "final_url": "https://www.federalshariatcourt.gov.pk/en/home/",
+  "title": "Home - Federal Shariat Court of Pakistan Federal Shariat Court of Pakistan federal shariat courtFederal Shariat Court of",
+  "copyright": "© 2026 Federal Shariat Court of Pakistan",
+  "mentions_scraping_ban": false,
+  "terms_links": [],
+  "status": "allowed (robots/home)"
+ },
+ {
+  "name": "PakLII",
+  "home": "https://www.paklii.org/",
+  "listing": "https://www.paklii.org/",
+  "content_type": "judgment",
+  "checked_at": "2026-10-06T02:28:08+00:00",
+  "robots": {
+   "status": null,
+   "error": "ConnectionError: HTTPSConnectionPool(host='www.paklii.org', port=443): Max retries exceeded with url: /robots.txt (Caused by NameResoluti"
+  },
+  "robots_allows_home": true,
+  "robots_allows_listing": true,
+  "home_status": null,
+  "error": "ConnectionError: HTTPSConnectionPool(host='www.paklii.org', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"H",
+  "status": "not reachable"
+ }
+]

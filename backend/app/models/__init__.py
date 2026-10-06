@@ -14,6 +14,7 @@ from app.models import (
     enums,  # noqa: F401
     lawyer,  # noqa: F401
     legal_corpus,  # noqa: F401
+    scraping,  # noqa: F401
     student,  # noqa: F401
     user,  # noqa: F401
 )
@@ -28,6 +29,7 @@ __all__ = [
     "enums",
     "lawyer",
     "legal_corpus",
+    "scraping",
     "student",
     "user",
 ]
