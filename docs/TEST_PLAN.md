@@ -5,7 +5,7 @@ legal assistance platform.
 **Scope:** auth, case management, AI chat, legal research, document
 analysis (with OCR/text extraction), and contract drafting and compliance.
 **Reference:** Final Report § 4.3 (Test Strategy), Tables 4.2–4.5.
-**Updated:** 6 October 2026: 306 automated backend tests; full live run before the mock presentation (§ 13).
+**Updated:** 6 October 2026: 317 automated backend tests; full live run before the mock presentation (§ 13).
 
 ---
 
@@ -82,12 +82,13 @@ real browser, for each role. Results are in § 9.
 | `unit/test_db_unavailable.py` | 7 | One retry, then 503; other DB errors stay 500 |
 | `unit/test_email_validator.py` | 5 | UT-EMAIL-001…002 |
 | `unit/test_query_rewrite.py` | 18 | Rewrite v2 (off), statute-name backstop, per-call token-usage log |
-| `unit/test_chat_quality_steps.py` | 40 | Strict prompt, low-confidence flag, family index and fallback (all off) |
+| `unit/test_chat_quality_steps.py` | 41 | Strict prompt, low-confidence flag, family index and fallback (all off) |
 | `unit/test_ocr_scanned.py` | 11 | Scanned PDFs without Poppler; Urdu re-read; real Tesseract |
 | `unit/test_validation_errors.py` | 3 | 422s carry code, message and hint |
 | `unit/test_case_fields.py` | 18 | General case types; number, parties, next hearing; PATCH rules; timeline |
 | `unit/test_research_weak.py` | 3 | Weak-match flag on research searches |
-| **Total** | **306** | |
+| `unit/test_contract_edit.py` | 10 | Contract editing: new version, checks re-run, lawyers only (MT-CON-04) |
+| **Total** | **317** | |
 
 ---
 
