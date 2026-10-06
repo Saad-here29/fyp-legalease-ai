@@ -46,6 +46,8 @@ SCHEDULE = re.compile(
 ORDINAL = {w: i for i, w in enumerate(
     ("FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINTH", "TENTH"), 1)}
 ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10}
+SHORT_WORDS = {"a", "i", "an", "as", "at", "be", "by", "do", "go", "he", "if", "in", "is", "it", "me", "my", "no",
+               "of", "on", "or", "so", "to", "up", "us", "we"}
 CSV_SECTION = re.compile(r"^Section\s+(\d+[A-Z]{0,3})\s*[—–-]\s*(.*)$")
 CSV_CHAPTER = re.compile(r"^Chapter\s+\S+\s*[—–-]")
 
@@ -161,7 +163,9 @@ def join_ocr_splits(text: str, vocab: Counter | None, min_count: int = 10) -> st
     """Conservative OCR repair: 'wi fe' -> 'wife', 'Coun cil' -> 'Council'.
     Two adjacent alphabetic tokens are joined only when the joined word is
     common in the corpus (>= min_count) AND more common than each piece, so
-    real word pairs ('a gain', 'the rein', 'in to') are left alone."""
+    real word pairs ('a gain', 'the rein', 'in to') are left alone. A trailing
+    1-2 letter fragment that isn't a word ('declare d', 'wish es') is judged
+    on the first piece only, since 'd' and 'es' are common as clause labels."""
     if not vocab:
         return text
 
@@ -169,7 +173,9 @@ def join_ocr_splits(text: str, vocab: Counter | None, min_count: int = 10) -> st
         a, b = m.group(1), m.group(2)
         j = (a + b).lower()
         cj = vocab.get(j, 0)
-        if cj >= min_count and vocab.get(a.lower(), 0) < cj and vocab.get(b.lower(), 0) < cj:
+        suffix = len(b) <= 2 and b.lower() not in SHORT_WORDS and not (
+            b.lower() == "s" and m.string[m.end() + 1:m.end() + 2] == ".")      # "s. 5" is "section 5"
+        if cj >= min_count and vocab.get(a.lower(), 0) < cj and (suffix or vocab.get(b.lower(), 0) < cj):
             return a
         return m.group(0)
 

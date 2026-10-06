@@ -71,6 +71,10 @@ def test_ocr_join_is_conservative():
     # real word pairs stay apart: "a" and "in"/"to" are commoner than the joined word
     assert join_ocr_splits("a gain went in to it", vocab) == "a gain went in to it"
     assert join_ocr_splits("the wi fe", None) == "the wi fe"
+    # a trailing fragment that isn't a word is judged on the first piece ("d" is a common clause label)
+    vocab.update({"declared": 1100, "declare": 580, "d": 9000, "s": 9000, "section": 5000, "sections": 900})
+    assert join_ocr_splits("was declare d void", vocab) == "was declared void"
+    assert join_ocr_splits("under section s. 5", vocab) == "under section s. 5"
 
 
 def test_csv_section_table():

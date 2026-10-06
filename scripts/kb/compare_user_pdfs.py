@@ -41,7 +41,7 @@ WORD = re.compile(r"[A-Za-z]+")
 def errors(text: str, vocab) -> dict:
     words = WORD.findall(text)
     split, glued, split_ex, glued_ex = 0, 0, [], []
-    for a, b in zip(words, words[1:]):
+    for a, b in zip(words, words[1:], strict=False):
         j = (a + b).lower()
         cj = vocab.get(j, 0)
         if cj >= 10 and vocab.get(a.lower(), 0) < cj and vocab.get(b.lower(), 0) < cj:
@@ -81,8 +81,7 @@ def example(corpus_text: str, pdf_text: str, broken: str) -> dict | None:
     return {"corpus": " ".join(ctx.split()), "pdf": " ".join(pdf_text[max(0, a - 15): b + 16].split())}
 
 
-def main() -> int:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+def compare() -> list[dict]:
     corpus = json.loads(CORPUS.read_text(encoding="utf-8"))
     by = {r["title"]: r["text"] for r in corpus}
     vocab = build_vocab(r["text"] for r in corpus)
@@ -110,7 +109,12 @@ def main() -> int:
             "corpus_errors": {k: v for k, v in e_cor.items() if not k.endswith("examples")},
             "examples_where_pdf_is_clean": exs,
         })
-    print(json.dumps(out, ensure_ascii=False, indent=1))
+    return out
+
+
+def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    print(json.dumps(compare(), ensure_ascii=False, indent=1))
     return 0
 
 
