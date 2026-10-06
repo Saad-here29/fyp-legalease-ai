@@ -99,6 +99,24 @@ Run them sparingly.
 | MT-RES-05 | Research | Empty query | Submit an empty search | Validation message, no request | Search button disabled; submitting sends no request | Pass (2026-10-05) |
 | MT-RES-06 † | Research | FR-RES-03 latency | Time five searches | Record the times (target ≤2 s; about 3 s expected) | "bail in a non-bailable offence": 1.8 s including the rewrite (one timed search; Groq cap) | Pass (2026-10-06), 1 sample |
 
+### 5b. Knowledge Base and Research filters (kb-v2, branch `kb-v2`)
+
+Run each case twice, with `KB_V2=false` and `KB_V2=true`; the screens must work both ways.
+
+| ID | Module | Requirement | Steps | Expected | Actual | Status |
+|---|---|---|---|---|---|---|
+| MT-KB-01 | Knowledge Base | Navigation | Sign in as each role (lawyer, client, student) | "Knowledge Base" is in the sidebar for all three | to run | to run |
+| MT-KB-02 | Knowledge Base | Stat strip | Open Knowledge Base | Laws 35, section records ~3,177, coverage "499 of 526" with "176 more are counted by the site but not listed" | to run | to run |
+| MT-KB-03 | Knowledge Base | List filters | Filter by category Family Laws, then tier 1, status Under review, year 1890, title "penal" | Table narrows each time; "No law matches these filters." for a filter with no match; Clear filters restores 35 | to run | to run |
+| MT-KB-04 | Knowledge Base | Law detail | Open Guardians and Wards Act, 1890 | Metadata, source "LegalEase corpus (Pakistan Code-derived)", tier tag, the Pakistan Code notice, 56 sections | to run | to run |
+| MT-KB-05 | Knowledge Base | Record JSON | Click s.17, then Copy | Full record as JSON with every spec field; Copy puts it on the clipboard | to run | to run |
+| MT-KB-06 | Knowledge Base | Download | Click Download JSON | `guardians-and-wards-act-1890.json` downloads with all its records | to run | to run |
+| MT-KB-07 | Knowledge Base | Original file | Open Pakistan Penal Code, 1860; Open original. Then open Contract Act, 1872 | PPC: the user-supplied PDF opens, label "user-supplied PDF - source URL to be confirmed". Contract Act: no Open original button | to run | to run |
+| MT-KB-08 | Knowledge Base | Access control | Call `/api/v1/kb/stats` signed out; request `/api/v1/kb/documents/..%2F..%2Fsecret/original` signed in | 401 signed out; 404 for the crafted id (no file outside `storage/kb/raw/`) | to run | to run |
+| MT-KB-09 | Research | Filters | Search "custody of a minor child"; set Category Family Laws, then Jurisdiction, Source tier 1, Year 1850-1900 | Results narrow; "Filters cover laws with known metadata (N of M)" is shown; cards show Act, section and heading, tier tag and "Record in Knowledge Base" | to run | to run |
+| MT-KB-10 | Research | Empty filters | Same search with Year 2025-2026, then Category Excise/Taxation Laws | "No passage matches this query with these filters." and a Clear filters button | to run | to run |
+| MT-KB-11 | AI Chat | Richer sources | With `KB_V2=true`, ask "What is the procedure for talaq under the Muslim Family Laws Ordinance?" | Sources read "Act - s.N Heading" with a "Record in Knowledge Base" link; with `KB_V2=false` the sources look as before | to run | to run |
+
 ## 6. Contracts (FR-CON-01, 03, 04)
 
 | ID | Module | Requirement | Steps | Expected | Actual | Status |

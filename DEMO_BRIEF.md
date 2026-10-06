@@ -351,6 +351,22 @@ Details are in `PROJECT_CONTEXT.md`.
 - khula or inheritance questions (retrieval gap);
 - PPC s. 302 and Contract Act s. 10 questions (known misses).
 
+### Knowledge Base in 60 seconds (branch `kb-v2` only, not in the mock tag)
+
+1. **Knowledge Base** in the sidebar: the stat strip (35 laws, ~3,177
+   section records, 499 of 526 listed Pakistan Code Acts held; 176 more are
+   counted by the site but not listed).
+2. Open **Guardians and Wards Act, 1890**: its metadata, the source label
+   ("LegalEase corpus (Pakistan Code-derived)") and the Pakistan Code
+   notice. Never call it official text: the Gazette is authoritative.
+3. Click **s.17 Matters to be considered by the Court in appointing
+   guardian**: the stored record appears as JSON (title, section, heading,
+   text, source, tier, content hash, status).
+4. **Download JSON**: the law's records as one file.
+
+Say: every passage the chat or research shows can be traced to one of these
+records, with where it came from.
+
 ### Starting the system
 
 Use two separate windows, so neither server is stopped when another tool

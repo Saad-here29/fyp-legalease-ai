@@ -156,7 +156,7 @@ for them** — adapt each page to what exists (decided 2026-09-27):
 | Mockup | Adaptation |
 |---|---|
 | Dashboards, Cases list/detail (pp. 4–6, 8–9) | Remove Calendar, cause list, deadlines, client messages, and the student reading/practice sections. Keep only real data. Cases: no Next hearing / Client columns ("Updated" instead), no issues framed, next-hearing panel, Research/Notes tabs or "Ask about this case"; the primary action is the real status change. No status shows in Seal (no due dates exist). |
-| Research (p. 11) | Remove the jurisdiction and court filters and the "Judgments" source type — the index is statute text only, and these filters were removed for that reason. No "Summarise top results with AI" (not built). Passage analysis runs on request, not on open; its "judgment" field is labelled "Operative rule". |
+| Research (p. 11) | Remove the jurisdiction and court filters and the "Judgments" source type — the index is statute text only, and these filters were removed for that reason. No "Summarise top results with AI" (not built). Passage analysis runs on request, not on open; its "judgment" field is labelled "Operative rule". *Update 2026-10-06 (kb-v2, branch only):* category, jurisdiction, source tier and year filters were added at the user's request; they apply only to passages whose law's metadata is known, and the page says how many documents that covers. |
 | AI Chat (p. 10) | No "Open at section" deep links — show the source name and excerpt only. No scope / linked-case tags, "Save to case" or attach button (not built). Meta line counts statutes; "No unverified section references" is derived from the backend citation check's "(unverified)" flags. |
 | Document Analysis (p. 12) | No page references on extracted values — the API has none. No "View original" (no download endpoint), no breadcrumb or document list (one document per visit). Summary's own risk section is dropped when its risks are shown as Points to review rows. |
 | Contracts (p. 13) | Only the 3 real templates (NDA, Employment, Service Agreement); no "Export .docx" — no export exists. No "Fix failing item"; the compliance check is the backend's keyword check — pass/fail only, no review state. |
@@ -165,7 +165,7 @@ for them** — adapt each page to what exists (decided 2026-09-27):
 **Corpus wording (2026-09-28):** describe the library as "about N Pakistani
 legal documents" (N live from `/research/stats`), "mostly Acts, Ordinances,
 Codes and Orders" where more detail helps. Never name a source for it (e.g.
-"the Pakistan Code") — the raw datasets' provenance isn't recorded — and
+"the Pakistan Code") — the raw datasets' provenance isn't recorded — *(Exception, kb-v2 Knowledge Base page, user decision 2026-10-06: it labels records "LegalEase corpus (Pakistan Code-derived)" and shows the Pakistan Code notice; it never calls them official text.)* and
 don't call all of it "statutes": it includes ESTACODE, a civil-service manual
 (see `docs/corpus_statute_list.md`).
 | Landing (p. 3) | No Pricing, free trial or "Start your free trial" copy. |
