@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.ai import embeddings
+from app.core.logging import logger
 from app.db.session import get_db
 from app.middlewares.auth import CurrentUser
 from app.schemas.research import (
@@ -18,7 +19,7 @@ from app.schemas.research import (
     StructuredAnalysis,
     StructuredAnalysisRequest,
 )
-from app.services.research_service import ResearchService
+from app.services.research_service import ResearchService, filter_coverage
 
 router = APIRouter()
 
@@ -35,7 +36,13 @@ def index_stats():
     # so "stats" isn't parsed as an id.
     from app.db.session import SessionLocal
     from app.scraping.stats import cached_scrape_updates
-    return {**embeddings.index_stats(), "updates": cached_scrape_updates(SessionLocal)}
+    try:
+        coverage = filter_coverage()
+    except Exception as e:  # noqa: BLE001 — a count on the page must never fail the endpoint
+        logger.warning(f"Filter coverage unavailable: {e}")
+        coverage = None
+    return {**embeddings.index_stats(), "updates": cached_scrape_updates(SessionLocal),
+            "filter_coverage": coverage}
 
 
 @router.post(
@@ -55,13 +62,20 @@ def search(
         year_from=payload.year_from,
         year_to=payload.year_to,
         case_type=payload.case_type,
+        category=payload.category,
+        jurisdiction=payload.jurisdiction,
+        source_tier=payload.source_tier,
     )
+    active = any(v not in (None, "") for v in (payload.category, payload.jurisdiction, payload.source_tier,
+                                               payload.year_from, payload.year_to))
     return ResearchSearchResponse(
         query=payload.query,
         total=len(results),
         results=results,
         weak_matches=bool(results)
         and max(r.relevance for r in results) < embeddings.similarity_threshold(),
+        filters_active=active,
+        filter_coverage=filter_coverage() if active else None,
     )
 
 

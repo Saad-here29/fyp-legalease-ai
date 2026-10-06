@@ -10,7 +10,7 @@ import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -32,6 +32,10 @@ class ChatMessageRequest(BaseModel):
 
 
 class CitationRef(BaseModel):
+    # Knowledge-base v2 passages add section, heading, source_url and doc_id;
+    # they're passed through only when present, so v1 citations are unchanged.
+    model_config = ConfigDict(extra="allow")
+
     n: int                      # matches the [n] marker in the answer
     source: str
     excerpt: str | None = None

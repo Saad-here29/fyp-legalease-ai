@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.ai import embeddings
 from app.ai.client import get_ai_client
 from app.ai.query_rewrite import rewrite_for_search
+from app.core.config import settings
 from app.schemas.research import ResearchResult, StructuredAnalysis
 
 # Map raw corpus filenames → human-readable titles. Anything matching a
@@ -63,6 +64,51 @@ def _trim_to_sentence(text: str, *, max_len: int = 800) -> str:
     return s.strip() or text.strip()
 
 
+def with_kb_metadata(hit: dict) -> dict:
+    """A hit plus the knowledge-base metadata the Research filters use.
+    v2 hits carry it; an old-index chunk gets category/year/tier from
+    category_map.json when its source title matched a Pakistan Code listing,
+    and nothing otherwise (it then drops out when a filter is active)."""
+    from app.kb import catalog
+    if "_kb_meta" in hit:
+        return hit
+    out = dict(hit)
+    if hit.get("kb") == "v2":
+        out["kb_law_id"] = (hit.get("doc_id") or "").split("/")[1] if "/" in (hit.get("doc_id") or "") else None
+        out["_kb_meta"] = True
+    else:
+        meta = catalog.v1_metadata(embeddings.record_source(hit))
+        if meta:
+            out.update({k: v for k, v in meta.items() if out.get(k) is None})
+        out["_kb_meta"] = bool(meta)
+    return out
+
+
+def matches_kb_filters(hit: dict, f: dict) -> bool:
+    if not hit.get("_kb_meta"):
+        return False
+    if f.get("category") and (hit.get("category") or "").lower() != f["category"].lower():
+        return False
+    if f.get("jurisdiction") and (hit.get("jurisdiction") or "").lower() != f["jurisdiction"].lower():
+        return False
+    if f.get("source_tier") is not None and hit.get("source_tier") != f["source_tier"]:
+        return False
+    yr = hit.get("year")
+    if f.get("year_from") is not None and (yr is None or yr < f["year_from"]):
+        return False
+    return not (f.get("year_to") is not None and (yr is None or yr > f["year_to"]))
+
+
+def filter_coverage() -> dict:
+    """Documents in the searchable library whose category and year are known."""
+    from app.kb import catalog, index_v2
+    v1 = {embeddings.record_source(m) for m in embeddings._META}
+    excluded = set()
+    if settings.KB_V2 and index_v2._V2_INDEX.load():
+        excluded = index_v2._V2_INDEX.excluded
+    return catalog.filter_coverage(v1, excluded, settings.KB_V2)
+
+
 class ResearchService:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -75,22 +121,35 @@ class ResearchService:
         year_from: int | None = None,
         year_to: int | None = None,
         case_type: str | None = None,
+        category: str | None = None,
+        jurisdiction: str | None = None,
+        source_tier: int | None = None,
     ) -> list[ResearchResult]:
         embeddings.build_or_load(self.db)
         search_query = rewrite_for_search(query)
-        hits = embeddings.search(
-            search_query,
-            top_k=top_k,
-            filters={
-                "court": court,
-                "year_from": year_from,
-                "year_to": year_to,
-                "case_type": case_type,
-            },
-        )
+        kb_filters = {"category": category, "jurisdiction": jurisdiction, "source_tier": source_tier,
+                      "year_from": year_from, "year_to": year_to}
+        if not any(v not in (None, "") for v in kb_filters.values()):
+            hits = embeddings.search(
+                search_query,
+                top_k=top_k,
+                filters={
+                    "court": court,
+                    "year_from": year_from,
+                    "year_to": year_to,
+                    "case_type": case_type,
+                },
+            )
+        else:
+            # Strict knowledge-base filters: search a wider pool, keep only
+            # passages whose law's metadata is known and matches.
+            pool = embeddings.search(search_query, top_k=min(50, top_k * 10),
+                                     filters={"court": court, "case_type": case_type})
+            hits = [h for h in (with_kb_metadata(h) for h in pool) if matches_kb_filters(h, kb_filters)][:top_k]
 
         results: list[ResearchResult] = []
         for h in hits:
+            h = with_kb_metadata(h)
             raw_text = embeddings.record_text(h)
             text = _trim_to_sentence(raw_text)
             excerpt = text[:280] + ("..." if len(text) > 280 else "")
@@ -122,6 +181,14 @@ class ResearchService:
                     excerpt=excerpt,
                     text=text,
                     relevance=round(h.get("relevance", 0.0), 4),
+                    section=h.get("section"),
+                    heading=h.get("heading"),
+                    category=h.get("category"),
+                    jurisdiction=h.get("jurisdiction"),
+                    source_tier=h.get("source_tier"),
+                    source_url=h.get("source_url"),
+                    kb_law_id=h.get("kb_law_id"),
+                    kb_record_id=h.get("doc_id") if h.get("kb") == "v2" else None,
                 )
             )
         return results

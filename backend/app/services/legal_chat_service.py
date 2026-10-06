@@ -222,6 +222,15 @@ def family_scope_applies(message: str, search_query: str, family: str) -> bool:
     return family == "on" or family_index.is_family_question(message, search_query)
 
 
+# Knowledge-base v2 passages (KB_V2 on) carry where they come from; v1
+# passages have none of these, so their citations are unchanged.
+CITATION_EXTRAS = ("section", "heading", "source_url", "doc_id")
+
+
+def citation_extras(passage: dict) -> dict:
+    return {k: passage[k] for k in CITATION_EXTRAS if passage.get(k) is not None}
+
+
 def retrieve_passages(message: str, search_query: str, *, family: str = "auto") -> list[dict]:
     """The passages the model will see: the top RAG_TOP_K for the
     (rewritten) search query that pass the threshold, with contents-list
@@ -409,6 +418,7 @@ class LegalChatService:
                 "excerpt": embeddings.record_text(p)[:240],
                 "relevance": round(p.get("relevance", 0), 4),
                 "family": p.get("family_window") is not None,
+                **citation_extras(p),
             }
             for p in passages
         ]
@@ -450,7 +460,8 @@ class LegalChatService:
             "session_id": str(session_id),
             # Numbered exactly as the answer's [n] markers: passage n = item n.
             "citations": [
-                {"n": i + 1, "source": c["source"], "excerpt": c.get("excerpt")}
+                {"n": i + 1, "source": c["source"], "excerpt": c.get("excerpt"),
+                 **{k: c[k] for k in CITATION_EXTRAS if c.get(k) is not None}}
                 for i, c in enumerate(citations or [])
             ],
             "response_time_ms": response_time_ms,
