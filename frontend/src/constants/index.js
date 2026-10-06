@@ -61,6 +61,8 @@ export const ROUTES = Object.freeze({
   CHATBOT: "/chatbot",
   RESEARCH: "/research",
   RESEARCH_DETAIL: "/research/:id",
+  KNOWLEDGE_BASE: "/knowledge-base",
+  KNOWLEDGE_BASE_LAW: "/knowledge-base/:id",
   DOCUMENTS: "/documents",
   CONTRACTS: "/contracts",
   CONTRACT_DETAIL: "/contracts/:id",

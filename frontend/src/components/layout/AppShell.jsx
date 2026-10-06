@@ -7,6 +7,7 @@ import {
   Search,
   FileText,
   PenLine,
+  Library,
   LogOut,
   Menu,
   X,
@@ -31,6 +32,7 @@ const NAV_BY_ROLE = {
     { to: ROUTES.CASES, label: "Cases", icon: Folder },
     { to: ROUTES.CHATBOT, label: "AI Chat", icon: MessageSquare },
     { to: ROUTES.RESEARCH, label: "Research", icon: Search },
+    { to: ROUTES.KNOWLEDGE_BASE, label: "Knowledge Base", icon: Library },
     { to: ROUTES.DOCUMENTS, label: "Documents", icon: FileText },
     { to: ROUTES.CONTRACTS, label: "Contracts", icon: PenLine },
   ],
@@ -39,6 +41,7 @@ const NAV_BY_ROLE = {
     { to: ROUTES.CASES, label: "My cases", icon: Folder },
     { to: ROUTES.CHATBOT, label: "AI Chat", icon: MessageSquare },
     { to: ROUTES.RESEARCH, label: "Research", icon: Search },
+    { to: ROUTES.KNOWLEDGE_BASE, label: "Knowledge Base", icon: Library },
     { to: ROUTES.DOCUMENTS, label: "Documents", icon: FileText },
     { to: ROUTES.CONTRACTS, label: "Contracts", icon: PenLine },
   ],
@@ -46,6 +49,7 @@ const NAV_BY_ROLE = {
     { to: ROUTES.STUDENT_DASHBOARD, label: "Dashboard", icon: Home },
     { to: ROUTES.CHATBOT, label: "AI Chat", icon: MessageSquare },
     { to: ROUTES.RESEARCH, label: "Research", icon: Search },
+    { to: ROUTES.KNOWLEDGE_BASE, label: "Knowledge Base", icon: Library },
   ],
 };
 

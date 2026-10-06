@@ -40,6 +40,16 @@ export const ENDPOINTS = {
     search: "/research/search",
     stats: "/research/stats",
   },
+  kb: {
+    stats: "/kb/stats",
+    documents: "/kb/documents",
+    document: (id) => `/kb/documents/${encodeURIComponent(id)}`,
+    sections: (id) => `/kb/documents/${encodeURIComponent(id)}/sections`,
+    download: (id) => `/kb/documents/${encodeURIComponent(id)}/download`,
+    original: (id) => `/kb/documents/${encodeURIComponent(id)}/original`,
+    // Record ids contain "/" ("legalease-corpus/<law>/s17"); each part is encoded.
+    record: (recordId) => `/kb/records/${recordId.split("/").map(encodeURIComponent).join("/")}`,
+  },
   contracts: {
     list: "/contracts",
     draft: "/contracts/draft",
