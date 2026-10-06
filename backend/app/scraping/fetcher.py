@@ -29,6 +29,10 @@ class LimitReached(Exception):
     """The per-run page or PDF cap was hit; the run stops fetching."""
 
 
+class Disallowed(Exception):
+    """robots.txt doesn't allow our User-Agent to fetch this URL."""
+
+
 @dataclass
 class FetchResult:
     url: str
@@ -52,6 +56,9 @@ class Fetcher:
     pdfs: int = 0
     requests_made: int = 0
     _last: dict[str, float] = field(default_factory=dict)
+    _robots: dict[str, object] = field(default_factory=dict)
+    host_delay: dict[str, float] = field(default_factory=dict)
+    obey_robots: bool = True
 
     def __post_init__(self) -> None:
         if self.session is None:
@@ -59,16 +66,47 @@ class Fetcher:
         self.session.headers["User-Agent"] = USER_AGENT
 
     def _wait_for(self, host: str) -> None:
+        delay = max(self.delay, self.host_delay.get(host, 0.0))
         last = self._last.get(host)
         if last is not None:
             gap = self.clock() - last
-            if gap < self.delay:
-                self.sleep(self.delay - gap)
+            if gap < delay:
+                self.sleep(delay - gap)
         self._last[host] = self.clock()
+
+    def allowed(self, url: str) -> bool:
+        """robots.txt check, cached per host (RFC 9309): a 4xx robots.txt
+        means everything is allowed; 5xx or no answer means stay off. A
+        Crawl-delay longer than our own delay is honoured."""
+        import urllib.robotparser
+        parts = urlparse(url)
+        host = parts.netloc
+        rp = self._robots.get(host)
+        if rp is None:
+            rp = urllib.robotparser.RobotFileParser()
+            self._wait_for(host)
+            self.requests_made += 1
+            try:
+                r = self.session.get(f"{parts.scheme}://{host}/robots.txt", timeout=self.timeout)
+                if r.status_code >= 500:
+                    rp.disallow_all = True
+                elif r.status_code >= 400 or "html" in r.headers.get("content-type", ""):
+                    rp.parse([])
+                else:
+                    rp.parse(r.text.splitlines())
+            except requests.RequestException:
+                rp.disallow_all = True
+            cd = rp.crawl_delay(USER_AGENT)
+            if cd:
+                self.host_delay[host] = float(cd)
+            self._robots[host] = rp
+        return rp.can_fetch(USER_AGENT, url)
 
     def get(self, url: str, *, pdf: bool = False) -> FetchResult:
         """One page (or PDF). Raises LimitReached before going over a cap, and
         requests.RequestException once the retries are used up."""
+        if self.obey_robots and not self.allowed(url):
+            raise Disallowed(f"robots.txt disallows {url}")
         if pdf and self.pdfs >= self.max_pdfs:
             raise LimitReached(f"PDF cap of {self.max_pdfs} reached")
         if self.pages >= self.max_pages:
