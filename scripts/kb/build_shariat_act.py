@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 import pymupdf  # noqa: E402
 
+from app.kb.catalog import OVERRIDE_SOURCE, override_category  # noqa: E402
 from app.kb.records import make_records, slugify, validate  # noqa: E402
 from app.kb.sectioner import Section, clean_body, split  # noqa: E402
 
@@ -55,7 +56,7 @@ def main() -> int:
     if m:
         sections.insert(0, Section("Preamble", None, clean_body(m.group(1)).rstrip(" ;") + ";"))
     meta = {
-        "title": TITLE, "year": 1962, "category": None, "act_number": "West Pakistan Act No. V of 1962",
+        "title": TITLE, "year": 1962, "category": override_category(TITLE), "category_source": OVERRIDE_SOURCE, "act_number": "West Pakistan Act No. V of 1962",
         "status": "under_review", "source": "user-supplied PDF", "source_tier": 2, "source_url": None,
         "original_file": f"backend/storage/kb/raw/{PDF_NAME}", "scraped_at": None, "jurisdiction": "Pakistan", "audience": "general",
         "provenance_note": ("Supplied by the user as a PDF (Word export dated 2025-03-24, 'RGN Date: "

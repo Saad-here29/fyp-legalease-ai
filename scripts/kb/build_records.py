@@ -18,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
+from app.kb.catalog import LISTING_SOURCE, OVERRIDE_SOURCE, override_category  # noqa: E402
 from app.kb.records import CORPUS_SOURCE, make_records, slugify  # noqa: E402
 from app.kb.sectioner import build_vocab, split, split_schedule_items  # noqa: E402
 
@@ -161,8 +162,12 @@ def main() -> int:
                 chosen = (ct, r, res)
                 break
         category, law = listing_for(copies, cmap)
+        # No Pakistan Code listing: the hand-written override (app/kb/category_overrides.json).
+        category_source = LISTING_SOURCE if category else None
+        if not category and override_category(title):
+            category, category_source = override_category(title), OVERRIDE_SOURCE
         meta = {
-            "title": title, "year": year, "category": category,
+            "title": title, "year": year, "category": category, "category_source": category_source,
             "act_number": law["act_number"] if law else None,
             "status": law["status"] if law else "current",
             "source": CORPUS_SOURCE, "source_tier": 1 if law else 2,

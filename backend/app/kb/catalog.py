@@ -27,6 +27,27 @@ SOURCE_LABELS = {
 CORPUS_LABEL = "LegalEase corpus (Pakistan Code-derived)"
 
 
+OVERRIDES_PATH = Path(__file__).with_name("category_overrides.json")
+OVERRIDE_SOURCE = "LegalEase override"
+LISTING_SOURCE = "Pakistan Code listing"
+
+
+def category_overrides() -> list[dict]:
+    """Hand-written categories for core laws in no Pakistan Code listing
+    (category_overrides.json, one reason per entry)."""
+    try:
+        return json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))["overrides"]
+    except (OSError, ValueError, KeyError):
+        return []
+
+
+def override_category(title: str | None) -> str | None:
+    for o in category_overrides():
+        if o["title"] == title:
+            return o["category"]
+    return None
+
+
 def kb_dir() -> Path:
     return Path(settings.KB_DIR)
 
@@ -39,7 +60,8 @@ def source_label(source: str | None) -> str:
 
 def _files() -> list[Path]:
     d = kb_dir()
-    return sorted((d / "records").glob("*.jsonl")) + [d / "category_map.json", Path(settings.KB_V2_METADATA_PATH)]
+    return sorted((d / "records").glob("*.jsonl")) + [d / "category_map.json", Path(settings.KB_V2_METADATA_PATH),
+                                                      OVERRIDES_PATH]
 
 
 def _stamp() -> tuple:
@@ -55,10 +77,14 @@ def _load() -> dict:
             continue
         first = recs[0]
         law_id = path.stem
+        category = first.get("category") or override_category(first["title"])
+        category_source = first.get("category_source") or (
+            None if not category else LISTING_SOURCE if first.get("category") else OVERRIDE_SOURCE)
         laws[law_id] = {
             "doc_id": law_id,
             "title": first["title"],
-            "category": first.get("category"),
+            "category": category,
+            "category_source": category_source,
             "jurisdiction": first.get("jurisdiction"),
             "year": first.get("year"),
             "act_number": first.get("act_number"),
@@ -105,6 +131,12 @@ def _v1_metadata(cmap: dict, laws: dict) -> dict[str, dict]:
             for corpus in m.get("corpus", []):
                 out[corpus["title"]] = {"category": c["name"], "year": law.get("year"),
                                         "jurisdiction": "Pakistan", "source_tier": 1}
+    # Core laws in no listing: the hand-written override (tier 2, as their records).
+    years = {law_["title"]: law_.get("year") for law_ in laws.values()}
+    for o in category_overrides():
+        for t in o.get("corpus_titles", []):
+            out.setdefault(t, {"category": o["category"], "year": years.get(o["title"]),
+                               "jurisdiction": "Pakistan", "source_tier": 2})
     return out
 
 
@@ -160,12 +192,13 @@ def stats() -> dict:
         "coverage": coverage(d["cmap"]),
         # Every Pakistan Code category with listed Acts: the Research filter's choices
         # (old-index passages take their category from these listings).
-        "categories": sorted(c["name"] for c in d["cmap"].get("categories", []) if c.get("listed_count")),
+        "categories": sorted({c["name"] for c in d["cmap"].get("categories", []) if c.get("listed_count")}
+                             | {o["category"] for o in category_overrides()}),
         "kb_v2_search": settings.KB_V2,
     }
 
 
-PUBLIC_LAW_FIELDS = ("doc_id", "title", "category", "jurisdiction", "year", "act_number", "source", "source_label",
+PUBLIC_LAW_FIELDS = ("doc_id", "title", "category", "category_source", "jurisdiction", "year", "act_number", "source", "source_label",
                      "source_tier", "source_url", "status", "audience", "source_version", "provenance_note",
                      "sectioned", "sections")
 

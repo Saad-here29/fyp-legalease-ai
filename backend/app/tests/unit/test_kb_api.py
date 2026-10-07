@@ -93,7 +93,9 @@ def test_stats(kb, authed):
     assert s["laws"] == 4 and s["section_records"] == 5
     assert s["by_category"]["Family Laws"] == 1 and s["by_source_tier"]["2"] == 3
     assert s["jurisdictions"] == ["Pakistan"]
-    assert s["categories"] == ["Civil Laws", "Family Laws"]
+    # listing categories plus the hand-written override categories (B6)
+    assert s["categories"] == ["Civil Laws", "Constitutional Law", "Criminal Laws", "Family Laws", "Law of Evidence"]
+    assert s["by_category"]["Criminal Laws"] == 1          # PPC via its override
     c = s["coverage"]
     assert (c["held"], c["listed"], c["site_badge_total"], c["not_listed"]) == (114, 119, 169, 50)
     assert "counted there but not listed" in c["note"]

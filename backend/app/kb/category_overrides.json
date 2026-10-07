@@ -1,0 +1,47 @@
+{
+  "_about": "Hand-written categories for core laws that appear in no Pakistan Code category listing (backend/storage/kb/category_map.json), so the Research and Knowledge Base filters can still find them. Applied only when the listing gives no category; a Pakistan Code category always wins. Records and the UI mark these as category_source 'LegalEase override'. Decided 2026-10-07 (kb-v2 B6). corpus_titles are the old-index source names of the same law, so old-index passages get the category too.",
+  "overrides": [
+    {
+      "title": "Pakistan Penal Code, 1860",
+      "category": "Criminal Laws",
+      "reason": "The substantive criminal code (offences and punishments); not in the site's Criminal Laws listing, which lists 44 of 69.",
+      "corpus_titles": ["THE PAKISTAN PENAL CODE", "Pakistan Penal Code"]
+    },
+    {
+      "title": "Code of Criminal Procedure, 1898",
+      "category": "Criminal Laws",
+      "reason": "The criminal procedure code (FIR, arrest, bail, trial); not in the site's Criminal Laws listing.",
+      "corpus_titles": ["THE CODE OF CRIMINAL PROCEDURE , 1898", "Code of Criminal Procedure, 1898"]
+    },
+    {
+      "title": "Qanun-e-Shahadat Order, 1984",
+      "category": "Law of Evidence",
+      "reason": "Pakistan's law of evidence (replaced the Evidence Act 1872); the site's Law of Evidence listing shows one other Act.",
+      "corpus_titles": ["THE QANUNESHAHADAT , 1984", "Qanun-e-Shahadat Order, 1984"]
+    },
+    {
+      "title": "Muslim Family Laws Ordinance, 1961",
+      "category": "Family Laws",
+      "reason": "Marriage registration, polygamy, talaq, maintenance and dower for Muslims; not in the site's Family Laws listing (19 Acts).",
+      "corpus_titles": ["THE MUSLIM FAMILY LAWS ORDINAN CE, 1961", "Muslim Family Laws Ordinance, 1961"]
+    },
+    {
+      "title": "West Pakistan Family Courts Act, 1964",
+      "category": "Family Laws",
+      "reason": "Establishes Family Courts and their jurisdiction (Schedule: dissolution, dower, maintenance, custody, dowry); not in the site's Family Laws listing.",
+      "corpus_titles": ["THE WEST PAKISTAN FAMILY COURTS ACT, 1964"]
+    },
+    {
+      "title": "West Pakistan Muslim Personal Law (Shariat) Application Act, 1962",
+      "category": "Family Laws",
+      "reason": "Makes Muslim personal law the rule of decision in succession, marriage, divorce, dower and guardianship; user-supplied PDF, not in any listing.",
+      "corpus_titles": []
+    },
+    {
+      "title": "Constitution of the Islamic Republic of Pakistan, 1973",
+      "category": "Constitutional Law",
+      "reason": "The Constitution is in no Pakistan Code category; 'Constitutional Law' is a new LegalEase category used only for it.",
+      "corpus_titles": ["THE CONSTITUTION OF THE ISLAMIC REPUBLIC OF PAKISTAN [As modified upto the 31st May, 2018"]
+    }
+  ]
+}

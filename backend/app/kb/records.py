@@ -13,7 +13,7 @@ STATUSES = {"current", "under_review", "repealed"}
 REQUIRED = ("doc_id", "title", "section", "heading", "text", "source_type", "jurisdiction", "category", "year",
             "act_number", "source", "source_tier", "source_url", "original_file", "scraped_at", "content_hash",
             "status", "audience")
-OPTIONAL = ("provenance_note", "sectioned", "source_version")
+OPTIONAL = ("provenance_note", "sectioned", "source_version", "category_source")
 
 
 def slugify(title: str) -> str:
@@ -66,7 +66,7 @@ def make_records(meta: dict, sections: list[Section] | None, raw_text: str | Non
             "audience": meta.get("audience") or "general",
             "sectioned": sections is not None,
         }
-        for k in ("provenance_note", "source_version"):
+        for k in ("provenance_note", "source_version", "category_source"):
             if meta.get(k):
                 rec[k] = meta[k]
         out.append(rec)
@@ -91,7 +91,7 @@ def validate(rec: dict) -> list[str]:
         if isinstance(rec[k], str) and not rec[k].strip():
             errs.append(f"{k} is empty")
     for k in ("section", "heading", "category", "act_number", "source_url", "original_file", "scraped_at",
-              "provenance_note", "source_version"):
+              "provenance_note", "source_version", "category_source"):
         if k in rec:
             typ(k, str, type(None))
     typ("year", int)

@@ -83,7 +83,16 @@ export default function KnowledgeBaseLawPage() {
       {l && (
         <>
           <dl className="grid gap-x-8 sm:grid-cols-2 border-t-2 border-ds-ink">
-            <Meta label="Category" value={l.category || "Not in a Pakistan Code category listing"} />
+            <Meta
+              label="Category"
+              value={
+                !l.category
+                  ? "Not in a Pakistan Code category listing"
+                  : l.category_source === "LegalEase override"
+                    ? `${l.category} (assigned by LegalEase; not in a Pakistan Code category listing)`
+                    : l.category
+              }
+            />
             <Meta label="Jurisdiction" value={l.jurisdiction} />
             <Meta label="Year" value={l.year} />
             <Meta label="Act number" value={l.act_number || "Not recorded"} />

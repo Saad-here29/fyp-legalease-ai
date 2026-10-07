@@ -75,6 +75,8 @@ def with_kb_metadata(hit: dict) -> dict:
     out = dict(hit)
     if hit.get("kb") == "v2":
         out["kb_law_id"] = (hit.get("doc_id") or "").split("/")[1] if "/" in (hit.get("doc_id") or "") else None
+        if not out.get("category"):           # a chunk built before the category override existed
+            out["category"] = catalog.override_category(hit.get("source"))
         out["_kb_meta"] = True
     else:
         meta = catalog.v1_metadata(embeddings.record_source(hit))
