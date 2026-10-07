@@ -25,7 +25,7 @@ async def lifespan(_: FastAPI):
     logger.info(
         f"Search mode: KB_V2={mode['kb_v2']} | v1 index {settings.FAISS_INDEX_PATH} "
         f"({mode['v1_index_chunks']} chunks) | v2 index "
-        f"{settings.KB_V2_INDEX_PATH + ' (' + str(mode['v2_index_chunks']) + ' chunks)' if settings.KB_V2 else 'off'} "
+        f"{str(_v2_active()[0]) + ' (' + str(mode['v2_index_chunks']) + ' chunks)' if settings.KB_V2 else 'off'} "
         f"| threshold {mode['threshold']}"
     )
 
@@ -155,12 +155,18 @@ def _faiss_ntotal(path: str) -> int | None:
     return struct.unpack("<q", head[8:16])[0]
 
 
+def _v2_active():
+    from app.kb.index_v2 import active_paths
+    return active_paths()
+
+
 def run_mode() -> dict:
     """Which search mode this server runs in (see docs/DEMO_RUNBOOK.md)."""
     return {
         "kb_v2": settings.KB_V2,
         "v1_index_chunks": _faiss_ntotal(settings.FAISS_INDEX_PATH),
-        "v2_index_chunks": _faiss_ntotal(settings.KB_V2_INDEX_PATH) if settings.KB_V2 else None,
+        "v2_index_chunks": _faiss_ntotal(str(_v2_active()[0])) if settings.KB_V2 else None,
+        "v2_index": _v2_active()[2] if settings.KB_V2 else None,      # "all" (C7) or "core" (35 laws)
         "threshold": settings.KB_V2_THRESHOLD if settings.KB_V2 else settings.RAG_SIMILARITY_THRESHOLD,
         "judgments_v2": settings.JUDGMENTS_V2,
         **_judgments_status(),

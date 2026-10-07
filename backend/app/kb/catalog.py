@@ -62,6 +62,7 @@ def law_files() -> list[Path]:
     """Core law record files, plus scraped laws (kb-v2 C3) with SCRAPED_V2 on."""
     d = kb_dir()
     files = sorted((d / "records").glob("*.jsonl"))
+    files += sorted((d / "records_all").glob("*.jsonl"))          # kb-v2 C7: every other sectioned law
     if settings.SCRAPED_V2:
         files += sorted((d / "scraped" / "records" / "statutes").glob("*.jsonl"))
     return files
@@ -69,7 +70,8 @@ def law_files() -> list[Path]:
 
 def _files() -> list[Path]:
     d = kb_dir()
-    return law_files() + [d / "category_map.json", Path(settings.KB_V2_METADATA_PATH), OVERRIDES_PATH]
+    from app.kb.index_v2 import active_paths
+    return law_files() + [d / "category_map.json", active_paths()[1], OVERRIDES_PATH]
 
 
 def _stamp() -> tuple:
@@ -112,6 +114,9 @@ def _load() -> dict:
             "scraped": path.parent.name == "statutes" and path.parent.parent.name == "records"
                        and path.parent.parent.parent.name == "scraped",
             "fetched_at": first.get("scraped_at"),
+            # kb-v2 C7: "core" (the 35), "corpus" (sectioned from the old index's corpus), "scraped"
+            "set": "corpus" if path.parent.name == "records_all" else (
+                "scraped" if path.parent.name == "statutes" else "core"),
             "document_type": first.get("document_type"),
             "amendments": first.get("amendments") or [],
         }
@@ -120,7 +125,8 @@ def _load() -> dict:
     cmap_path = kb_dir() / "category_map.json"
     cmap = json.loads(cmap_path.read_text(encoding="utf-8")) if cmap_path.exists() else {"categories": []}
     chunks = None
-    meta_path = Path(settings.KB_V2_METADATA_PATH)
+    from app.kb.index_v2 import active_paths
+    meta_path = active_paths()[1]
     if meta_path.exists():
         try:
             with meta_path.open(encoding="utf-8") as f:
@@ -185,6 +191,7 @@ def coverage(cmap: dict) -> dict:
 
 
 def stats() -> dict:
+    from app.kb.index_v2 import active_paths
     d = data()
     laws = list(d["laws"].values())
 
@@ -198,6 +205,8 @@ def stats() -> dict:
 
     return {
         "laws": len(laws),
+        "laws_by_set": {k: sum(1 for law in laws if law.get("set") == k) for k in ("core", "corpus", "scraped")},
+        "section_index": active_paths()[2],                 # "all" (kb-v2 C7) or "core"
         "section_records": len(d["records"]),
         "chunks": d["chunks"],
         "by_category": count("category"),
@@ -215,7 +224,7 @@ def stats() -> dict:
 
 PUBLIC_LAW_FIELDS = ("doc_id", "title", "category", "category_source", "jurisdiction", "year", "act_number", "source", "source_label",
                      "source_tier", "source_url", "status", "audience", "source_version", "provenance_note",
-                     "sectioned", "sections", "scraped", "fetched_at", "document_type", "amendments")
+                     "sectioned", "sections", "scraped", "fetched_at", "document_type", "amendments", "set")
 
 
 def public_law(law: dict) -> dict:

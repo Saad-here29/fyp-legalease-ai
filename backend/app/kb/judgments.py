@@ -435,7 +435,8 @@ def build_index(records_dir: Path, index_path: Path, meta_path: Path, *, tokeniz
     import faiss
     import numpy as np
     protected = {Path(settings.FAISS_INDEX_PATH).resolve(), Path(settings.FAISS_METADATA_PATH).resolve(),
-                 Path(settings.KB_V2_INDEX_PATH).resolve(), Path(settings.KB_V2_METADATA_PATH).resolve()}
+                 Path(settings.KB_V2_INDEX_PATH).resolve(), Path(settings.KB_V2_METADATA_PATH).resolve(),
+                 Path(settings.KB_V2_ALL_INDEX_PATH).resolve(), Path(settings.KB_V2_ALL_METADATA_PATH).resolve()}
     if index_path.resolve() in protected or meta_path.resolve() in protected:
         raise ValueError("refusing to write over a statute index")
     t0 = time.perf_counter()

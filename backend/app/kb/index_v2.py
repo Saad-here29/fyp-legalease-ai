@@ -185,7 +185,7 @@ def make_chunks(recs: list[dict], tokenizer) -> tuple[list[dict], dict[str, str]
     return chunks, texts
 
 
-def build(records_dir: Path, index_path: Path, meta_path: Path, *, tokenizer, embed,
+def build(records_dir: Path | list[Path], index_path: Path, meta_path: Path, *, tokenizer, embed,
           excluded_v1_sources: list[str], cache_dir: Path | None = None, checkpoint: int = 1000,
           time_budget: float | None = None) -> dict:
     """Chunk every record and write a NEW index; refuses the live v1 paths.
@@ -205,7 +205,7 @@ def build(records_dir: Path, index_path: Path, meta_path: Path, *, tokenizer, em
     t0 = time.perf_counter()
     cache = VectorCache(cache_dir or index_path.parent / "vector_cache")
     seeded = cache.seed_from_index(index_path, meta_path)
-    recs = load_records(records_dir)
+    recs = [r for d in (records_dir if isinstance(records_dir, list) else [records_dir]) for r in load_records(d)]
     chunks, texts = make_chunks(recs, tokenizer)
     t_chunk = time.perf_counter() - t0
     keys = [vector_key(c["chunk_text"]) for c in chunks]
@@ -291,6 +291,16 @@ def names_audience(query: str, audience: str | None, title: str | None) -> bool:
 
 # --------------------------------------------------------------------------- search
 
+def active_paths() -> tuple[Path, Path, str]:
+    """(index, metadata, name) of the section index search uses: faiss_v2_all
+    (kb-v2 C7, all sectioned laws) when both its files exist, else faiss_v2
+    (the 35 core laws)."""
+    a_idx, a_meta = Path(settings.KB_V2_ALL_INDEX_PATH), Path(settings.KB_V2_ALL_METADATA_PATH)
+    if a_idx.exists() and a_meta.exists():
+        return a_idx, a_meta, "all"
+    return Path(settings.KB_V2_INDEX_PATH), Path(settings.KB_V2_METADATA_PATH), "core"
+
+
 class _V2:
     def __init__(self) -> None:
         self.index = None
@@ -305,7 +315,7 @@ class _V2:
         with self.lock:
             if self.index is None:
                 import faiss
-                idx, meta = Path(settings.KB_V2_INDEX_PATH), Path(settings.KB_V2_METADATA_PATH)
+                idx, meta, which = active_paths()
                 if not (idx.exists() and meta.exists()):
                     logger.warning(f"KB_V2 is on but {idx} is missing; using the v1 index only")
                     return 0
@@ -313,7 +323,7 @@ class _V2:
                 self.chunks, self.texts = data["chunks"], data["texts"]
                 self.excluded = set(data["manifest"]["excluded_v1_sources"])
                 self.index = faiss.read_index(str(idx))
-                logger.info(f"KB v2 index ready: {self.index.ntotal} chunks")
+                logger.info(f"KB v2 index ready ({which}): {self.index.ntotal} chunks, {idx}")
         return self.index.ntotal
 
 

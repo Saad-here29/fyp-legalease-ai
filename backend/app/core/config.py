@@ -128,6 +128,11 @@ class Settings(BaseSettings):
     KB_DIR: str = "./storage/kb"            # records/, raw/, category_map.json (read-only at runtime)
     KB_V2_INDEX_PATH: str = "./storage/kb/faiss_v2.faiss"
     KB_V2_METADATA_PATH: str = "./storage/kb/faiss_v2_meta.json"
+    # kb-v2 C7: every sectioned law (the 35 core + records_all/). Used instead
+    # of faiss_v2 once both files exist (the builder writes them only when
+    # every chunk has a vector); until then faiss_v2 is used, unchanged.
+    KB_V2_ALL_INDEX_PATH: str = "./storage/kb/faiss_v2_all.faiss"
+    KB_V2_ALL_METADATA_PATH: str = "./storage/kb/faiss_v2_all_meta.json"
     # Judgments (kb-v2 C1): where scripts/kb/build_index_judgments.py writes the index.
     KB_JUDGMENTS_INDEX_PATH: str = "./storage/kb/faiss_judgments.faiss"
     KB_JUDGMENTS_METADATA_PATH: str = "./storage/kb/faiss_judgments_meta.json"

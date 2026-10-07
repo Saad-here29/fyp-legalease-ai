@@ -51,7 +51,8 @@ def _protected() -> set[Path]:
     """Indexes a scraped build must never write."""
     return {Path(p).resolve() for p in (
         settings.FAISS_INDEX_PATH, settings.FAISS_METADATA_PATH, settings.KB_V2_INDEX_PATH,
-        settings.KB_V2_METADATA_PATH, settings.KB_JUDGMENTS_INDEX_PATH, settings.KB_JUDGMENTS_METADATA_PATH,
+        settings.KB_V2_METADATA_PATH, settings.KB_V2_ALL_INDEX_PATH, settings.KB_V2_ALL_METADATA_PATH,
+        settings.KB_JUDGMENTS_INDEX_PATH, settings.KB_JUDGMENTS_METADATA_PATH,
         settings.JUDGMENTS_INDEX_PATH)}
 
 

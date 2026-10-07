@@ -13,7 +13,7 @@ def test_health_returns_ok(client):
     body = response.json()
     assert body["status"] == "ok"
     # which search mode is running (docs/DEMO_RUNBOOK.md)
-    assert set(body) == {"status", "kb_v2", "v1_index_chunks", "v2_index_chunks", "threshold",
+    assert set(body) == {"status", "kb_v2", "v1_index_chunks", "v2_index_chunks", "v2_index", "threshold",
                          "judgments_v2", "judgment_chunks", "judgments",
                          "scraped_v2", "scraped_chunks", "scraped_judgment_chunks", "reasoning_v2"}
     assert body["judgments_v2"] is settings.JUDGMENTS_V2
@@ -28,13 +28,15 @@ def test_health_reports_kb_v2_mode_and_chunk_counts(client, tmp_path, monkeypatc
         faiss.write_index(index, str(tmp_path / name))
     monkeypatch.setattr(settings, "FAISS_INDEX_PATH", str(tmp_path / "v1.faiss"))
     monkeypatch.setattr(settings, "KB_V2_INDEX_PATH", str(tmp_path / "v2.faiss"))
+    monkeypatch.setattr(settings, "KB_V2_ALL_INDEX_PATH", str(tmp_path / "none_all.faiss"))
     monkeypatch.setattr(settings, "KB_V2", True)
     monkeypatch.setattr(settings, "KB_V2_THRESHOLD", 0.62)
     monkeypatch.setattr(settings, "JUDGMENTS_V2", False)
     monkeypatch.setattr(settings, "SCRAPED_V2", False)
     monkeypatch.setattr(settings, "REASONING_V2", False)
     body = client.get("/health").json()
-    assert body =={"status": "ok", "kb_v2": True, "v1_index_chunks": 7, "v2_index_chunks": 3, "threshold": 0.62,
+    assert body == {"status": "ok", "kb_v2": True, "v1_index_chunks": 7, "v2_index_chunks": 3, "v2_index": "core",
+                    "threshold": 0.62,
                     "judgments_v2": False, "judgment_chunks": None, "judgments": None,
                     "scraped_v2": False, "scraped_chunks": None, "scraped_judgment_chunks": None,
                     "reasoning_v2": False}
