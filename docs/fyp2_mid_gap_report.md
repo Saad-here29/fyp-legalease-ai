@@ -8,7 +8,7 @@ was changed and no AI calls were made.
   42 pp.) and **Final report** (May 2026, 56 pp.) in `docs/reports/`;
 - the current code at `80f57f5`;
 - the October 2026 quality pass (`docs/TEST_PLAN.md` § 9);
-- the September pre-demo audit (`PROJECT_CONTEXT.md`).
+- the September pre-demo audit (`docs/archive/PROJECT_CONTEXT.md`).
 
 **Requirement IDs:**
 - **The Final Report's IDs are used throughout:** FR-CM01–07, FR-AI-01–05,

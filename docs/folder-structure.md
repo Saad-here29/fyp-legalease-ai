@@ -15,8 +15,8 @@ at run time but too large or private to commit.
 ├── data/                 raw + processed corpus and eval data — only README.md in git (data/README.md)
 ├── docs/                 project documentation                      (docs/README.md)
 ├── README.md             overview, setup, how to run
-├── PROJECT_CONTEXT.md    status, decisions, known gaps
-├── DEMO_BRIEF.md         demo script and talking points
+├── docs/archive/PROJECT_CONTEXT.md    status, decisions, known gaps
+├── docs/runbooks/demo-brief.md         demo script and talking points
 ├── .editorconfig, .gitignore
 ```
 

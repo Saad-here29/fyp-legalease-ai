@@ -361,8 +361,8 @@ is shown.
 
 ## Demo paths
 
-- **Main demo:** `DEMO_BRIEF.md` § "Demo start checklist" and § "Demo order".
-- **Knowledge Base in 60 seconds:** `DEMO_BRIEF.md` § "Knowledge Base in 60
+- **Main demo:** `docs/runbooks/demo-brief.md` § "Demo start checklist" and § "Demo order".
+- **Knowledge Base in 60 seconds:** `docs/runbooks/demo-brief.md` § "Knowledge Base in 60
   seconds" (kb-v2 only).
 - **Live check of this setup, 2026-10-06:**
   `docs/kb_v2_live_check_2026-10-06.md`.

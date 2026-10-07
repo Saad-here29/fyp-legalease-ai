@@ -329,7 +329,7 @@ The free tier allows **200,000 tokens per day**, **8,000 per minute** and
 - **If the budget runs out:** cases, document upload and research search
   keep working; AI answers show an error.
 
-Details are in `PROJECT_CONTEXT.md`.
+Details are in `docs/archive/PROJECT_CONTEXT.md`.
 
 ---
 

@@ -70,8 +70,8 @@ ai-services/   corpus/index builder, NER training notebook      → ai-services/
 scripts/       data cleaning, retrieval evaluation, setup       → scripts/README.md
 data/          statute corpus and evaluation data (not in git)  → data/README.md
 docs/          architecture, API, schema, design, retrieval, reports → docs/README.md
-PROJECT_CONTEXT.md   project status, decisions and known gaps
-DEMO_BRIEF.md        what to show and say in the demo
+docs/archive/PROJECT_CONTEXT.md   project status, decisions and known gaps
+docs/runbooks/demo-brief.md        what to show and say in the demo
 ```
 
 ---

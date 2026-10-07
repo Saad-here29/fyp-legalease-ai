@@ -8,7 +8,7 @@ Final Report (see `docs/fyp2_mid_gap_report.md`).
 - **Pass (Oct QA):** recorded in the October 2026 quality pass (2026-10-04;
   113 API checks and 62 page loads; `docs/TEST_PLAN.md` § 9).
 - **Pass (Sept audit):** recorded in the September pre-demo audit and demo
-  script (`PROJECT_CONTEXT.md`).
+  script (`docs/archive/PROJECT_CONTEXT.md`).
 - **To run:** not yet executed as a manual case. Run it before the panel and
   fill in both columns.
 

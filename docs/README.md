@@ -2,9 +2,9 @@
 
 ## Start here
 - [`../README.md`](../README.md): what LegalEase AI is, setup, and how to run it.
-- [`../PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md): current status, decisions,
+- [`../PROJECT_CONTEXT.md`](archive/PROJECT_CONTEXT.md): current status, decisions,
   known gaps and Groq limits.
-- [`../DEMO_BRIEF.md`](../DEMO_BRIEF.md): demo script and likely questions.
+- [`../DEMO_BRIEF.md`](runbooks/demo-brief.md): demo script and likely questions.
 
 ## How the system works
 | Doc | Covers |

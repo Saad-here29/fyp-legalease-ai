@@ -53,7 +53,7 @@ npm run build
 - **Offline tests:** the backend tests never call the language model.
   Model-dependent code is tested with stubs. Keep it that way: every Groq
   call spends the shared daily budget (200k tokens/day; see
-  `PROJECT_CONTEXT.md`).
+  `docs/archive/PROJECT_CONTEXT.md`).
 - **Frontend tests:** there are none yet.
 
 ## Database changes

@@ -1,6 +1,6 @@
 # Style Guide — Design system v1 (2026)
 
-> Referenced by `PROJECT_CONTEXT.md`: "Follow the style rules in
+> Referenced by `docs/archive/PROJECT_CONTEXT.md`: "Follow the style rules in
 > STYLE_GUIDE.md exactly — do not improvise colors, fonts, or spacing."
 >
 > **Source of truth:** `docs/design_reference/LegalEase AI Design System.pdf`
