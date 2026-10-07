@@ -46,8 +46,10 @@ clients and students. **Not built:** the Practice Simulator and Notifications.
 Each request flows from the routers (`api/v1`) to the services and repositories,
 then to the database. AI features go through `ai/` and `kb/`: retrieval
 (vector search plus BM25 keyword search), then the model call, then
-deterministic checks on the model's output. For details, see
-[docs/architecture/system-overview.md](docs/architecture/system-overview.md)
+deterministic checks on the model's output. The one-page summary, with the
+chat pipeline step by step, is
+[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md). There's
+more in [docs/architecture/system-overview.md](docs/architecture/system-overview.md)
 and [docs/architecture/knowledge_base_spec.md](docs/architecture/knowledge_base_spec.md).
 
 ## Knowledge base
@@ -62,7 +64,7 @@ demo script turns them on.
 | All laws (`faiss_v2_all`) | The 35 core laws plus 223 more from the statute corpus: 258 laws, 9,401 section records | 43,610 | `KB_V2`, when present |
 | Scraped laws (`faiss_scraped`) | 724 laws from the Pakistan Code and the Khyber Pakhtunkhwa Code, 22,455 section records (32 laws marked repealed) | 82,023 | `SCRAPED_V2` |
 | Judgments (`faiss_judgments`) | 400 judgments, mostly the Supreme Court of Pakistan, by paragraph | 64,322 | `JUDGMENTS_V2` |
-| Scraped judgments (`faiss_scraped_judgments`) | 18 Federal Shariat Court judgments | 10,416 | `SCRAPED_V2` |
+| Scraped judgments (`faiss_scraped_judgments`) | 18 Federal Shariat Court judgments | 10,416 | `SCRAPED_V2` + `JUDGMENTS_V2` |
 | Original index (`storage/faiss/legal_corpus`) | The statute corpus as plain chunks (the fallback) | 53,739 | flags off |
 
 `GET /health` reports which of these the running server is using.
@@ -84,17 +86,27 @@ backend/
     core/          settings and feature flags, security, cookies, errors, logging
     db/            engine, sessions, column types
     utils/         email, placeholders
-    tests/         pytest suite (unit/ and HTTP tests) with fixtures
+    tests/         pytest suite: unit/, fixtures/, HTTP tests
   alembic/         database migrations
-  storage/         (not in git) FAISS indexes, section records, judgments, models
+  storage/         (not in git) kb/ (records, judgments, scraped laws, FAISS indexes, vector caches),
+                   faiss/ (original index), models/ (NER)
 frontend/src/
   features/        one folder per screen group: auth, dashboard, case-management, chatbot,
                    legal-research, knowledge-base, document-analysis, contract-drafting, landing
   components/, layouts/, routes/, api/, store/, lib/, constants/
-scripts/           start_demo.ps1, setup.ps1, knowledge base builders (kb/), scraping jobs (scraping/), evaluations
+scripts/
+  start_demo.ps1   one-command demo start (-Safe: all flags off)
+  setup.ps1        first-time setup
+  kb/              build records and indexes, Colab export/embed, evaluations (eval_*, measure_*)
+  scraping/        scrape_laws, run_weekly, register_weekly_task, sources.json
 ai-services/       original corpus builder and the NER training notebook
 data/              raw and processed corpus (not in git; see data/README.md)
-docs/              documentation; index in docs/README.md
+docs/              index in docs/README.md
+  architecture/    ARCHITECTURE.md, system overview, KB spec, scraping, schema, API, design, diagrams
+  evaluation/      test plan, question sets and results (c8/, chat_quality/), reports, demo document
+  runbooks/        demo runbook and brief, scraping demo, development, deployment
+  archive/         earlier iteration notes and the FYP report PDFs
+_to_review/        files set aside for the team to decide on
 ```
 
 ## Setup

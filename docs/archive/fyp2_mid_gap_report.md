@@ -5,7 +5,7 @@ was changed and no AI calls were made.
 
 **Sources:**
 - the FYP-1 **Proposal** (Jan 2026, 14 pp.), **Mid report** (Mar 2026,
-  42 pp.) and **Final report** (May 2026, 56 pp.) in `docs/architecture/diagrams/`;
+  42 pp.) and **Final report** (May 2026, 56 pp.) in `docs/archive/fyp-reports/`;
 - the current code at `80f57f5`;
 - the October 2026 quality pass (`docs/evaluation/test-plan.md` § 9);
 - the September pre-demo audit (`docs/archive/PROJECT_CONTEXT.md`).
