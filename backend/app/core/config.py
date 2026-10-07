@@ -128,9 +128,21 @@ class Settings(BaseSettings):
     KB_DIR: str = "./storage/kb"            # records/, raw/, category_map.json (read-only at runtime)
     KB_V2_INDEX_PATH: str = "./storage/kb/faiss_v2.faiss"
     KB_V2_METADATA_PATH: str = "./storage/kb/faiss_v2_meta.json"
-    # Judgments (kb-v2 C1): a separate index, not searched by the app yet.
+    # Judgments (kb-v2 C1): where scripts/kb/build_index_judgments.py writes the index.
     KB_JUDGMENTS_INDEX_PATH: str = "./storage/kb/faiss_judgments.faiss"
     KB_JUDGMENTS_METADATA_PATH: str = "./storage/kb/faiss_judgments_meta.json"
+    # Judgments in Research, Chat and the Knowledge Base (kb-v2 C2). Off: the
+    # app behaves exactly as before (no judgment endpoints, nothing retrieved).
+    JUDGMENTS_V2: bool = False
+    # The index the app SEARCHES (separate from the builder's path, so a dev
+    # copy can be used while a build writes faiss_judgments.*). Metadata path
+    # empty = "<index stem>_meta.json" next to it.
+    JUDGMENTS_INDEX_PATH: str = "./storage/kb/faiss_judgments.faiss"
+    JUDGMENTS_METADATA_PATH: str = ""
+    JUDGMENTS_MIN_SCORE: float = 0.50     # search: best paragraph per judgment at or above this
+    JUDGMENTS_TOP_K: int = 5              # judgments per Research search
+    JUDGMENTS_CHAT_K: int = 3             # judgment paragraphs given to the chat model
+    JUDGMENTS_SHOW_MIN: float = 0.55      # weaker matches are not shown in Chat (nor sent to the model)
 
 
 @lru_cache

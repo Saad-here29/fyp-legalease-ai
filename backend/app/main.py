@@ -46,6 +46,21 @@ async def lifespan(_: FastAPI):
     from app.ai import family_index
     family_index.start_background_load()
 
+    # Judgments (only when JUDGMENTS_V2 is on): read the index and the
+    # records list in the background so the first search doesn't wait.
+    if settings.JUDGMENTS_V2:
+        import threading
+
+        from app.kb import judgment_catalog, judgment_search
+
+        def _warm() -> None:
+            try:
+                logger.info(f"Judgments: {judgment_search.status()} | index {judgment_search.paths()[0]}")
+                judgment_catalog.load()
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Judgments warm-up failed: {e}")
+        threading.Thread(target=_warm, name="judgments-warm", daemon=True).start()
+
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
@@ -147,7 +162,20 @@ def run_mode() -> dict:
         "v1_index_chunks": _faiss_ntotal(settings.FAISS_INDEX_PATH),
         "v2_index_chunks": _faiss_ntotal(settings.KB_V2_INDEX_PATH) if settings.KB_V2 else None,
         "threshold": settings.KB_V2_THRESHOLD if settings.KB_V2 else settings.RAG_SIMILARITY_THRESHOLD,
+        "judgments_v2": settings.JUDGMENTS_V2,
+        **_judgments_status(),
     }
+
+
+def _judgments_status() -> dict:
+    """Chunks and judgments in the judgments index being searched (None when
+    JUDGMENTS_V2 is off; 0 while the index is missing or still being written)."""
+    from app.kb import judgment_search
+    try:
+        return judgment_search.status()
+    except Exception as e:  # noqa: BLE001 — /health must never fail
+        logger.warning(f"Judgments status unavailable: {e}")
+        return {"judgment_chunks": 0, "judgments": 0}
 
 
 @app.get("/health", tags=["health"])

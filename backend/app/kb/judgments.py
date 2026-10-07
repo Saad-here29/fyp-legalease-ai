@@ -317,6 +317,45 @@ def validate(rec: dict) -> list[str]:
     return errs
 
 
+# --------------------------------------------------------------------------- names shown
+
+_NAME_HAS_REPORT = re.compile(r"\b(?:PLD|SCMR|PLJ|CLC|MLD|YLR|PCr\.?LJ|NLR|SCJ|CLD|PTD)\b")
+
+
+def name_is_weak(name: str | None) -> bool:
+    """A case name the rules only partly found: missing, cut ("…Petitioner v.
+    Station House Officer", "(APUBTA) through its President. … Petitioner v.
+    …": an ellipsis anywhere, or opening with a bracketed note), a party role
+    instead of a name ("Petitioner in both v. …"), under 8 characters, or a
+    precedent the judgment cites rather than its own name (carrying a
+    law-report citation, or opening with a footnote number: "1 Shaukat Aziz
+    Siddiqui v. Federation …")."""
+    n = (name or "").strip()
+    return (not n or "…" in n or "..." in n or n.startswith("(") or n[0].isdigit()
+            or n.lower().startswith("petitioner")
+            or len(n) < 8 or bool(_NAME_HAS_REPORT.search(n)))
+
+
+def display_name(rec: dict) -> str:
+    """The case name, or "<case number> (<court>, <year>)" when the name is weak."""
+    if not name_is_weak(rec.get("case_name")):
+        return rec["case_name"].strip()
+    bits = ", ".join(str(x) for x in (rec.get("court"), rec.get("year")) if x)
+    head = (rec.get("case_number") or "").strip() or "Judgment"
+    return head + (f" ({bits})" if bits else "")
+
+
+def shown_prefix(rec: dict, n) -> str:
+    """The prefix shown to the model and in results: like chunk_prefix but
+    with display_name (the indexed chunk text keeps chunk_prefix, so the
+    vectors already built stay valid)."""
+    name = display_name(rec)
+    bits = ", ".join(str(x) for x in (rec.get("court"), rec.get("year")) if x)
+    if bits and name.endswith(f"({bits})"):
+        return f"{name} - para {n}:"
+    return name + (f" ({bits})" if bits else "") + f" - para {n}:"
+
+
 # --------------------------------------------------------------------------- chunks
 
 def chunk_prefix(rec: dict, n: int) -> str:
