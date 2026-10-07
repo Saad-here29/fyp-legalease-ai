@@ -63,16 +63,21 @@ def _title_pattern(title: str) -> str | None:
 
 
 def _laws() -> dict[str, list[str]]:
-    """Law title -> patterns that name it in a question."""
+    """Law title -> patterns that name it in a question (cached per catalog version)."""
+    d = catalog.data()
+    cached = d.get("_law_patterns")
+    if cached and cached[0] == d.get("key"):
+        return cached[1]
     out: dict[str, list[str]] = {}
-    for law in catalog.data()["laws"].values():
+    for law in d["laws"].values():
         t = law["title"]
         pats = list(ALIASES.get(t, []))
         tp = _title_pattern(t)
         if tp:
             pats.append(tp)
         if pats:
-            out[t] = pats
+            out[t] = [re.compile(p, re.I) for p in pats]
+    d["_law_patterns"] = (d.get("key"), out)
     return out
 
 
@@ -113,7 +118,7 @@ def find_refs(question: str) -> list[tuple[str, str]]:
     hints: list[tuple[int, int, str]] = []
     for title, pats in _laws().items():
         for p in pats:
-            for m in re.finditer(p, q, re.I):
+            for m in p.finditer(q):
                 hints.append((m.start(), m.end(), title))
     if not hints:
         return []

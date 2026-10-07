@@ -160,8 +160,18 @@ def _v1_metadata(cmap: dict, laws: dict) -> dict[str, dict]:
     return out
 
 
+_STAMP_SECONDS = 30.0      # kb-v2 C8: with 860 law files, checking every file's time on every call cost ~0.15 s
+
+
 def data() -> dict:
+    """The catalog, reloaded when a records file changes (checked at most every
+    _STAMP_SECONDS; reset() forces a check)."""
+    import time
+    now = time.monotonic()
+    if _CACHE.get("key") is not None and now - _CACHE.get("checked_at", 0.0) < _STAMP_SECONDS:
+        return _CACHE
     key = _stamp()
+    _CACHE["checked_at"] = now
     if _CACHE["key"] != key:
         with _LOCK:
             if _CACHE["key"] != key:
