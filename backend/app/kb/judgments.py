@@ -77,13 +77,26 @@ def content_hash(text: str) -> str:
 _REPORT_CITE = re.compile(
     r"\b(?:PLD|PLJ|NLR|KLR)\s*\(?\d{4}\)?\s+(?:SC|FSC|Lahore|Lah|Karachi|Kar|Peshawar|Pesh|Quetta|Islamabad|Isl)\b"
     r"|\b\d{4}\s+(?:SCMR|MLD|CLC|YLR|PCr\.?\s?LJ|P\s?Cr\.?\s?L\s?J|PLC|CLD|PTD|SCJ|MLR|CLJ)\s+\d{1,5}\b")
-_HEADNOTE = re.compile(r"\b(?:Head\s?notes?|HEADNOTE|Ratio\s+decidendi|Cases?\s+referred|Per\s+[A-Z][a-z]+,?\s+J\.)",
+_HEADNOTE = re.compile(r"\b(?:Head\s?notes?|HEADNOTE|Ratio\s+decidendi|Cases?\s+referred|Per\s+[A-Z][a-z]+,?\s+J\.)"
+                       # the publishers' headnote style: "(a) Guardians and Wards Act (VIII of 1890)--- ----S.25---"
+                       r"|\(\s?a\s?\)\s*[A-Z][^\n]{3,160}?-{3}",
                        re.I)
 
 
+def dedupe_key(rec: dict) -> tuple | None:
+    """Same judgment in two copies: same case-number digits and year (and the
+    same case name when both copies have one)."""
+    digits = re.sub(r"[^0-9]", "", rec.get("case_number") or "")
+    if not digits or not rec.get("year"):
+        return None
+    return digits, rec["year"]
+
+
 def quality(text: str, info: dict) -> dict:
-    head = text[:4000]
-    report_cites = _REPORT_CITE.findall(head)
+    # A publisher's copy carries ITS OWN citation in its first lines ("2009 YLR 991").
+    # A judgment that merely cites precedents (PLD 1988 SC ...) further down is not one.
+    top = text.lstrip()[:300]
+    report_cites = _REPORT_CITE.findall(top)
     flags = {
         "chars": len(text.strip()),
         "near_empty": len(text.strip()) < NEAR_EMPTY_CHARS,
@@ -112,7 +125,7 @@ _COURTS = [
     (r"family\s+court", "Family Court"),
 ]
 _CASE_NO = re.compile(
-    r"\b((?:Civil|Criminal|Crl\.?|C\.|Constitutional|Const\.|Jail|Shariat|Writ|Family|Human\s+Rights)\s*"
+    r"\b((?:Civil|Criminal|Crl\.?|C\.|Constitution(?:al)?|Const\.|Jail|Shariat|Writ|Family|Human\s+Rights|Suo\s+Motu)\s*"
     r"(?:Petitions?|Appeals?|Misc\.?\s*Applications?|Review\s+Petitions?|P\.|A\.|M\.?A\.|R\.?P\.)\s*"
     r"(?:No[s]?\.?\s*)?[\dA-Z][\w\-/. ]{0,25}?(?:of|/)\s*(?:19|20)\d{2})", re.I)
 _SHORT_CASE_NO = re.compile(r"\b((?:Crl|C|Civ|Cr|W|F|J)\.?\s?[A-Z]{1,3}\.?\s?(?:No\.?\s*)?\d{1,5}(?:-[A-Z])?(?:/|\s+of\s+)(?:19|20)\d{2})")
@@ -124,6 +137,9 @@ _JUDGE_LINE = re.compile(
     r"(?:Present|Coram|Bench|Before)\s*[:\-]\s*([\s\S]{3,400}?)(?:\n\s*\n|Civil|Criminal|Crl|Petition|Appeal|For\s+the)",
     re.I)
 _JUDGE_NAME = re.compile(r"((?:Mr\.?\s+|Mrs\.?\s+|Ms\.?\s+|Justice\s+)*[A-Z][A-Za-z.'\- ]{3,60}?),?\s*(?:C\.?J\.?|J\.|HCJ|ACJ)(?![A-Za-z])")
+# A judge on a line of their own without ", J.": "MR. JUSTICE GULZAR AHMED"
+_JUSTICE_LINE = re.compile(r"(?im)^\s*(?:mr\.?|mrs\.?|ms\.?|madam)?\s*justice\s+([a-z][a-z.'\- ]{2,60}?)\s*"
+                           r"(?:,\s*(?:h?c\.?j\.?|a?cj|j\.?))?\s*$")
 _DECIDED = re.compile(r"(?:Date\s+of\s+(?:hearing|decision|judgment|announcement)|Decided\s+on|Announced\s+on)"
                       r"\s*[:\-]?\s*[^\n]{0,30}?((?:19|20)\d{2})", re.I)
 _YEAR = re.compile(r"\b(19[5-9]\d|20[0-3]\d)\b")
@@ -135,9 +151,14 @@ TOPICS = {
     "talaq": r"\btalaq\b|\bdivorce\b",
     "dissolution": r"dissolution\s+of\s+(?:muslim\s+)?marriage",
     "nikah": r"\bnikah\b|nikahnama|nikah\s*nama",
-    "custody": r"\bcustody\b|\bhizanat\b",
-    "guardianship": r"\bguardian(?:ship)?\b|guardians\s+and\s+wards",
-    "maintenance": r"\bmaintenance\b|\bnafqa\b|\bnafaqa\b",
+    # family senses only: "the accused is in custody" or "maintenance of law and order" don't count
+    "custody": r"custody\s+of\s+(?:the\s+|his\s+|her\s+|their\s+)?(?:minors?|child(?:ren)?|son|daughter|ward)"
+               r"|\bhizanat\b|minor'?s?\s+custody",
+    "guardianship": r"guardians?\s+and\s+wards|guardianship|guardian\s+of\s+the\s+(?:person|minor)",
+    "maintenance": r"maintenance\s+(?:allowance|of\s+(?:the\s+)?(?:wife|minors?|child(?:ren)?|petitioner\s+wife))"
+                   r"|past\s+maintenance|\bnafqa\b|\bnafaqa\b|maintenance\s+to\s+the\s+(?:wife|minors?)"
+                   r"|dower\s+and\s+maintenance|maintenance\s+and\s+dower|(?:wife|she)\s+is\s+entitled\s+to\s+maintenance"
+                   r"|claim\s+for\s+(?:past\s+)?maintenance",
     "bail": r"\bbail\b",
     "murder": r"qatl[\s-]*(?:e|i)[\s-]*amd|\bmurder\b|section\s+302",
     "contract": r"\bcontract\b|agreement\s+to\s+sell",
@@ -153,6 +174,28 @@ def _clean_party(s: str) -> str:
     return s[:90]
 
 
+def court_of(text: str) -> str | None:
+    """The deciding court, from the heading only (the first ~800 characters;
+    a lower court named later is the one appealed from). Letters only, so an
+    OCR-spaced "S UPREME COURT OF PAKIST AN" still matches. A file that
+    starts mid-judgment (no heading) gets None."""
+    top = re.sub(r"[^a-z]", "", text[:800].lower())
+    if "federalshariatcourt" in top:
+        return "Federal Shariat Court"
+    if re.search(r"s?u?p?r?e?m?e?court(?:of)?pakistan", top) and "highcourt" not in top[: top.find("pakistan")]:
+        return "Supreme Court of Pakistan"
+    for key, name in _COURT_KEYS:
+        if key in top:
+            return name
+    return None
+
+
+_COURT_KEYS = [("lahorehighcourt", "Lahore High Court"), ("highcourtofsindh", "Sindh High Court"),
+               ("sindhhighcourt", "Sindh High Court"), ("peshawarhighcourt", "Peshawar High Court"),
+               ("highcourtofbalochistan", "Balochistan High Court"), ("balochistanhighcourt", "Balochistan High Court"),
+               ("islamabadhighcourt", "Islamabad High Court"), ("familycourt", "Family Court")]
+
+
 def metadata(text: str, *, filename: str = "") -> dict:
     """Rule-based metadata from the first pages. A field is None when the
     rules don't find it (never guessed)."""
@@ -166,21 +209,21 @@ def metadata(text: str, *, filename: str = "") -> dict:
         m = _VERSUS.search(head)
         if m and len(m.group(1)) < 100:
             out["case_name"] = f"{_clean_party(m.group(1))} v. {_clean_party(m.group(2))}"
-    low = head.lower()
-    for pat, name in _COURTS:
-        if re.search(pat, low):
-            out["court"] = name
-            break
-    m = _CASE_NO.search(head) or _SHORT_CASE_NO.search(head)
+    out["court"] = court_of(text)
+    # OCR splits digits ("OF 20 21", "12.9 .20 18"): join them for numbers and dates.
+    joined = re.sub(r"(?<=\d)\s+(?=\d)", "", head)
+    m = _CASE_NO.search(joined) or _SHORT_CASE_NO.search(joined)
     if m:
         out["case_number"] = re.sub(r"\s+", " ", m.group(1)).strip(" .")
-    m = _DECIDED.search(text[:12000]) or _DECIDED.search(text[-4000:])
+    m = _DECIDED.search(re.sub(r"(?<=\d)\s+(?=\d)", "", text[:12000])) or _DECIDED.search(text[-4000:])
     if m:
         out["year"] = int(m.group(1))
     elif out["case_number"] and _YEAR.search(out["case_number"]):
         out["year"] = int(_YEAR.findall(out["case_number"])[-1])
     m = _JUDGE_LINE.search(head)
     names = _JUDGE_NAME.findall(m.group(1)) if m else []
+    if not names:                                       # "MR. JUSTICE GULZAR AHMED" lines, no ", J."
+        names = [f"Justice {n.strip().title()}" for n in _JUSTICE_LINE.findall(head[:3000])]
     if not names:
         names = _JUDGE_NAME.findall(text[-3000:])          # signatures at the end
     out["judges"] = list(dict.fromkeys(re.sub(r"\s+", " ", n).strip(" ,.") for n in names if len(n.split()) >= 2))[:5]
@@ -305,6 +348,15 @@ def select_pilot(recs: list[dict], n: int = 400) -> list[dict]:
     """Family-law judgments first (most family topics first), then a spread
     across years and judges (round-robin by year, preferring unseen judges)."""
     usable = [r for r in recs if not r["quality"]["exclude"]]
+    # The same judgment in two datasets (same case number and year): keep the
+    # copy with more metadata found.
+    best: dict = {}
+    for r in usable:
+        k = dedupe_key(r) or r["doc_id"]
+        score = (sum(bool(r.get(f)) for f in ("case_name", "court", "judges", "case_number")), r["quality"]["chars"])
+        if k not in best or score > best[k][0]:
+            best[k] = (score, r)
+    usable = [r for _s, r in best.values()]
     fam = sorted((r for r in usable if set(r["topics"]) & set(FAMILY_TOPICS)),
                  key=lambda r: (-len(set(r["topics"]) & set(FAMILY_TOPICS)), r["doc_id"]))
     picked = fam[:n]

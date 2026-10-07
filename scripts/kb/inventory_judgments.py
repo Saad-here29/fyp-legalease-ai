@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import re
 import sys
 import zipfile
 from collections import Counter
@@ -49,10 +50,14 @@ def iter_files(paths: list[Path], pattern: str):
             except ImportError:
                 print(f"SKIP {p}: reading .parquet needs pyarrow (not installed)", file=sys.stderr)
                 continue
-            table = pq.read_table(p).to_pylist()
-            col = next((c for c in ("text", "judgment", "content", "body") if table and c in table[0]), None)
+            names = pq.ParquetFile(p).schema_arrow.names
+            cols = [c for c in names if c in ("text", "judgment", "content", "body", "case_details",
+                                               "citation_number")]                     # never the embeddings
+            table = pq.read_table(p, columns=cols).to_pylist()
+            col = next((c for c in ("text", "judgment", "content", "body") if c in cols), None)
             for i, row in enumerate(table):
-                yield f"{p}#row{i}", None, str(row.get(col) or "").encode("utf-8")
+                rid = re.search(r"'id':\s*'([^']+)'", str(row.get("citation_number") or row.get("case_details") or ""))
+                yield f"{p}#{rid.group(1) if rid else f'row{i}'}", None, str(row.get(col) or "").encode("utf-8")
         elif p.is_file():
             yield str(p), p, None
 
@@ -82,6 +87,8 @@ def main() -> int:
     ap.add_argument("--source", required=True, help="a short name for this dataset")
     ap.add_argument("--glob", default="*", help="file pattern inside folders / archives (default: all)")
     ap.add_argument("--limit", type=int, default=None, help="stop after N files (for a quick look)")
+    ap.add_argument("--law-reports", action="store_true",
+                    help="every file here is a publisher's law-report copy: inventory only, never indexed")
     args = ap.parse_args()
     OUT.joinpath("records").mkdir(parents=True, exist_ok=True)
 
@@ -98,6 +105,15 @@ def main() -> int:
             continue
         rec = jd.make_record(Path(display), text, info, source=args.source, file_sha=sha)
         rec["original_file"] = display
+        if args.law_reports and not rec["quality"]["exclude"]:
+            rec["quality"]["law_report"] = True
+            rec["quality"]["exclude"] = "law-report copy (publisher headnotes)"
+        fid = re.search(r"#((?:[A-Za-z]+\.)+)\s*(\d+(?:-[A-Z])?)_((?:19|20)\d{2})\.pdf$", display)
+        if fid and not rec["case_number"]:
+            rec["case_number"] = f"{fid.group(1)} {fid.group(2)} of {fid.group(3)}"
+            rec["case_number_from"] = "dataset file id"
+        if fid and not rec["year"]:
+            rec["year"] = int(fid.group(3))
         if not rec["paragraphs"]:
             rec["paragraphs"] = [{"n": 1, "text": " ".join(text.split()) or "(no text)"}]
         recs.append(rec)
@@ -107,15 +123,17 @@ def main() -> int:
     by_title = Counter((r["case_name"], r["year"]) for r in recs if r["case_name"])
     seen_hash, seen_title = set(), set()
     for r in recs:
-        key = (r["case_name"], r["year"])
+        # same case number and year (two copies of one judgment); case name + year only
+        # when neither copy has a number ("Province of Punjab v. ..." is too common alone)
+        key = jd.dedupe_key(r) or ((r["case_name"], r["year"], None) if r["case_name"] and r["year"] else None)
         if r["quality"]["exclude"]:
             continue
         if r["content_hash"] in seen_hash:
             r["quality"]["exclude"] = "duplicate (same text)"
-        elif r["case_name"] and key in seen_title:
-            r["quality"]["exclude"] = "duplicate (same case name and year)"
+        elif key and key in seen_title:
+            r["quality"]["exclude"] = "duplicate (same case number and year)"
         seen_hash.add(r["content_hash"])
-        if r["case_name"]:
+        if key:
             seen_title.add(key)
 
     name = jd.slug(args.source)
