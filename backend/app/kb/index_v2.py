@@ -145,9 +145,38 @@ class VectorCache:
         return len(keys)
 
 
+MIN_BODY_CHARS = 40
+_LEADING_BRACKETS = re.compile(r"^[\W_]*(?:\[[^\]]{0,300}\][\W_]*)+")
+_REMOVAL_NOTE = re.compile(r"^[\W_]*(?:(?:omitted|repealed|deleted|expired|spent)\b|rep\.)", re.I)
+
+
+def index_exclusion(rec: dict) -> str | None:
+    """Why a record is kept out of faiss_v2 (it stays in the records and on
+    the Knowledge Base page), or None. Near-empty sections ("[Omitted]",
+    "Rep. by the Repealing Act, 1938 ...") match many unrelated questions
+    with a high score, because the prefix is nearly all the chunk says."""
+    text = (rec.get("text") or "").strip()
+    body = _LEADING_BRACKETS.sub("", text)
+    # Schedule list items ("Schedule item 2: Dower") are short on purpose and
+    # carry real content; only a removal note keeps them out.
+    if " item " in (rec.get("section") or ""):
+        return "omitted / repealed note" if _REMOVAL_NOTE.match(body) else None
+    # Under 40 characters and not a sentence (a marker such as "[Omitted]" or
+    # "(See section 28) TABLE OF CONSANGUINITY"). A short real provision, e.g.
+    # QSO Art. 86 "All other documents are private", stays in.
+    if len(text) < MIN_BODY_CHARS and len(re.findall(r"\b[a-z]{2,}\b", text)) < 3:
+        return "body under 40 characters"
+
+    if _REMOVAL_NOTE.match(body) and len(body) < 250:
+        return "omitted / repealed note"
+    return None
+
+
 def make_chunks(recs: list[dict], tokenizer) -> tuple[list[dict], dict[str, str]]:
     chunks, texts = [], {}
     for rec in recs:
+        if index_exclusion(rec):
+            continue
         texts[rec["doc_id"]] = rec["text"]
         for c in chunk_record(rec, tokenizer):
             chunks.append({**{k: rec.get(k) for k in CHUNK_FIELDS}, "window": c["window"],
@@ -194,6 +223,8 @@ def build(records_dir: Path, index_path: Path, meta_path: Path, *, tokenizer, em
         "embedding_model": settings.EMBEDDING_MODEL_NAME, "normalised": True, "metric": "inner product",
         "max_tokens": MAX_TOKENS, "overlap": OVERLAP, "records": len(recs), "chunks": len(chunks),
         "laws": sorted({r["title"] for r in recs}),
+        "excluded_records": {reason: n for reason in ("body under 40 characters", "omitted / repealed note")
+                             if (n := sum(1 for r in recs if index_exclusion(r) == reason))},
         "excluded_v1_sources": sorted(excluded_v1_sources),
         "unique_chunk_texts": len(unique), "reused_vectors": len(unique) - len(missing),
         "embedded_now": embedded, "still_missing": len(missing) - embedded, "seeded_from_previous": seeded,
