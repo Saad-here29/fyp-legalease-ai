@@ -49,6 +49,9 @@ export const ENDPOINTS = {
     original: (id) => `/kb/documents/${encodeURIComponent(id)}/original`,
     // Record ids contain "/" ("legalease-corpus/<law>/s17"); each part is encoded.
     record: (recordId) => `/kb/records/${recordId.split("/").map(encodeURIComponent).join("/")}`,
+    // Judgments (kb-v2 C2; 404 while JUDGMENTS_V2 is off)
+    judgments: "/kb/judgments",
+    judgment: (docId) => `/kb/judgments/${docId.split("/").map(encodeURIComponent).join("/")}`,
   },
   contracts: {
     list: "/contracts",

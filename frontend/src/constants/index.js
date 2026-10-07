@@ -63,6 +63,7 @@ export const ROUTES = Object.freeze({
   RESEARCH_DETAIL: "/research/:id",
   KNOWLEDGE_BASE: "/knowledge-base",
   KNOWLEDGE_BASE_LAW: "/knowledge-base/:id",
+  KNOWLEDGE_BASE_JUDGMENT: "/knowledge-base/judgments/:source/:hash",
   DOCUMENTS: "/documents",
   CONTRACTS: "/contracts",
   CONTRACT_DETAIL: "/contracts/:id",

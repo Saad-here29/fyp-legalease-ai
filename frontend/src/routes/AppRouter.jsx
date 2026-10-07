@@ -16,6 +16,7 @@ import ResearchPage from "@/features/legal-research/ResearchPage";
 import ResearchDetailPage from "@/features/legal-research/ResearchDetailPage";
 import KnowledgeBasePage from "@/features/knowledge-base/KnowledgeBasePage";
 import KnowledgeBaseLawPage from "@/features/knowledge-base/KnowledgeBaseLawPage";
+import KnowledgeBaseJudgmentPage from "@/features/knowledge-base/KnowledgeBaseJudgmentPage";
 import DocumentsPage from "@/features/document-analysis/DocumentsPage";
 import CaseDetailPage from "@/features/case-management/CaseDetailPage";
 import ContractsPage from "@/features/contract-drafting/ContractsPage";
@@ -110,6 +111,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
             <KnowledgeBasePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.KNOWLEDGE_BASE_JUDGMENT}
+        element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <KnowledgeBaseJudgmentPage />
           </ProtectedRoute>
         }
       />

@@ -7,10 +7,13 @@ import { Figures } from "@/features/dashboard/components/DashParts";
 import { ROUTES } from "@/constants";
 import { kbApi } from "./api";
 import { TierTag, KbStatusTag } from "./kbParts";
+import JudgmentsTab from "./JudgmentsTab";
+import { useJudgmentsInfo } from "./useJudgments";
 
 // Knowledge Base — the laws the kb-v2 section records were built from, with
 // their metadata, sections and records (read-only; /api/v1/kb). Ruled table
-// per the Cases mockup; filters live in the URL so Back keeps them.
+// per the Cases mockup; filters live in the URL so Back keeps them. With
+// judgments on (kb-v2 C2) a "Judgments" tab sits beside the laws (?tab=judgments).
 
 const FILTERS = ["q", "category", "jurisdiction", "tier", "status", "year"];
 
@@ -18,6 +21,8 @@ export default function KnowledgeBasePage() {
   const [params, setParams] = useSearchParams();
   const filters = Object.fromEntries(FILTERS.map((k) => [k, params.get(k) || ""]));
   const [q, setQ] = useState(filters.q);
+  const judgments = useJudgmentsInfo();
+  const tab = judgments && params.get("tab") === "judgments" ? "judgments" : "laws";
 
   const { data: stats } = useQuery({ queryKey: ["kb-stats"], queryFn: kbApi.stats, staleTime: 5 * 60 * 1000 });
   const query = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ""));
@@ -61,6 +66,30 @@ export default function KnowledgeBasePage() {
       />
       {cov && <p className="ds-body text-ds-text-2 mt-4 max-w-[760px]">{cov.note}</p>}
 
+      {judgments && (
+        <div className="mt-10 flex gap-2 border-b border-ds-rule" role="tablist" aria-label="Knowledge base contents">
+          {[
+            ["laws", `Laws${stats ? ` (${stats.laws})` : ""}`],
+            ["judgments", `Judgments (${judgments.counts.judgments.toLocaleString()})`],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setParams(key === "laws" ? {} : { tab: "judgments" }, { replace: true })}
+              className={`min-h-[48px] px-4 -mb-px font-ds-sans text-[16px] border-b-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink ${
+                tab === key ? "border-ds-ink font-semibold text-ds-text" : "border-transparent text-ds-text-2 hover:text-ds-text"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === "judgments" && <JudgmentsTab info={judgments} />}
+
+      {tab === "laws" && (
       <section className="mt-12" aria-labelledby="laws-heading">
         <div className="flex flex-wrap items-end justify-between gap-4 pb-3 border-b-2 border-ds-ink">
           <h2 id="laws-heading" className="ds-h2">
@@ -143,6 +172,7 @@ export default function KnowledgeBasePage() {
         )}
         {data && data.documents.length > 0 && <LawTable laws={data.documents} />}
       </section>
+      )}
     </AppShell>
   );
 }

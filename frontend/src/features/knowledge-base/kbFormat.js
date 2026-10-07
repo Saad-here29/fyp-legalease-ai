@@ -19,6 +19,14 @@ export function sectionLabel(section, heading) {
   return [num, heading].filter(Boolean).join(" ");
 }
 
+// A judgment id ("judgment/<dataset>/<hash>") -> its page, scrolled to a paragraph if given.
+export function judgmentPath(docId, para) {
+  const [, source, hash] = (docId || "").split("/");
+  if (!source || !hash) return null;
+  const path = ROUTES.KNOWLEDGE_BASE_JUDGMENT.replace(":source", encodeURIComponent(source)).replace(":hash", encodeURIComponent(hash));
+  return para != null ? `${path}?para=${para}` : path;
+}
+
 // A record id ("legalease-corpus/guardians-and-wards-act-1890/s17") -> its law's page with the record open.
 export function kbRecordPath(recordId) {
   const parts = (recordId || "").split("/");
