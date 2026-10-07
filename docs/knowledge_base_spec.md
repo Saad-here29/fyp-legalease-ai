@@ -348,6 +348,24 @@ checked" line reads the update log (each source's latest check), not the
 database. Off: none of this, and "Sources checked" reads the database as
 before.
 
+### b5) Document Analysis reasoning (Phase C4, `REASONING_V2`)
+
+Response of `POST /documents/{id}/analyze` with the flag on: two more keys,
+`reasoning` (or null) and `reasoning_error` (a plain-language reason when
+null). Saved with the analysis as an extra `reasoning` key inside
+`document_analysis.identified_clauses` (no migration). Off: neither key, and
+the saved row is unchanged. Code: `backend/app/ai/reasoning.py`.
+
+`reasoning`: `document_type`, `issues[]` (each may carry `related_cases`),
+`arguments{party: []}`, `court_reasoning[]` (with `step`),
+`holding_or_outcome`, `statutes_cited[]` (`act`, `section`, `status`
+verified / not_found / not_checked, `kb_record_id`, `kb_law_id`, `heading`),
+`strong_points[]`, `weak_points[]`, `risks[]`, `open_questions[]`; every
+item has `text`, `evidence` (verbatim quote), `verified`, optional `flags`.
+Plus `counts` (returned, kept, dropped, dropped_reasons, flagged, statutes),
+`coverage` (partial, note, tokens), `related_cases_note`, `disclaimer`
+("AI-assisted analysis; verify against the original").
+
 ## c) Source whitelist and tiers
 
 | Tier | Sources | Ingested? |

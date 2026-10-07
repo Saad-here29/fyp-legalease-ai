@@ -243,6 +243,30 @@ quarantined and searchable per source); a law with the "Scraped" badge
 (e.g. Stamp Act, 1899): source link, fetch date, "Under review"; Research
 "stamp duty on a bond": Stamp Act sections from the scraped index.
 
+## Document Analysis reasoning (kb-v2 C4, 2026-10-07): optional, off unless set
+
+Add `$env:REASONING_V2 = "true"` before starting the backend. Each Analyse
+then makes ONE extra Groq call (about 2k–6k tokens: up to 4,200 of document
+text, ~500 of instructions, a 1,500-token reply cap) after the summary and
+NER, and the page gets a **Reasoning** tab beside Summary & entities.
+
+**What it shows:** issues, arguments by party, the court's reasoning in
+order, holding, statutes cited (linked to the Knowledge Base when the Act
+and section are held), strong and weak points, risks, open questions. Each
+item has its verbatim evidence quote (expandable) and a "Quote found" badge;
+items whose quote isn't in the document, or that name a date, case number,
+FIR or section not in it, are removed and counted ("N unverifiable items
+removed"). With `JUDGMENTS_V2` on, each issue lists up to 2 related past
+cases, labelled as not cited in the document.
+
+**What to say:** the check proves each quote is in the document; it can't
+prove the sentence draws the right conclusion from it. Read the evidence.
+
+**Rate limit:** the summary and the reasoning call fall in the same minute,
+so on Groq's 8,000 tokens/minute the second call may get a 429. It backs off
+(Groq's retry-after, else 5 s, 10 s, 20 s; at most 45 s) and then gives up
+with "The AI service is busy …"; the summary and entities still show.
+
 ## Differences to know before switching
 
 - **Same data:** same database, same accounts, same cases and contracts.
