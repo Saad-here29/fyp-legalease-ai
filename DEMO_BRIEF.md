@@ -28,6 +28,18 @@
 > its recommendation, is `docs/kb_v2_live_check_2026-10-06.md`. The
 > **60-second Knowledge Base path** is in § 7, "Knowledge Base in 60
 > seconds" (kb-v2 only).
+>
+> **Since kb-v2 B6 (2026-10-07):** the Research category filter keeps the
+> core laws:
+> - **PPC, CrPC:** Criminal Laws;
+> - **QSO:** Law of Evidence;
+> - **MFLO, the Family Courts Act, the Shariat Act:** Family Laws;
+> - **the Constitution:** Constitutional Law.
+>
+> These categories are hand-assigned and labelled as such. So the live
+> check's advice to avoid the filter no longer applies. Near-empty
+> "[Omitted]"/"Rep. by …" sections no longer appear as sources. Details are
+> in `docs/DEMO_RUNBOOK.md` § "Changes in kb-v2 B6".
 
 ---
 
