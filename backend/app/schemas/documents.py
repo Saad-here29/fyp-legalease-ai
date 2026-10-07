@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import computed_field
+from pydantic import ConfigDict, computed_field
 
 from app.models.enums import DocumentType, FileType
 from app.schemas.common import APIModel
@@ -57,3 +57,8 @@ class DocumentAnalysisResult(APIModel):
     ner_available: bool = False
     entities_source: str = "ner_model"
     clauses_and_risks_source: str = "llm_summary"
+
+    # With REASONING_V2 on (kb-v2 C4) the response also carries "reasoning"
+    # (the checked brief, or null) and "reasoning_error" (why it is null).
+    # Off, neither key is present and the response is exactly as before.
+    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True, extra="allow")

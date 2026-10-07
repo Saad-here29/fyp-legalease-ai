@@ -348,6 +348,15 @@ def analyze_document(
             logger.warning(f"NER failed on document {document_id}: {type(e).__name__}: {e}")
             ner_result = ner.NerResult(available=False)
 
+    # kb-v2 C4 (REASONING_V2): one more model call, checked without a second
+    # one (app/ai/reasoning.py). Still no DB session held. Off: nothing runs.
+    reasoning_extra: dict = {}
+    if settings.REASONING_V2:
+        from app.ai import reasoning
+        brief, why = reasoning.analyse(text, [e.text for e in ner_result.entities],
+                                       hint=document_type.value)
+        reasoning_extra = {"reasoning": brief, "reasoning_error": why}
+
     key_clauses, risks = extract_clauses_and_risks(summary_text)
     parties = [e.text for e in sorted(ner_result.by_type(*_PARTY_TYPES),
                                       key=lambda e: -e.count)]
@@ -361,6 +370,9 @@ def analyze_document(
         analysis = doc.analysis or DocumentAnalysis(document_id=doc.id)
         analysis.summary = summary_text
         analysis.identified_clauses = {"source": "llm_summary", "items": key_clauses}
+        if reasoning_extra:
+            # Saved with the analysis without a new column: an extra key in this JSON (kb-v2 C4).
+            analysis.identified_clauses = {**analysis.identified_clauses, **reasoning_extra}
         analysis.risk_flags = {"source": "llm_summary", "items": risks}
         analysis.extracted_entities = entities if ner_result.available else None
         analysis.document_classification = doc.document_type.value
@@ -380,4 +392,5 @@ def analyze_document(
         references=references,
         entities=entities,
         ner_available=ner_result.available,
+        **reasoning_extra,
     )
