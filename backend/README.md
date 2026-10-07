@@ -3,7 +3,7 @@
 FastAPI service for LegalEase AI. It covers auth, cases, chat, research,
 documents and contracts. Setup and run steps are in the root
 [`README.md`](../README.md); architecture is in
-[`docs/architecture.md`](../docs/architecture.md).
+[`docs/architecture/system-overview.md`](../docs/architecture/system-overview.md).
 
 ## Install
 
