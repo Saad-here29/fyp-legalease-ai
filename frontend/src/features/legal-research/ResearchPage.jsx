@@ -7,7 +7,8 @@ import { ROUTES } from "@/constants";
 import { researchApi } from "./api";
 import { kbApi } from "@/features/knowledge-base/api";
 import { TierTag, KbSourceLink } from "@/features/knowledge-base/kbParts";
-import { sectionLabel } from "@/features/knowledge-base/kbFormat";
+import { sectionLabel, judgmentPath } from "@/features/knowledge-base/kbFormat";
+import { useJudgmentsInfo } from "@/features/knowledge-base/useJudgments";
 
 // Legal research — design system v1, per the Research mockup
 // (docs/design_reference page 11): ink search band, then ruled results.
@@ -17,9 +18,14 @@ import { sectionLabel } from "@/features/knowledge-base/kbFormat";
 // apply only to passages whose law's metadata is known; the page says how
 // many documents that covers. Query and filters live in the URL (?q=&cat=…)
 // so returning from a passage restores the results.
+// With judgments on (kb-v2 C2) a Statutes / Judgments / All switch (?scope=)
+// adds the team's judgment dataset: best paragraph per judgment, linked to
+// the judgment's page. Judgments take the year and court filters; category,
+// jurisdiction and tier are statute-only and are hidden for Judgments.
 
 const EXAMPLES = ["khula procedure", "bail in a non-bailable offence", "FIR registration Section 154", "custody of minor children"];
 const TOP_K = 10;
+const STATUTE_ONLY = ["category", "jurisdiction", "source_tier"];
 const MORE_K = 30;
 
 // Words worth highlighting in an excerpt: the query's own words, minus
@@ -58,11 +64,17 @@ export default function ResearchPage() {
     year_from: params.get("yf") || "",
     year_to: params.get("yt") || "",
   };
+  const judgmentsInfo = useJudgmentsInfo();
+  const scopeParam = params.get("scope");
+  const scope = judgmentsInfo && ["judgments", "all"].includes(scopeParam) ? scopeParam : "statutes";
+  const court = scope === "statutes" ? "" : params.get("court") || "";
   const activeFilters = Object.fromEntries(
     Object.entries(filters)
-      .filter(([, v]) => v !== "")
+      .filter(([key, v]) => v !== "" && !(scope === "judgments" && STATUTE_ONLY.includes(key)))
       .map(([key, v]) => [key, ["source_tier", "year_from", "year_to"].includes(key) ? Number(v) : v])
   );
+  // Sent only when judgments are on, so the request is unchanged otherwise.
+  const scopePayload = judgmentsInfo ? { scope, ...(court && { court }) } : {};
   const setFilter = (key, value) => {
     const next = new URLSearchParams(params);
     if (value === "") next.delete(key);
@@ -72,7 +84,7 @@ export default function ResearchPage() {
   };
   const clearFilters = () => {
     const next = new URLSearchParams(params);
-    ["cat", "jur", "tier", "yf", "yt"].forEach((key) => next.delete(key));
+    ["cat", "jur", "tier", "yf", "yt", "court"].forEach((key) => next.delete(key));
     setParams(next, { replace: true });
   };
   const { data: kbStats } = useQuery({ queryKey: ["kb-stats"], queryFn: kbApi.stats, staleTime: 5 * 60 * 1000 });
@@ -81,8 +93,8 @@ export default function ResearchPage() {
   const { data: stats } = useQuery({ queryKey: ["research-stats"], queryFn: researchApi.stats, staleTime: Infinity });
 
   const { data, isFetching, isError, error } = useQuery({
-    queryKey: ["research", q, k, activeFilters],
-    queryFn: () => researchApi.search({ query: q, top_k: k, ...activeFilters }),
+    queryKey: ["research", q, k, activeFilters, scopePayload],
+    queryFn: () => researchApi.search({ query: q, top_k: k, ...activeFilters, ...scopePayload }),
     enabled: q.length >= 2,
     staleTime: 5 * 60 * 1000,
   });
@@ -141,7 +153,9 @@ export default function ResearchPage() {
       <p className="mt-5 font-ds-sans text-[14px] text-ds-paper/65">
         Semantic search over Pakistani legal text — mostly Acts, Ordinances, Codes and Orders
         {stats?.chunks ? ` · ${stats.chunks.toLocaleString()} passages from about ${stats.documents.toLocaleString()} Pakistani legal documents` : ""}.
-        No court judgments or case law.
+        {judgmentsInfo
+          ? ` Plus ${judgmentsInfo.counts.indexed.toLocaleString()} court judgments from a dataset supplied by the team (staged, not yet reviewed).`
+          : " No court judgments or case law."}
       </p>
       {stats?.updates?.available && (
         <p className="mt-2 font-ds-sans text-[14px] text-ds-paper/65">
@@ -163,6 +177,10 @@ export default function ResearchPage() {
     <AppShell title="Legal research" band={band}>
       <FilterBar
         key={`${filters.year_from}-${filters.year_to}`}
+        scope={judgmentsInfo ? scope : null}
+        setScope={(v) => setFilter("scope", v === "statutes" ? "" : v)}
+        court={court}
+        courts={Object.keys(judgmentsInfo?.courts || {}).filter((c) => c !== "Unknown")}
         filters={filters}
         setFilter={setFilter}
         clearFilters={clearFilters}
@@ -191,7 +209,13 @@ export default function ResearchPage() {
         </p>
       )}
 
-      {data && (
+      {data && scope === "judgments" && (
+        <section aria-live="polite">
+          <JudgmentResults data={data} q={q} terms={terms} headline />
+        </section>
+      )}
+
+      {data && scope !== "judgments" && (
         <section aria-live="polite">
           <div className="flex flex-wrap items-end justify-between gap-3 pb-4 border-b-2 border-ds-ink">
             <p className="font-ds-sans text-[17px]">
@@ -230,6 +254,12 @@ export default function ResearchPage() {
             <button onClick={() => run(q, MORE_K)} disabled={isFetching} className="ds-btn-secondary mt-8">
               {isFetching ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Loading" /> : "Show more results"}
             </button>
+          )}
+
+          {scope === "all" && (
+            <div className="mt-16">
+              <JudgmentResults data={data} q={q} terms={terms} />
+            </div>
           )}
         </section>
       )}
@@ -291,33 +321,149 @@ function ResultRow({ result, query, terms }) {
   );
 }
 
-function FilterBar({ filters, setFilter, clearFilters, categories, jurisdictions, coverage }) {
+// Judgment results (kb-v2 C2): the best paragraph of each judgment. Under
+// "All" they follow the statutes as "Past relevant cases".
+function JudgmentResults({ data, q, terms, headline = false }) {
+  const list = data.judgments || [];
+  return (
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-3 pb-4 border-b-2 border-ds-ink">
+        {headline ? (
+          <p className="font-ds-sans text-[17px]">
+            <span className="font-semibold text-[28px] leading-none tabular-nums mr-1.5">{list.length}</span>
+            judgment{list.length === 1 ? "" : "s"} for <span className="font-semibold">“{q}”</span>
+          </p>
+        ) : (
+          <h2 className="ds-h2">Past relevant cases</h2>
+        )}
+        <p className="ds-meta">Best paragraph of each judgment</p>
+      </div>
+      <p className="ds-body text-ds-text-2 mt-4 max-w-[760px]">
+        From a judgment dataset supplied by the team (original source and licence to be confirmed); staged, not yet
+        reviewed. A case shows how a court applied the law; it does not replace the statute.
+      </p>
+      {list.length === 0 ? (
+        <p className="ds-body text-ds-text-2 py-8">
+          No judgment is close enough to this query{data.filters_active ? " with these filters" : ""}.
+        </p>
+      ) : (
+        <ul>
+          {list.map((j) => (
+            <JudgmentRow key={j.doc_id} j={j} terms={terms} />
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function JudgmentRow({ j, terms }) {
+  const to = judgmentPath(j.doc_id, j.paragraph);
+  return (
+    <li className="grid gap-x-8 gap-y-3 md:grid-cols-[minmax(0,1fr)_auto] py-6 border-b border-ds-rule">
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-2 font-ds-sans text-[14px]">
+          <span className="font-semibold uppercase tracking-[0.12em] text-ds-text-2">Judgment</span>
+          <span className="text-ds-text-2">· {[j.court, j.year].filter(Boolean).join(", ") || "Court not found"}</span>
+          {j.case_number && <span className="text-ds-text-2">· {j.case_number}</span>}
+        </p>
+        <h3 className="mt-1">
+          <Link
+            to={to}
+            className="font-ds-serif font-medium text-[24px] leading-[30px] text-ds-text hover:underline decoration-ds-underline decoration-2 underline-offset-4
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink rounded-ds-sm"
+          >
+            {j.display_name}
+          </Link>
+        </h3>
+        <p className="font-ds-sans font-semibold text-[17px] leading-[24px] text-ds-text mt-1">Paragraph {j.paragraph}</p>
+        <p className="ds-body text-ds-text-2 mt-2 line-clamp-3">
+          <Highlighted text={j.snippet} terms={terms} />
+        </p>
+      </div>
+      <div className="flex md:flex-col md:items-end gap-x-6 gap-y-3 md:pt-6">
+        <Link to={to} className="ds-link text-[15px]">
+          Read judgment, para {j.paragraph}
+        </Link>
+        <span className="ds-meta tabular-nums" title="Similarity between your query and this paragraph">
+          {Math.round((j.relevance || 0) * 100)}% match
+        </span>
+      </div>
+    </li>
+  );
+}
+
+const SCOPES = [
+  ["statutes", "Statutes"],
+  ["judgments", "Judgments"],
+  ["all", "All"],
+];
+
+function FilterBar({ scope, setScope, court, courts, filters, setFilter, clearFilters, categories, jurisdictions, coverage }) {
   const [yf, setYf] = useState(filters.year_from);
   const [yt, setYt] = useState(filters.year_to);
-  const any = Object.values(filters).some((v) => v !== "");
+  const statuteFilters = scope !== "judgments";
+  const any = Object.values(filters).some((v) => v !== "") || !!court;
   const year = (v) => v.replace(/\D/g, "").slice(0, 4);
   const commit = (key, v) => setFilter(key, v.length === 4 ? v : "");
   return (
     <section aria-label="Filters" className="mb-10 pb-6 border-b border-ds-rule">
+      {scope && (
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <span className="ds-label mb-0" id="scope-label">
+            Search in
+          </span>
+          <div className="inline-flex rounded-ds border border-ds-rule overflow-hidden" role="radiogroup" aria-labelledby="scope-label">
+            {SCOPES.map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={scope === v}
+                onClick={() => setScope(v)}
+                className={`min-h-[44px] px-4 font-ds-sans text-[15px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink ${
+                  scope === v ? "bg-ds-ink text-white font-semibold" : "bg-ds-sheet text-ds-text hover:bg-ds-paper"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <FilterSelect
-          label="Category"
-          value={filters.category}
-          onChange={(v) => setFilter("cat", v)}
-          options={[["", "All categories"], ...categories.map((c) => [c, c])]}
-        />
-        <FilterSelect
-          label="Jurisdiction"
-          value={filters.jurisdiction}
-          onChange={(v) => setFilter("jur", v)}
-          options={[["", "All"], ...jurisdictions.map((j) => [j, j])]}
-        />
-        <FilterSelect
-          label="Source tier"
-          value={filters.source_tier}
-          onChange={(v) => setFilter("tier", v)}
-          options={[["", "All tiers"], ["1", "Tier 1"], ["2", "Tier 2"]]}
-        />
+        {scope && scope !== "statutes" && (
+          <FilterSelect
+            label={scope === "all" ? "Court (judgments)" : "Court"}
+            value={court}
+            onChange={(v) => setFilter("court", v)}
+            options={[["", "All courts"], ...courts.map((c) => [c, c])]}
+          />
+        )}
+        {statuteFilters && (
+          <FilterSelect
+            label="Category"
+            value={filters.category}
+            onChange={(v) => setFilter("cat", v)}
+            options={[["", "All categories"], ...categories.map((c) => [c, c])]}
+          />
+        )}
+        {statuteFilters && (
+          <FilterSelect
+            label="Jurisdiction"
+            value={filters.jurisdiction}
+            onChange={(v) => setFilter("jur", v)}
+            options={[["", "All"], ...jurisdictions.map((j) => [j, j])]}
+          />
+        )}
+        {statuteFilters && (
+          <FilterSelect
+            label="Source tier"
+            value={filters.source_tier}
+            onChange={(v) => setFilter("tier", v)}
+            options={[["", "All tiers"], ["1", "Tier 1"], ["2", "Tier 2"]]}
+          />
+        )}
         <label>
           <span className="ds-label">Year from</span>
           <input
@@ -344,7 +490,7 @@ function FilterBar({ filters, setFilter, clearFilters, categories, jurisdictions
         </label>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-        {coverage && (
+        {coverage && statuteFilters && (
           <p className="ds-body text-ds-text-2">
             Filters cover laws with known metadata ({coverage.known.toLocaleString()} of {coverage.total.toLocaleString()}).
           </p>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Check, List, Loader2, Scale, X } from "lucide-react";
@@ -8,9 +8,10 @@ import { ArchMark } from "@/components/common/Wordmark";
 import Markdown from "@/lib/Markdown";
 import { citeAnchor, normalizeMarkers } from "@/lib/citations";
 import { KbSourceLink } from "@/features/knowledge-base/kbParts";
-import { sectionLabel } from "@/features/knowledge-base/kbFormat";
+import { sectionLabel, judgmentPath } from "@/features/knowledge-base/kbFormat";
 import { chatApi } from "./api";
 import { researchApi } from "@/features/legal-research/api";
+import { useJudgmentsInfo } from "@/features/knowledge-base/useJudgments";
 
 // AI Chat — design system v1, per the AI Chat mockup (docs/design_reference
 // page 10): conversations column, then the thread with a ruled answer, a
@@ -100,9 +101,11 @@ const dayLabel = (iso) => {
 };
 
 // Stored citations are one entry per retrieved passage, in the order the
-// model was given them — so entry i is the "[i+1]" in the answer.
+// model was given them — so entry i is the "[i+1]" in the answer. Judgment
+// paragraphs (kb-v2 C2) are stored after them as kind "case_law" and listed
+// separately (caseLaw), never numbered.
 const numbered = (citations) =>
-  (citations || []).map((c, i) => ({
+  (citations || []).filter((c) => c.kind !== "case_law").map((c, i) => ({
     n: c.n ?? i + 1,
     source: c.source || c.title || "",
     // Stored excerpts start wherever the indexed chunk starts, often
@@ -114,6 +117,21 @@ const numbered = (citations) =>
     sourceUrl: c.source_url || null,
     recordId: c.doc_id || null,
   }));
+
+// Judgment paragraphs given to the answer, from the live reply's case_law or
+// the stored citations. Weak matches (under 0.55) are never shown.
+const caseLaw = (list) =>
+  (list || [])
+    .filter((c) => (c.relevance ?? 1) >= 0.55)
+    .map((c) => ({
+      docId: c.doc_id,
+      name: c.source,
+      court: c.court || null,
+      year: c.year || null,
+      caseNumber: c.case_number || null,
+      paragraph: c.paragraph,
+      excerpt: (c.excerpt || "").trim(),
+    }));
 
 export default function ChatPage() {
   const qc = useQueryClient();
@@ -166,6 +184,7 @@ export default function ChatPage() {
               role: String(m.sender_type).toLowerCase() === "ai" ? "assistant" : "user",
               content: normalizeMarkers(m.content),
               citations: numbered(m.citations),
+              caseLaw: caseLaw((m.citations || []).filter((c) => c.kind === "case_law")),
               elapsedMs: m.response_time_ms ?? null,
               time: clock(new Date(m.created_at)),
             })
@@ -196,6 +215,7 @@ export default function ChatPage() {
           role: "assistant",
           content: normalizeMarkers(data.response),
           citations: numbered(data.citations),
+          caseLaw: caseLaw(data.case_law),
           elapsedMs: data.response_time_ms ?? clientMs,
           time: clock(new Date()),
         }),
@@ -529,6 +549,32 @@ function Answer({ message }) {
           </ol>
         </div>
       )}
+
+      {message.caseLaw?.length > 0 && (
+        <div className="mt-4 pt-5 border-t border-ds-rule">
+          <p className="ds-eyebrow">Case law</p>
+          <p className="ds-meta mt-1">
+            Paragraphs from past judgments given to this answer as context (team-supplied dataset, staged).
+          </p>
+          <ul className="mt-2">
+            {message.caseLaw.map((c) => (
+              <li key={`${c.docId}-${c.paragraph}`} className="py-4 border-b border-ds-rule last:border-0">
+                <span className="block font-ds-sans font-semibold text-[16px] leading-[24px] text-ds-text">
+                  {c.name}
+                  {c.name.includes(`(${[c.court, c.year].filter(Boolean).join(", ")})`) || (!c.court && !c.year)
+                    ? ""
+                    : ` (${[c.court, c.year].filter(Boolean).join(", ")})`}
+                  , para {c.paragraph}
+                </span>
+                {c.excerpt && <span className="ds-meta block mt-1 line-clamp-2" dir="auto">{c.excerpt}</span>}
+                <Link to={judgmentPath(c.docId, c.paragraph)} className="ds-link text-[15px] inline-block mt-2">
+                  Read the judgment, para {c.paragraph}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </article>
   );
 }
@@ -562,6 +608,7 @@ function Thinking() {
 function EmptyState({ onPick }) {
   // Live library size, so the number can't go stale after a rebuild.
   const { data: stats } = useQuery({ queryKey: ["research-stats"], queryFn: researchApi.stats, staleTime: Infinity });
+  const judgments = useJudgmentsInfo();
   return (
     <div>
       <p className="ds-eyebrow">Pakistani statute law</p>
@@ -569,8 +616,11 @@ function EmptyState({ onPick }) {
       <p className="ds-body text-ds-text-2 mt-4 max-w-[640px]">
         Answers are grounded in LegalEase&apos;s library of
         {stats?.documents ? ` about ${stats.documents.toLocaleString()}` : ""} Pakistani legal documents — mostly Acts,
-        Ordinances, Codes and Orders — and cite the passages they rely on. The library holds no court judgments or case
-        law, and questions outside Pakistani law are refused.
+        Ordinances, Codes and Orders — and cite the passages they rely on.{" "}
+        {judgments
+          ? "Paragraphs from past judgments (a team-supplied dataset, staged) may be added as context, listed under Case law."
+          : "The library holds no court judgments or case law,"}{" "}
+        {judgments ? "Questions" : "and questions"} outside Pakistani law are refused.
       </p>
 
       <p className="ds-meta mt-10 mb-3">Try one of these</p>
