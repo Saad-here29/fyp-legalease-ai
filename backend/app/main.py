@@ -166,6 +166,7 @@ def run_mode() -> dict:
         **_judgments_status(),
         "scraped_v2": settings.SCRAPED_V2,
         **_scraped_status(),
+        "reasoning_v2": settings.REASONING_V2,
     }
 
 
