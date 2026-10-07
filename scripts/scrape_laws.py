@@ -7,7 +7,7 @@
     python scripts/scrape_laws.py --dry-run --limit 3 --compare-with run1.json   # unchanged / changed, no DB
 
 kb-v2 C3, file staging (no database; run from backend/):
-    python ../scripts/scrape_laws.py --stage-files                        # default caps PC 120, KP 60, FSC 100
+    python ../scripts/scrape_laws.py --stage-files                        # default caps PC 800, KP 60, FSC 100
     python ../scripts/scrape_laws.py --stage-files --caps "Pakistan Code=10,Khyber Pakhtunkhwa Code=10,Federal Shariat Court=10"
     python ../scripts/scrape_laws.py --stage-files --budget 0             # no time limit
     python ../scripts/scrape_laws.py --stage-files --reparse              # rebuild records from saved originals, no network
@@ -134,7 +134,7 @@ def main() -> int:
     return 0
 
 
-DEFAULT_CAPS = {"Pakistan Code": 120, "Khyber Pakhtunkhwa Code": 60, "Federal Shariat Court": 100}
+DEFAULT_CAPS = {"Pakistan Code": 800, "Khyber Pakhtunkhwa Code": 60, "Federal Shariat Court": 100}     # PC 800: kb-v2 C8
 
 
 def parse_caps(text: str) -> dict[str, int]:

@@ -420,7 +420,7 @@ def test_weekly_runner_exit_codes(monkeypatch, tmp_path):
 def test_scrape_script_caps():
     sys.path.insert(0, str(ROOT / "scripts"))
     import scrape_laws
-    assert scrape_laws.parse_caps("") == {"Pakistan Code": 120, "Khyber Pakhtunkhwa Code": 60,
+    assert scrape_laws.parse_caps("") == {"Pakistan Code": 800, "Khyber Pakhtunkhwa Code": 60,
                                           "Federal Shariat Court": 100}
     assert scrape_laws.parse_caps("Pakistan Code=10, Federal Shariat Court=5")["Pakistan Code"] == 10
     with pytest.raises(SystemExit):
@@ -430,3 +430,31 @@ def test_scrape_script_caps():
 def test_register_script_does_not_run_on_import():
     text = (ROOT / "scripts/scraping/register_weekly_task.ps1").read_text(encoding="utf-8")
     assert "-DaysOfWeek Sunday" in text and '$At = "03:00"' in text and "run_weekly.py" in text
+
+
+# --------------------------------------------------------------------------- paged listing (kb-v2 C8)
+
+def _listing(*ids):
+    return ("<ul>" + "".join(f'<li><a href="https://kpcode.kp.gov.pk/homepage/lawDetails/{i}">Law {i}, 2020</a></li>'
+                             for i in ids) + "</ul>").encode()
+
+
+def test_paged_listing_walks_each_letter_until_a_page_adds_nothing(kb):
+    base = "https://kpcode.kp.gov.pk/homepage/alphabetical/"
+    pages = {f"{base}A/0": (_listing(1, 2), "text/html"), f"{base}A/10": (_listing(2, 3), "text/html"),
+             f"{base}A/20": (_listing(3), "text/html"), f"{base}B/0": (_listing(4), "text/html"),
+             f"{base}B/10": (_listing(), "text/html")}
+    src = {**KP, "listing_urls": [], "paged_listing": {"url": base + "{letter}/{offset}", "letters": "AB",
+                                                       "step": 10, "max_pages": 50}}
+    f = fetcher(pages)
+    items = list(kb_run._items(src, f, [], quiet))
+    assert [i.url.rsplit("/", 1)[1] for i in items] == ["1", "2", "3", "4"]
+    asked = [u for u in f.session.calls if "alphabetical" in u]
+    assert asked == [f"{base}A/0", f"{base}A/10", f"{base}A/20", f"{base}B/0", f"{base}B/10"]   # no A/30
+
+
+def test_kp_source_has_the_full_listing_and_pc_cap_is_800():
+    assert KP["paged_listing"]["url"].endswith("/homepage/alphabetical/{letter}/{offset}")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import scrape_laws
+    assert scrape_laws.DEFAULT_CAPS["Pakistan Code"] == 800

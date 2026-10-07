@@ -260,10 +260,16 @@
   "listing_urls": [
    "https://kpcode.kp.gov.pk/homepage/recent_updated"
   ],
+  "paged_listing": {
+   "url": "https://kpcode.kp.gov.pk/homepage/alphabetical/{letter}/{offset}",
+   "letters": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+   "step": 10,
+   "max_pages": 60
+  },
   "item_xpath": "//a[contains(@href,'/homepage/lawDetails/')]",
   "pdf_xpath": "//a[contains(@href,'/uploads/') and contains(translate(@href,'PDF','pdf'),'.pdf')]/@href",
   "item_is_pdf": false,
-  "notes": "'Recently updated' list -> law page -> watermarked PDF under /uploads/.",
+  "notes": "'Recently updated' list first, then the full alphabetical listing (A-Z, 10 laws a page, offset in the URL: /homepage/alphabetical/A/10) -> law page -> watermarked PDF under /uploads/.",
   "status": "verified",
   "verified": {
    "date": "2026-10-06",

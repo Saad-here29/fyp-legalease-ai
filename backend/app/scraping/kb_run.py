@@ -189,16 +189,39 @@ def reparse(sources: list[dict], *, log: Callable[[str], None] = print) -> dict:
     return counts
 
 
+def listing_pages(src: dict):
+    """Listing URLs: listing_urls, then (kb-v2 C8) a paged listing described by
+    "paged_listing": {"url": ".../alphabetical/{letter}/{offset}", "letters":
+    "ABC...", "step": 10, "max_pages": 60}. Yields (url, letter, offset)."""
+    for u in src.get("listing_urls", []):
+        yield u, None, None
+    paged = src.get("paged_listing")
+    if paged:
+        for letter in paged.get("letters", ""):
+            for n in range(paged.get("max_pages", 60)):
+                yield paged["url"].format(letter=letter, offset=n * paged.get("step", 10)), letter, n
+
+
 def _items(src: dict, fetcher: Fetcher, priority: list, log: Callable[[str], None]):
     """The priority items, then each listing page's items (listing pages are
-    fetched only when needed)."""
+    fetched only when needed). In a paged listing a letter ends at the first
+    page that adds no new item."""
     yield from priority
-    for listing_url in src.get("listing_urls", []):
+    seen: set[str] = set()
+    done_letter = None
+    for listing_url, letter, _offset in listing_pages(src):
+        if letter is not None and letter == done_letter:
+            continue
         page = fetcher.get(listing_url)
         stage.save_original(src["name"], page.url, page.content, page.content_type, "listing", stage.utcnow())
         found = parse_listing(page.content, page.url, src)
-        log(f"[{src['name']}] {listing_url}: {len(found)} items")
-        for f in found:
+        new = [f for f in found if f.url not in seen]
+        log(f"[{src['name']}] {listing_url}: {len(found)} items ({len(new)} new)")
+        if letter is not None and not new:
+            done_letter = letter
+            continue
+        for f in new:
+            seen.add(f.url)
             yield stage.Item(src["name"], f.title, f.url)
 
 
