@@ -366,6 +366,38 @@ Plus `counts` (returned, kept, dropped, dropped_reasons, flagged, statutes),
 `coverage` (partial, note, tokens), `related_cases_note`, `disclaimer`
 ("AI-assisted analysis; verify against the original").
 
+**Phase C10 (accuracy):**
+
+- **Coverage.** The document is split at paragraphs, numbered paragraphs and
+  CAPITALS headings into parts of up to `REASONING_INPUT_TOKENS` (5,000), one
+  call each, up to `REASONING_MAX_CALLS` (5): about 12,000 words, i.e. the
+  whole of nearly any pleading. The calls are paced to `REASONING_TPM` (7,500
+  tokens/min, counting the summary call just made), and a 429 still backs off.
+  When a document needs more parts than that, the first and last parts and
+  the parts with the prayer or relief, statute references and orders are
+  kept. The "only part analysed" note then gives the real percentage. A
+  failure after the first part keeps the parts already done, with a partial
+  note. `coverage` adds `parts`, `parts_total`, `percent`, `calls`, `waited_seconds`.
+- **Statutes from the text.** Act, Ordinance, Order, Regulations, Code or
+  Rules names with a year (and a section named just before) are read from the
+  full text with a pattern and added when the model missed them
+  (`found_in_text`). Each is checked in the knowledge base as before; an Act
+  named without a section is `law_held` when the law is held.
+- **Absence claims.** A weak point, risk, open question or summary "Points to
+  review" item that says "no X", "X is missing", "does not mention X" is
+  removed when the document contains X's words within 40 words of each other
+  (plural or verb forms matched on the first six letters). They're counted
+  under dropped reasons, or in `review_points_removed` and
+  `review_points_removed_text` for the summary.
+- **Prompts.** Review points must be this document's own gaps (events with no
+  date, amounts or dates that don't match, unnumbered annexures, blanks). That
+  applies to the reasoning call and, with the flag on, the summary's section 5,
+  which is renamed "Points to review".
+- **Related cases.** Searched at the Chat floor (0.58). A case is skipped when
+  it has no case name and no number, when its title is just the court's name,
+  when its paragraph 0/1 is a heading or parties block, or when it can't be
+  read. `title` is "Name (Court, Year)" with nothing repeated.
+
 ### b6) Query hints and the consequence rule (Phase C5)
 
 **Query hints** (`backend/storage/kb/query_hints.json`, committed;

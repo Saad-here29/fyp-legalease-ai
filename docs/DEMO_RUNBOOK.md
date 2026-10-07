@@ -330,6 +330,16 @@ so on Groq's 8,000 tokens/minute the second call may get a 429. It backs off
 (Groq's retry-after, else 5 s, 10 s, 20 s; at most 45 s) and then gives up
 with "The AI service is busy …"; the summary and entities still show.
 
+**Since C10 (2026-10-08):** the whole document is analysed, in parts of up to
+5,000 tokens, up to 5 calls (about 12,000 words). The calls are spaced to stay
+under 8,000 tokens/minute, so a 12,000-word document takes about 3 minutes
+(3 calls of about 6.5k tokens, roughly 20k of the 200k daily budget with the
+summary). The page waits up to 6 minutes. The "only part analysed" notice
+shows only for longer documents, with the real percentage. Statutes named in
+the text appear even when the model missed them ("named in the document").
+"No X" review points are removed when the document contains X, and the count
+is shown.
+
 ## Differences to know before switching
 
 - **Same data:** same database, same accounts, same cases and contracts.
