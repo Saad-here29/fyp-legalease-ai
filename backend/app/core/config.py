@@ -148,6 +148,7 @@ class Settings(BaseSettings):
     JUDGMENTS_TOP_K: int = 5              # judgments per Research search
     JUDGMENTS_CHAT_K: int = 3             # judgment paragraphs given to the chat model
     JUDGMENTS_SHOW_MIN: float = 0.55      # weaker matches are not shown in Chat (nor sent to the model)
+    JUDGMENTS_CHAT_MIN: float = 0.58      # kb-v2 C8: Chat's own floor for case paragraphs (Research keeps MIN_SCORE)
     # Scraped laws and judgments (kb-v2 C3), staged as files under
     # KB_DIR/scraped/ by scripts/scrape_laws.py --stage-files. Off: nothing
     # scraped is searched or listed, and Research's "Sources checked" line

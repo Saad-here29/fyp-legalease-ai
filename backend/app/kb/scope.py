@@ -42,6 +42,25 @@ LEGAL_TERMS = re.compile(
 _NAMED_ACT = re.compile(r"\b[A-Z][a-z]+(?:\s+(?:[A-Z][a-z]+|of|and))*\s+Act\b")
 
 
+def foreign_only(question: str) -> bool:
+    """kb-v2 C8: the question is about another country's law and doesn't
+    mention Pakistan ("murder under the Indian Penal Code"): refused before
+    retrieval, so no sources or cases are shown."""
+    q = question or ""
+    return bool(FOREIGN.search(q)) and not re.search(r"\bpakistan", q, re.I)
+
+
+_REFUSAL = re.compile(r"outside (?:the|my) scope|can only (?:answer|help with) questions about pakistani|"
+                      r"only answer questions about pakistani law|cannot help with that|not able to help with that|"
+                      r"\u062f\u0627\u0626\u0631\u06c2 \u06a9\u0627\u0631 \u0633\u06d2 \u0628\u0627\u06c1\u0631", re.I)
+
+
+def is_refusal(answer: str) -> bool:
+    """kb-v2 C8: a short answer that only says the question is out of scope."""
+    a = answer or ""
+    return len(a) < 600 and bool(_REFUSAL.search(a))
+
+
 def legal_terms(question: str) -> list[str]:
     """Clear legal terms in the question ([] if it names a foreign country)."""
     q = question or ""

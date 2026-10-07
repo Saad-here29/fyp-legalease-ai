@@ -164,11 +164,13 @@ CASES_RULES = (
     "cases only, this overrides the rule against citing case names:\n"
     "1. Cite a case only as \"Case name (Court, year), para N\", exactly as it "
     "is listed below, and never a case that is not listed.\n"
-    "2. State only what that paragraph says. Never invent a holding, outcome "
+    "2. Describe a case only in its own words: a short quotation from its "
+    "paragraph, with the court, year and paragraph number. Never turn one "
+    "paragraph into a general rule of law, and never invent a holding, outcome "
     "or principle the paragraph does not state.\n"
     "3. Never use a case in place of a statute: the law comes from the "
-    "numbered statute passages [n]; a case may only show how a court applied "
-    "or explained it.\n"
+    "numbered statute passages [n]. Describe a statute section only in its own "
+    "words or by its heading, never as a case paraphrases it.\n"
     "4. Don't put [n] markers on cases, and never give law-report citations "
     "(PLD, SCMR or similar).\n"
     "5. If a case doesn't help answer the question, don't mention it."
@@ -406,21 +408,28 @@ def expand_sections(passages: list[dict]) -> list[dict]:
     return out
 
 
-def retrieve_judgments(search_query: str) -> list[dict]:
-    """kb-v2 C2: up to JUDGMENTS_CHAT_K judgment paragraphs (best one per
-    judgment) scoring at least JUDGMENTS_SHOW_MIN; weaker ones are neither
-    shown nor sent to the model. Called only after the statute scope gate
+def retrieve_judgments(search_query: str, message: str = "") -> list[dict]:
+    """kb-v2 C2/C8: up to JUDGMENTS_CHAT_K judgment paragraphs (best one per
+    judgment) scoring at least JUDGMENTS_CHAT_MIN (and SHOW_MIN); weaker ones
+    are neither shown nor sent to the model. For a family-law question only
+    judgments with a family topic. Called only after the statute scope gate
     passed; never changes it. [] when JUDGMENTS_V2 is off or the index isn't
     ready."""
     if not settings.JUDGMENTS_V2:
         return []
     from app.kb import judgment_search
+    from app.kb.judgments import FAMILY_TOPICS
+    family = family_index.is_family_question(message, search_query)
     try:
-        found = judgment_search.search(search_query, top_k=settings.JUDGMENTS_CHAT_K,
-                                       min_score=max(settings.JUDGMENTS_MIN_SCORE, settings.JUDGMENTS_SHOW_MIN))
+        found = judgment_search.search(
+            search_query, top_k=settings.JUDGMENTS_CHAT_K * (4 if family else 1),
+            min_score=max(settings.JUDGMENTS_MIN_SCORE, settings.JUDGMENTS_SHOW_MIN, settings.JUDGMENTS_CHAT_MIN))
     except Exception as e:  # noqa: BLE001 — judgments are extra context; never fail the answer
         logger.warning(f"Judgment retrieval failed: {e}")
         return []
+    if family:
+        found = [j for j in found if set(j.get("topics") or []) & set(FAMILY_TOPICS)]
+    found = found[: settings.JUDGMENTS_CHAT_K]
     if found:
         logger.info("Judgments: " + "; ".join(f"{j['display_name'][:60]} para {j['paragraph']} ({j['score']:.3f})"
                                               for j in found))
@@ -576,6 +585,12 @@ class LegalChatService:
             logger.warning("Chat called but FAISS index is empty.")
             return self._reply(sid, lang, fixed_reply(INDEX_NOT_READY, lang))
 
+        # kb-v2 C8: another country's law, Pakistan not mentioned: refuse before
+        # retrieval, so no sources and no case law are attached.
+        if settings.KB_V2 and scope.foreign_only(message):
+            logger.info("Chat refusal: foreign law")
+            return self._reply(sid, lang, fixed_reply(OUT_OF_SCOPE_REFUSAL, lang), response_time_ms=_ms_since(t0))
+
         search_query = rewrite_for_search(message)
         passages = retrieve_passages(message, search_query, family=family)
 
@@ -588,7 +603,7 @@ class LegalChatService:
                                response_time_ms=_ms_since(t0))
 
         # kb-v2 C2: past cases, only once the statute scope gate has passed.
-        judgments = retrieve_judgments(search_query)
+        judgments = retrieve_judgments(search_query, message)
 
         history.append({"role": "user", "content": message})
         # AIServiceUnavailable propagates -> router returns 503; the user
@@ -606,12 +621,17 @@ class LegalChatService:
             }
             for p in passages
         ] + [case_law_citation(j) for j in judgments]
+        # kb-v2 C8: when the model itself refused, the reply carries no sources and no case law.
+        refused = settings.KB_V2 and scope.is_refusal(checked.text)
+        if refused:
+            logger.info("Chat: the model refused; sources and case law dropped")
+            citations_payload = []
         # Phase 3 — short DB write: persist the reply.
         return self._reply(
             sid, lang, checked.text,
             citations=citations_payload,
             response_time_ms=_ms_since(t0),
-            sources=self._unique_sources(passages),
+            sources=[] if refused else self._unique_sources(passages),
         )
 
     # ----- Internal ------------------------------------------------------

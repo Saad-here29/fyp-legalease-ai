@@ -90,3 +90,96 @@ def test_the_models_own_headings_are_ignored_but_the_body_is_checked():
     r = check_citations(answer, PASSAGE, consequences=True)
     assert r.unverified == ['Legal consequence not stated in the retrieved text: "void"']
     assert _mask_headings(answer).splitlines()[0].strip() == "" and "void" in _mask_headings(answer)
+
+
+# --------------------------------------------------------------------------- cases (C8 item 4)
+
+def test_readable_paragraphs():
+    from app.kb.judgment_search import readable
+    assert readable("The Court held that the wife is entitled to dower on demand.")
+    assert not readable("قال الله تعالى وعاشروهن بالمعروف فان كرهتموهن فعسى ان تكرهوا شيئا " * 3 + " the Court")
+    assert not readable("The verse " + "\ufefb\ufe8e\ufed3" * 4 + " was cited.")      # presentation forms
+    assert not readable("12 34 --")
+
+
+def _hit(doc, topics, score=0.7):
+    return {"doc_id": doc, "display_name": doc, "court": "SC", "year": 2020, "case_number": None, "paragraph": 3,
+            "text": "t", "paragraph_text": "t", "prefix": f"{doc} - para 3:", "score": score, "topics": topics}
+
+
+def test_chat_cases_floor_and_family_topics(monkeypatch):
+    from app.kb import judgment_search
+    calls = []
+
+    def fake(q, top_k, min_score):
+        calls.append((top_k, min_score))
+        return [_hit("bail case", ["bail"]), _hit("dower case", ["dower", "family"]), _hit("tax case", [])]
+    monkeypatch.setattr(judgment_search, "search", fake)
+    monkeypatch.setattr(settings, "JUDGMENTS_V2", True)
+    fam = chat.retrieve_judgments("dower mehr payment", "When must the husband pay the dower?")
+    assert [j["doc_id"] for j in fam] == ["dower case"] and calls[0] == (settings.JUDGMENTS_CHAT_K * 4, 0.58)
+    other = chat.retrieve_judgments("bail in a non-bailable offence", "When is bail granted?")
+    assert [j["doc_id"] for j in other] == ["bail case", "dower case", "tax case"] and calls[1][1] == 0.58
+
+
+def test_case_rules_in_the_prompt():
+    rules = chat.CASES_RULES
+    assert "only in its own words" in rules and "general rule of law" in rules
+    assert "Describe a statute section only in its own words or by its heading" in rules
+
+
+# --------------------------------------------------------------------------- refusals (C8 item 5)
+
+def test_foreign_and_refusal_detection():
+    from app.kb import scope
+    assert scope.foreign_only("What is the punishment for murder under the Indian Penal Code?")
+    assert not scope.foreign_only("Is an Indian court decree enforceable in Pakistan?")
+    assert not scope.foreign_only("What is the punishment for murder?")
+    assert scope.is_refusal(chat.OUT_OF_SCOPE_REFUSAL["en"]) and scope.is_refusal(chat.OUT_OF_SCOPE_REFUSAL["ur"])
+    assert not scope.is_refusal("Short answer: talaq needs notice to the Chairman [1]. " * 3)
+
+
+@pytest.fixture
+def chat_user(db_session):
+    from app.core.security import hash_password
+    from app.models.enums import UserRole
+    from app.models.user import User
+    u = User(email="c8@gmail.com", password_hash=hash_password("x"), full_name="C Eight", role=UserRole.STUDENT,
+             is_active=True, is_verified=True)
+    db_session.add(u)
+    db_session.commit()
+    return u
+
+
+class Model:
+    def __init__(self, answer=None):
+        self.answer, self.calls = answer, 0
+
+    def chat(self, history, system=None):
+        self.calls += 1
+        return self.answer
+
+
+def test_foreign_question_is_refused_with_no_sources(db_session, chat_user, monkeypatch):
+    monkeypatch.setattr(settings, "KB_V2", True)
+    monkeypatch.setattr(chat.embeddings, "build_or_load", lambda *a: 1)
+    monkeypatch.setattr(chat, "rewrite_for_search", lambda q: (_ for _ in ()).throw(AssertionError("no rewrite")))
+    svc = chat.LegalChatService(db_session)
+    svc.ai = Model()
+    reply = svc.send(chat_user, "What is the punishment for murder under the Indian Penal Code?")
+    assert reply["response"] == chat.OUT_OF_SCOPE_REFUSAL["en"]
+    assert reply["citations"] == [] and reply["sources"] == [] and svc.ai.calls == 0
+
+
+def test_model_refusal_carries_no_sources_or_cases(db_session, chat_user, monkeypatch):
+    monkeypatch.setattr(settings, "KB_V2", True)
+    monkeypatch.setattr(settings, "JUDGMENTS_V2", True)
+    monkeypatch.setattr(chat.embeddings, "build_or_load", lambda *a: 1)
+    monkeypatch.setattr(chat, "rewrite_for_search", lambda q: q)
+    monkeypatch.setattr(chat, "retrieve_passages", lambda *a, **k: [{"source": "Some Act", "text": "x",
+                                                                     "relevance": 0.7}])
+    monkeypatch.setattr(chat, "retrieve_judgments", lambda *a, **k: [_hit("a case", [])])
+    svc = chat.LegalChatService(db_session)
+    svc.ai = Model("This question is outside the scope of Pakistani law I can answer on.")
+    reply = svc.send(chat_user, "Recommend a cricket bat for the law exam")
+    assert reply["citations"] == [] and reply["sources"] == [] and reply["case_law"] == []

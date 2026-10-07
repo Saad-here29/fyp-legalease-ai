@@ -19,6 +19,7 @@ by score.
 from __future__ import annotations
 
 import json
+import re
 import threading
 from pathlib import Path
 
@@ -143,6 +144,21 @@ def window_text(chunk: dict) -> str:
     return text
 
 
+_ARABIC = re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
+_PRESENTATION = re.compile(r"[\uFB50-\uFDFF\uFE70-\uFEFF]")
+
+
+def readable(text: str) -> bool:
+    """kb-v2 C8: False for a paragraph that is mostly Arabic script (Quranic
+    quotations, Urdu passages the English model reads badly) or holds many
+    Arabic presentation-form characters (a PDF's broken text layer)."""
+    letters = sum(ch.isalpha() for ch in text or "")
+    if not letters:
+        return False
+    arabic = len(_ARABIC.findall(text))
+    return arabic / letters <= 0.30 and len(_PRESENTATION.findall(text)) < 5
+
+
 def _court_ok(court: str | None, wanted: str | None) -> bool:
     return not wanted or wanted.lower() in (court or "").lower()
 
@@ -167,8 +183,8 @@ def search(query: str, *, top_k: int | None = None, min_score: float | None = No
             if not 0 <= i < len(chunks) or float(s) < min_score:
                 continue
             c = chunks[i]
-            if c["doc_id"] in best:
-                continue
+            if c["doc_id"] in best or c.get("para") == 0 or not readable(window_text(c)):
+                continue                       # para 0 is the heading and parties, not a holding
             yr = c.get("year")
             if (year_from is not None and (yr is None or yr < year_from)) or \
                (year_to is not None and (yr is None or yr > year_to)) or not _court_ok(c.get("court"), court):
@@ -184,6 +200,8 @@ def search(query: str, *, top_k: int | None = None, min_score: float | None = No
                "year": summ.get("year", c.get("year")), "case_number": summ.get("case_number")}
         para_text = catalog.paragraph(c["doc_id"], c["para"]) if summ else None
         window = window_text(c)
+        if para_text and not readable(para_text):
+            continue
         hits.append({
             "doc_id": c["doc_id"], "display_name": jd.display_name(rec), "case_name": rec["case_name"],
             "court": rec["court"], "year": rec["year"], "case_number": rec["case_number"],
