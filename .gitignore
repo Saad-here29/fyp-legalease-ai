@@ -123,3 +123,7 @@ tmp/
 # PyMuPDF (backend venv):
 #   python -c "import fitz; d=fitz.open('docs/design_reference/LegalEase AI Design System.pdf'); [p.get_pixmap(dpi=150).save(f'docs/design_reference/page-{i+1:02d}.jpg') for i,p in enumerate(d)]"
 docs/design_reference/*.jpg
+
+# C12: a stray copy of backend/storage/kb/faiss_judgments_dev_meta.json found at the backend root
+# (no code reads or writes that path); set aside for review, kept out of git.
+_to_review/backend/faiss_judgments_meta.json
