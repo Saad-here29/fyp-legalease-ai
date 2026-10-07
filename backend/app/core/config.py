@@ -128,6 +128,9 @@ class Settings(BaseSettings):
     KB_DIR: str = "./storage/kb"            # records/, raw/, category_map.json (read-only at runtime)
     KB_V2_INDEX_PATH: str = "./storage/kb/faiss_v2.faiss"
     KB_V2_METADATA_PATH: str = "./storage/kb/faiss_v2_meta.json"
+    # Judgments (kb-v2 C1): a separate index, not searched by the app yet.
+    KB_JUDGMENTS_INDEX_PATH: str = "./storage/kb/faiss_judgments.faiss"
+    KB_JUDGMENTS_METADATA_PATH: str = "./storage/kb/faiss_judgments_meta.json"
 
 
 @lru_cache

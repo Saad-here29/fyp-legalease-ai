@@ -60,10 +60,11 @@ def _fit_prefix(rec: dict, tokenizer) -> str:
     return prefix_for({**rec, "heading": (head + " …") if head else ""})
 
 
-def chunk_record(rec: dict, tokenizer) -> list[dict]:
+def chunk_record(rec: dict, tokenizer, prefix: str | None = None) -> list[dict]:
     """Windows of one record: [{"text", "start", "end", "window"}], every
-    text <= MAX_TOKENS tokens, prefix included."""
-    prefix = _fit_prefix(rec, tokenizer)
+    text <= MAX_TOKENS tokens, prefix included. `prefix` overrides the
+    statute prefix (judgment paragraphs pass their own)."""
+    prefix = prefix if prefix is not None else _fit_prefix(rec, tokenizer)
     body = rec["text"]
     enc = tokenizer(body, add_special_tokens=False, return_offsets_mapping=True)
     offs = [o for o in enc["offset_mapping"] if o[1] > o[0]]
