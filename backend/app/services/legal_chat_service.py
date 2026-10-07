@@ -356,7 +356,54 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
         if exact:
             logger.info(f"Exact section lookup: {', '.join(e['doc_id'] for e in exact)}")
             passages = exact_lookup.merge(exact, passages, settings.RAG_TOP_K)
+        if settings.SECTION_EXPANSION:
+            passages = expand_sections(passages)
     return passages
+
+
+def _section_text(p: dict) -> str | None:
+    """The full text of a retrieved section from the records (core, all-laws or scraped)."""
+    from app.kb import catalog, index_v2, scraped
+    d = p.get("doc_id")
+    if not d:
+        return None
+    if p.get("kb") == "scraped":
+        return scraped._INDEX.texts.get(d)
+    full = index_v2._V2_INDEX.texts.get(d)
+    if full is None:
+        rec = catalog.data()["records"].get(d)
+        full = rec.get("text") if rec else None
+    return full
+
+
+def cap_tokens(text: str, limit: int) -> str:
+    """At most `limit` tokens, cut at the last sentence end that fits, marked "…"."""
+    if count_tokens(text) <= limit:
+        return text
+    enc = _encoder()
+    cut = enc.decode(enc.encode(text)[:limit]) if enc is not None else text[: limit * 4]
+    end = max(cut.rfind(". "), cut.rfind("; "))
+    return (cut[: end + 1] if end > len(cut) * 0.6 else cut).rstrip() + " …"
+
+
+def expand_sections(passages: list[dict]) -> list[dict]:
+    """kb-v2 C8: each retrieved section (faiss_v2 / scraped hit) carries its
+    FULL text from the records, capped at SECTION_MAX_TOKENS, so the model never
+    sees only a fragment; the same section twice is kept once; at most
+    SECTION_MAX_COUNT sections (the best ranked). Old-index chunks are unchanged."""
+    out, seen, sections = [], set(), 0
+    for p in passages:
+        d = p.get("doc_id") if p.get("kb") in ("v2", "scraped") else None
+        if d:
+            if d in seen or sections >= settings.SECTION_MAX_COUNT:
+                continue
+            seen.add(d)
+            sections += 1
+            full = _section_text(p)
+            if full:
+                p = {**p, "text": cap_tokens(full, settings.SECTION_MAX_TOKENS), "expanded": True}
+        out.append(p)
+    return out
 
 
 def retrieve_judgments(search_query: str) -> list[dict]:

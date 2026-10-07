@@ -164,6 +164,11 @@ class Settings(BaseSettings):
     # text fused with the vector ranking (reciprocal rank fusion). KB_V2 only.
     HYBRID_SEARCH: bool = True
     HYBRID_MIN_COSINE: float = 0.40     # a section found only by words must still be this close in meaning
+    # Section expansion (kb-v2 C8): Chat sends a retrieved section's full text
+    # from the records (not a 120-token chunk), capped, top sections only.
+    SECTION_EXPANSION: bool = True
+    SECTION_MAX_TOKENS: int = 700
+    SECTION_MAX_COUNT: int = 4
     QUERY_HINTS_PATH: str = "./storage/kb/query_hints.json"
     REASONING_V2: bool = False
     REASONING_INPUT_TOKENS: int = 4200     # document text sent (excerpted above this); + ~500 instructions

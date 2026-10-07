@@ -236,7 +236,11 @@ def v2(v1, tmp_path, monkeypatch):
     index_v2.reset()
 
 
-def test_flag_on_merges_and_drops_stale_duplicates(v2):
+def test_flag_on_merges_and_drops_stale_duplicates(v2, monkeypatch):
+    # The B2 merge, ordered by score. With hybrid search (C8) the order is the fused
+    # rank instead (tested in test_c8_hybrid.py); relevance stays the cosine score.
+    monkeypatch.setattr(settings, "HYBRID_SEARCH", False)
+    monkeypatch.setattr(settings, "QUERY_HINTS", False)
     hits = embeddings.search("maintenance of wife divorced", top_k=6)
     sources = [h["source"] for h in hits]
     assert "THE SAMPLE FAMILY ACT, 1964" not in sources            # old OCR copy excluded
