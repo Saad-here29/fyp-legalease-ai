@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { AlertCircle, AlertTriangle, Check } from "lucide-react";
+import { ROUTES } from "@/constants";
 import { judgmentPath, kbRecordPath } from "@/features/knowledge-base/kbFormat";
 
 // Document Analysis "Reasoning" tab (kb-v2 C4, REASONING_V2). Every item was
@@ -44,6 +45,11 @@ export default function ReasoningPanel({ reasoning, error }) {
             .map(([r, n]) => `${r} (${n})`)
             .join("; ")}
           .
+        </p>
+      )}
+      {!reasoning.coverage?.partial && reasoning.coverage?.calls > 1 && (
+        <p className="ds-meta mt-2">
+          The whole document was analysed, in {reasoning.coverage.calls} parts.
         </p>
       )}
       {reasoning.coverage?.partial && (
@@ -146,9 +152,12 @@ function Verified({ item }) {
 
 const STATUS = {
   verified: ["Verified in the Knowledge Base", "text-ds-pass"],
+  law_held: ["Act in the Knowledge Base (no section named)", "text-ds-pass"],
   not_found: ["Section not in our copy", "text-ds-review"],
   not_checked: ["Not checked (Act not held)", "text-ds-text-2"],
 };
+
+const lawPath = (id) => ROUTES.KNOWLEDGE_BASE_LAW.replace(":id", encodeURIComponent(id));
 
 function Statutes({ items }) {
   return (
@@ -160,15 +169,19 @@ function Statutes({ items }) {
         <ul className="mt-3 border-t border-ds-rule">
           {items.map((s, i) => {
             const [label, cls] = STATUS[s.status] || STATUS.not_checked;
-            const to = s.kb_record_id ? kbRecordPath(s.kb_record_id) : null;
+            const to = s.kb_record_id ? kbRecordPath(s.kb_record_id) : s.kb_law_id ? lawPath(s.kb_law_id) : null;
+            const name = `${s.act}${s.section ? ` s.${s.section}` : ""}${s.heading ? ` (${s.heading})` : ""}`;
             return (
-              <Item key={i} item={{ ...s, text: `${s.act} s.${s.section}${s.heading ? ` (${s.heading})` : ""}` }}>
+              <Item key={i} item={{ ...s, text: name }}>
                 <p className={`ml-10 mt-2 font-ds-sans text-[14px] font-semibold ${cls}`}>
                   {label}
+                  {s.found_in_text && <span className="font-normal text-ds-text-2"> · named in the document</span>}
                   {to && (
                     <>
                       {" · "}
-                      <Link to={to} className="ds-link">Open {s.kb_title} s.{s.section}</Link>
+                      <Link to={to} className="ds-link">
+                        Open {s.kb_title}{s.section ? ` s.${s.section}` : ""}
+                      </Link>
                     </>
                   )}
                   {s.note && s.status !== "verified" && <span className="font-normal text-ds-text-2"> · {s.note}</span>}
@@ -191,8 +204,7 @@ function Related({ cases }) {
         {cases.map((c) => (
           <li key={c.doc_id}>
             <Link to={judgmentPath(c.doc_id, c.paragraph)} className="ds-link text-[15px]">
-              {c.display_name}
-              {c.court || c.year ? ` (${[c.court, c.year].filter(Boolean).join(", ")})` : ""}, para {c.paragraph}
+              {c.title || c.display_name}, para {c.paragraph}
             </Link>
           </li>
         ))}

@@ -64,7 +64,11 @@ export default function AnalysisResults({ analysis }) {
 function SummaryAndEntities({ analysis }) {
   // Risks are shown once, as "Points to review" rows, so drop the summary's
   // own risk section (section 5 of the prompt in AIClient.summarise).
-  const summary = analysis.risks.length ? withoutRiskSection(analysis.summary) : analysis.summary;
+  // With REASONING_V2 (kb-v2 C10) review points the document contradicts are removed, so the list can
+  // be empty while the summary's own section still holds them: then the section is dropped too.
+  const checked = "review_points_removed" in analysis;
+  const summary = analysis.risks.length || checked ? withoutRiskSection(analysis.summary) : analysis.summary;
+  const removed = analysis.review_points_removed || 0;
   return (
     <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
       <section>
@@ -77,6 +81,12 @@ function SummaryAndEntities({ analysis }) {
         </Markdown>
 
         <h3 className="ds-h4 mt-10">Points to review</h3>
+        {removed > 0 && (
+          <p className="ds-meta mt-2">
+            {removed} point{removed === 1 ? "" : "s"} removed: {removed === 1 ? "it said" : "they said"} something was
+            missing that the document contains.
+          </p>
+        )}
         {analysis.risks.length === 0 ? (
           <p className="ds-body text-ds-text-2 mt-3">The summary listed no risks or missing clauses.</p>
         ) : (
@@ -182,7 +192,7 @@ function Group({ title, items, empty }) {
 
 // Section headings as the summary writes them: "5) Risk flags…",
 // "**5. Risk flags**", "### 5) Risk flags" (see backend summary_sections.py).
-const RISK_HEADING = /^\s*(?:#{1,6}\s*|\*\*\s*)?5\s*[).:][^\n]*risk[^\n]*$/im;
+const RISK_HEADING = /^\s*(?:#{1,6}\s*|\*\*\s*)?5\s*[).:][^\n]*(?:risk|review)[^\n]*$/im;
 const LATER_HEADING = /^\s*(?:#{1,6}\s*|\*\*\s*)?[6-9]\s*[).:][^\n]*$/m;
 
 function withoutRiskSection(text) {
