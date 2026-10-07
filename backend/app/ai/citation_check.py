@@ -614,22 +614,66 @@ def _consequence_problems(text: str, passages: list[dict]) -> list[tuple[str, in
     return out
 
 
-_NUMBER_WORDS = {w: i for i, w in enumerate(
+# Number words, matched on text with the spaces removed so that OCR splits
+# ("one thous and rupees") and joined words read the same (kb-v2 C8).
+_UNITS = {w: i for i, w in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
-    "seventeen eighteen nineteen twenty".split())}
-_FIGURE = re.compile(r"\b(\d[\d,]*|" + "|".join(_NUMBER_WORDS) + r")\s*(thousand|lakh|hundred)?\s*"
-                     r"(years?|months?|days?|rupees)\b")
+    "seventeen eighteen nineteen".split())}
+_TENS = {w: 10 * (i + 2) for i, w in enumerate("twenty thirty forty fifty sixty seventy eighty ninety".split())}
+_SCALES = {"hundred": 100, "thousand": 1000, "lakh": 100000, "lac": 100000, "crore": 10000000, "million": 1000000}
+_NUMBER_WORD = "|".join(sorted([*_UNITS, *_TENS, *_SCALES], key=len, reverse=True))
+_FIGURE = re.compile(r"((?:\d[\d,]*(?:\.\d+)?|(?:" + _NUMBER_WORD + r"|and)+)+?)(years?|months?|weeks?|days?|rupees)")
+_RS = re.compile(r"(?:rs\.?|rupees)(\d[\d,]*)")
+
+
+def _words_to_number(s: str) -> int | None:
+    """"fivethousand" -> 5000, "onethousandtwohundred" -> 1200, "twentyfive" -> 25, "5,000" -> 5000."""
+    if re.fullmatch(r"\d[\d,]*(?:\.\d+)?", s):
+        return int(float(s.replace(",", "")))
+    m = re.match(r"(\d[\d,]*)(" + "|".join(_SCALES) + r")$", s)
+    if m:
+        return int(m.group(1).replace(",", "")) * _SCALES[m.group(2)]
+    total = current = 0
+    pos = 0
+    while pos < len(s):
+        w = next((w for w in sorted([*_UNITS, *_TENS, *_SCALES], key=len, reverse=True) if s.startswith(w, pos)),
+                 None)
+        if w is None:
+            if s.startswith("and", pos):          # "one hundred and twenty"
+                pos += 3
+                continue
+            return None
+        if w in _UNITS:
+            current += _UNITS[w]
+        elif w in _TENS:
+            current += _TENS[w]
+        elif w == "hundred":
+            current = (current or 1) * 100
+        else:
+            total += (current or 1) * _SCALES[w]
+            current = 0
+        pos += len(w)
+    return total + current if (total or current) else None
 
 
 def _figures(text: str) -> set[tuple[int, str]]:
-    """(amount, unit) pairs: "three months" -> (3, "month"), "one thousand rupees" -> (1000, "rupee")."""
+    """(amount, unit) pairs, whatever the spacing or form: "three months" and
+    "3 months" -> (3, "month"); "one thous and rupees", "Rs.1,000" -> (1000, "rupee")."""
+    compact = re.sub(r"[\s\-]+", "", (text or "").lower())
     out = set()
-    for num, scale, unit in _FIGURE.findall(text):
-        n = _NUMBER_WORDS.get(num)
-        n = int(num.replace(",", "")) if n is None else n
-        n *= {"thousand": 1000, "lakh": 100000, "hundred": 100}.get(scale, 1)
-        out.add((n, unit.rstrip("s")))
+    for num, unit in _FIGURE.findall(compact):
+        n = _words_to_number(num)
+        if n is not None:
+            out.add((n, unit.rstrip("s")))
+    for num in _RS.findall(compact):
+        out.add((int(num.replace(",", "")), "rupee"))
     return out
+
+
+def _mask_headings(text: str) -> str:
+    """The text with the model's own markdown headings ("### Penalty",
+    "**Legal consequences**" alone on a line) blanked, keeping every offset."""
+    return re.sub(r"(?m)^[ \t]*(?:#{1,6}[ \t].*|\*\*[^*\n]{1,80}\*\*:?[ \t]*)$", lambda m: " " * len(m.group(0)), text)
 
 
 def check_citations(answer: str, passages: list[dict], lang: str = "en",
@@ -691,7 +735,7 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
     #    source or appear in the retrieved text; (b) a [n] marker must point
     #    to a source matching an Act named in its own sentence.
     inserts = []
-    for item, pos in _act_problems(text, passages, passages_norm):
+    for item, pos in _act_problems(_mask_headings(text) if consequences else text, passages, passages_norm):
         if item not in seen_unverified:
             seen_unverified[item] = None
             inserts.append((pos, f" {words['flag']}"))
@@ -703,7 +747,7 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
                 inserts.append((pos, f" {words['flag']}"))
     # 6) Legal consequences the retrieved text doesn't state (kb-v2 C5)
     if consequences:
-        for item, pos in _consequence_problems(text, passages):
+        for item, pos in _consequence_problems(_mask_headings(text), passages):
             if item not in seen_unverified:
                 seen_unverified[item] = None
                 inserts.append((pos, f" {words['flag']}"))
