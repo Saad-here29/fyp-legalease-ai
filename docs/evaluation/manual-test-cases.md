@@ -2,7 +2,7 @@
 
 These are manual (black-box) test cases for every implemented feature, drafted
 2026-10-05 for the FYP-2 mid evaluation. Requirement IDs follow the FYP-1
-Final Report (see `docs/fyp2_mid_gap_report.md`).
+Final Report (see `docs/archive/fyp2_mid_gap_report.md`).
 
 **How to read "Actual" and "Status":**
 - **Pass (Oct QA):** recorded in the October 2026 quality pass (2026-10-04;

@@ -64,7 +64,7 @@
 - **On Q1 (run B), the only clean comparison the cap allowed:** both modes
   gave a correct, fully verified answer. Strict was shorter, with no gain
   in grounding.
-- **Earlier comparison** (`docs/strict_grounding_comparison_2026-10-06.md`):
+- **Earlier comparison** (`docs/archive/strict_grounding_comparison_2026-10-06.md`):
   strict also didn't improve on 6 questions.
 
 So keep the current setting (off).

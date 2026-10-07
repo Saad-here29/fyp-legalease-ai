@@ -5,7 +5,7 @@ Nothing built, no rewrites recorded, no Groq tokens used.** First written
 2026-10-03.
 
 Companion files:
-- [`retrieval_statute_chunking.md`](retrieval_statute_chunking.md):
+- [`docs/archive/retrieval_statute_chunking.md`](archive/retrieval_statute_chunking.md):
   every statute by chunking decision (condition 3);
 - [`retrieval_gold_set_draft.md`](retrieval_gold_set_draft.md): the draft
   gold set, **waiting for your check** (condition 5).
@@ -209,7 +209,7 @@ characters.
 
 The full lists, with heading counts, contents entries, coverage and missing
 numbers, are in
-[`retrieval_statute_chunking.md`](retrieval_statute_chunking.md). The
+[`docs/archive/retrieval_statute_chunking.md`](archive/retrieval_statute_chunking.md). The
 fallback statutes are almost all one- or two-clause Acts (validation Acts,
 short repeal Acts), where a fixed window is the whole statute anyway.
 

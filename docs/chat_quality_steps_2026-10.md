@@ -234,7 +234,7 @@ figure. Groq use has stopped.
 
 ## Decision, 2026-10-06: STRICT_GROUNDING stays off for the mock presentation
 
-The measurement run is in `docs/strict_grounding_comparison_2026-10-06.md`
+The measurement run is in `docs/archive/strict_grounding_comparison_2026-10-06.md`
 (6 answers on their saved passages; 13,006 tokens).
 
 **Decision:** keep `STRICT_GROUNDING` off for the mock presentation on

@@ -121,7 +121,7 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
   an old Node/Mongo rebuild plan) into `Documents and Reports/`; fixed
   several pre-existing filename typos (`Algortihm 1.png`, `Agorithm2.png`,
   `State transition  DIagram...pdf`); removed the empty
-  `ai-services/corpus-builder/` duplicate (`docs/folder-structure.md`
+  `ai-services/corpus-builder/` duplicate (`docs/archive/folder-structure.md`
   corrected to reference the real `corpus_builder/` package — Python
   identifiers can't contain hyphens); deleted the dead
   `frontend/src/features/legal-research/data.js`; removed three backend
@@ -574,7 +574,7 @@ during the audit except the ones approved (commit `8a02485`).
   unchanged afterwards. The database now has 4 users.
 
 ## Folder structure
-See `docs/folder-structure.md` (updated 2026-10-04) and the README in each
+See `docs/archive/folder-structure.md` (updated 2026-10-04) and the README in each
 top-level folder:
 ```
 backend/  frontend/  ai-services/  scripts/  data/ (not in git)  docs/ (incl. reports/)

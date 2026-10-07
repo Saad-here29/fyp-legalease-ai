@@ -194,7 +194,7 @@ calls:
   They stay in the records and on the Knowledge Base page. The index went
   from 11,289 to 11,193 chunks.
 - **Retrieval numbers are unchanged from B3:** gold 14/26 (OFF 7/26),
-  off-topic 1/15 (O14). See `docs/kb_v2_comparison_2026-10-06_b6.md`.
+  off-topic 1/15 (O14). See `docs/archive/kb_v2_comparison_2026-10-06_b6.md`.
 - **Still true:** a bare two-word query such as "talaq procedure" or "khula
   procedure" doesn't reach MFLO on its own embedding. In the app the query
   rewrite adds "under Muslim Family Laws Ordinance" and MFLO comes first. So
