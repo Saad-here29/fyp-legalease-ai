@@ -166,6 +166,57 @@ All of these apply only with `KB_V2=true`; the master fallback is unchanged.
 - **`STRICT_GROUNDING` stays off.** See
   `docs/kb_v2_live_check_2026-10-07_b7.md`.
 
+## Judgments (kb-v2 C2, 2026-10-07): optional, off unless set
+
+Judgments are added to Research, AI Chat and the Knowledge Base only when the
+backend starts with `JUDGMENTS_V2=true`. Without it, nothing changes.
+
+**Start (Terminal A),** with the dev index (1,000 chunks, 14 judgments) while
+the full pilot is still being built:
+
+```powershell
+cd E:\Users\fyp-legalease-ai-main\legalease-kb\backend
+$env:KB_V2 = "true"
+$env:JUDGMENTS_V2 = "true"
+$env:JUDGMENTS_INDEX_PATH = "./storage/kb/faiss_judgments_dev.faiss"
+$env:HF_HUB_OFFLINE = "1"; $env:TRANSFORMERS_OFFLINE = "1"; $env:PYTHONIOENCODING = "utf-8"
+E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+```
+
+When the full pilot has finished, drop the `JUDGMENTS_INDEX_PATH` line (the
+default is `./storage/kb/faiss_judgments.faiss`) and restart. The index file
+is also re-read on its own when it changes.
+
+**Check:** `http://127.0.0.1:8000/health` shows `"judgments_v2": true`,
+`"judgment_chunks": 1000`, `"judgments": 14` (dev index). With the full
+pilot: about 64,000 chunks and 400 judgments.
+
+**Demo path (about 3 minutes):**
+1. **Knowledge Base, Judgments tab.** Point out the counts, the court and
+   topic filters, and the yellow "Staged, not yet reviewed" tag. Open
+   *Shaista Habib v. Muhammad Arif Habib*: the numbered paragraphs and the
+   provenance note ("dataset supplied by the team; original source and
+   licence to be confirmed").
+2. **Research, Judgments.** Search "custody of minor children welfare".
+   Each result is one judgment's best paragraph, with court, year, case
+   number and paragraph number; "Read judgment, para N" opens that
+   paragraph. Then **All**: statutes first, then "Past relevant cases".
+3. **AI Chat.** Ask "Who gets custody of minor children after divorce?".
+   Under Sources, the "Case law" group lists the judgment paragraphs the
+   answer was given, each linking to its judgment.
+
+**What to say:** judgments are context, never the law itself. The answer
+may name a case only as "Case name (Court, year), para N", only from the
+paragraphs retrieved, and the check removes any other case and flags a wrong
+paragraph number. The dataset's source and licence are still to be
+confirmed, so judgments are marked staged.
+
+**Watch out:**
+- The dev index holds only 14 judgments, so many questions find none.
+- About half the judgments are shown by case number, because their party
+  names weren't read cleanly from the first page.
+- Each chat answer with cases costs about 900 more Groq tokens.
+
 ## Differences to know before switching
 
 - **Same data:** same database, same accounts, same cases and contracts.

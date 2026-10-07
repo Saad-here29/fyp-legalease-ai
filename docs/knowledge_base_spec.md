@@ -169,6 +169,19 @@ rules can't find is null (or an empty list), never guessed.
 | `status` | `"staged"` | Not shown to users until reviewed |
 | `quality` | object | `chars`, `near_empty`, `needs_ocr`, `law_report`, `exclude` (the reason, or null) |
 
+**Reading the datasets** (`scripts/kb/inventory_judgments.py`, read-only,
+nothing copied): folders, `.zip` archives (read member by member) and
+`.parquet` files. From a parquet only the text and metadata columns are read
+(`text` / `judgment` / `content` / `body`, `case_details`, `citation_number`);
+its embedding column is never loaded. The row's file id (e.g.
+`C.A.10_2021.pdf`) becomes part of `original_file` and fills `case_number`
+and `year` when the rules find none (`case_number_from: "dataset file id"`).
+
+**Topics** are rule-based keywords with at least 2 mentions. The family
+topics count only the family sense: `custody` is custody of a minor or child
+(or *hizanat*), not custody of an accused; `maintenance` is maintenance of a
+wife or minor (*nafqa*), not maintenance of a building or of law and order.
+
 **Excluded from the index (kept in the records with the reason):**
 - **Near-empty:** under 1,500 characters.
 - **Needs OCR:** most pages have no text layer.
@@ -184,10 +197,91 @@ rules can't find is null (or an empty list), never guessed.
 the most metadata is kept), then family-law judgments, then a round-robin by
 year that prefers judges not yet in the pilot.
 
+**Cross-source overlap.** The two team datasets largely hold the same
+Supreme Court judgments: 1,073 of the parquet's 1,317 numbered judgments
+match a judgment in the txt archive by case number and year. Within one
+dataset these are excluded as duplicates; across datasets they are merged
+when the pilot is chosen and in the Knowledge Base list (C2), so a case is
+never shown or indexed twice. 2,554 distinct usable judgments remain of
+3,739 usable records.
+
 **Chunks.** Windows of at most 120 tokens (the embedding model's tokenizer)
 from **one paragraph**, with the prefix
 `"<case_name> (<court>, <year>) - para <N>:"` counted inside the 120. A hit
 cites the judgment and the paragraph number.
+
+### b3) Judgments in the app (Phase C2, `JUDGMENTS_V2`)
+
+Off by default; set at launch (`$env:JUDGMENTS_V2 = "true"`). Off, the app
+is exactly as before: no judgment endpoints (404), Research is statute-only,
+Chat's prompt and replies are unchanged.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `JUDGMENTS_V2` | `false` | The switch |
+| `JUDGMENTS_INDEX_PATH` | `./storage/kb/faiss_judgments.faiss` | The index the app searches. Metadata: `<stem>_meta.json` next to it (or `JUDGMENTS_METADATA_PATH`). Separate from the builder's `KB_JUDGMENTS_INDEX_PATH`, so a dev copy can be searched while a build runs |
+| `JUDGMENTS_MIN_SCORE` | `0.50` | Research: a judgment is listed if its best paragraph reaches this |
+| `JUDGMENTS_TOP_K` | `5` | Judgments per Research search |
+| `JUDGMENTS_CHAT_K` | `3` | Judgment paragraphs given to the chat model |
+| `JUDGMENTS_SHOW_MIN` | `0.55` | Chat: weaker paragraphs are neither shown nor sent to the model |
+
+**Index loading** (`app/kb/judgment_search.py`): reloaded when the index or
+metadata file's modified time or size changes. While a file is missing,
+unreadable, or the two don't match (vector count differs from chunk count:
+a build still writing), search returns nothing and the rest of the app works.
+`/health` reports `judgments_v2`, `judgment_chunks` and `judgments` (None
+when off, 0 while the index isn't usable).
+
+**Search:** embed the query, keep the **best paragraph per judgment**, drop
+those under the minimum score, top K. A hit carries `doc_id`, the display
+name, court, year, case number, paragraph number, the matched text and the
+score.
+
+**Display name.** The case name, unless it is weak: missing, under 8
+characters, containing "…", opening with "(" or a footnote number, starting
+with "Petitioner", or carrying a law-report citation (then the rules picked
+up a precedent the judgment cites). A weak name is replaced by
+`"<case number> (<court>, <year>)"` (or `"Judgment (<court>, <year>)"` with
+no number). The same name is used in the prefix shown to the model; the
+indexed chunk text keeps its original prefix, so vectors already built stay
+valid. Across the 2,554 listed judgments, 1,227 use the case-number name and
+172 have neither name nor number.
+
+**Endpoints** (read-only, any signed-in user, from
+`storage/kb/judgments/records/*.jsonl`, never the database):
+- `GET /api/v1/kb/judgments`: counts (listed, in the index, excluded by
+  reason), courts, years, topics, and a paginated list (`q` over name, case
+  number and judges; `court`, `year`, `topic`, `indexed`, `page`,
+  `page_size` up to 100).
+- `GET /api/v1/kb/judgments/{doc_id}`: metadata, numbered paragraphs,
+  provenance note, status, whether it is in the index.
+
+The original file's path and the file and content hashes are never returned.
+
+**Research** takes `scope`: `statutes` (default), `judgments` or `all`.
+Judgments use `year_from`, `year_to` and `court`; category, jurisdiction and
+tier are statute-only (ignored for judgments, hidden on the page). Under
+`all`, statutes come first, then "Past relevant cases"; the court filter
+applies to judgments only.
+
+**Chat.** Only after the statute scope gate has passed (decided by statute
+scores alone; thresholds unchanged), up to `JUDGMENTS_CHAT_K` paragraphs
+scoring at least `JUDGMENTS_SHOW_MIN` are added to the prompt after the
+statute authorities, as **"Reported cases (context only)"**, each with name,
+court, year, paragraph number and text (up to 1,200 characters), with rules:
+cite a case only as "Case name (Court, year), para N"; state only what that
+paragraph says; never invent a holding; never use a case in place of a
+statute.
+
+**Grounding check** (`app/ai/citation_check.py`, `judgments=`): a case the
+answer names must match a retrieved judgment, by its party names or its case
+number and year; otherwise the sentence is removed ("not among the cases
+retrieved for this answer"). A paragraph number given for a retrieved case
+must be the one retrieved; otherwise it is marked "(unverified)" and listed
+in the closing note. Publisher citations (PLD, SCMR…) are always removed.
+The judgments are stored with the reply's citations as `kind: "case_law"`
+(not numbered and not counted for the weak-match note) and returned as
+`case_law`, shown under Sources as "Case law" with a link to the judgment.
 
 ## c) Source whitelist and tiers
 

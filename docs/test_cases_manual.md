@@ -117,6 +117,20 @@ Run each case twice, with `KB_V2=false` and `KB_V2=true`; the screens must work 
 | MT-KB-10 | Research | Empty filters | Same search with Year 2025-2026, then Category Excise/Taxation Laws | "No passage matches this query with these filters." and a Clear filters button | to run | to run |
 | MT-KB-11 | AI Chat | Richer sources | With `KB_V2=true`, ask "What is the procedure for talaq under the Muslim Family Laws Ordinance?" | Sources read "Act - s.N Heading" with a "Record in Knowledge Base" link; with `KB_V2=false` the sources look as before | to run | to run |
 
+### 5c. Judgments (kb-v2 C2, `JUDGMENTS_V2`)
+
+Run with `JUDGMENTS_V2=true` and `JUDGMENTS_INDEX_PATH` set to the dev index
+(see `docs/DEMO_RUNBOOK.md`), except MT-JUD-06.
+
+| ID | Module | Requirement | Steps | Expected | Actual | Status |
+|---|---|---|---|---|---|---|
+| MT-JUD-01 | Knowledge Base | Judgments list | Open Knowledge Base, then the Judgments tab; filter by court Supreme Court of Pakistan, topic custody, then search "3718" | Tab shows the judgment count; rows show name, court, year, case number and topics; each filter narrows the list; "3718" finds Civil Petition No. 3718 of 2023, shown by its case number because its party names are incomplete | to run | to run |
+| MT-JUD-02 | Knowledge Base | Judgment page | Open Shaista Habib v. Muhammad Arif Habib | Court, year, case number, judges, topics; "Staged, not yet reviewed"; the provenance note "dataset supplied by the team; original source and licence to be confirmed"; numbered paragraphs. No file path or hash anywhere on the page or in the API response | to run | to run |
+| MT-JUD-03 | Research | Judgments scope | Search "custody of minor children welfare", choose Judgments, then set Year from 2023 and a court | One row per judgment with court, year, case number, "Paragraph N", snippet and score; Category, Jurisdiction and Source tier are hidden; year and court narrow the list; "Read judgment, para N" opens the judgment at that paragraph | to run | to run |
+| MT-JUD-04 | Research | All scope | Same search with All | Statute passages first, then a "Past relevant cases" section; statute filters still work for the statutes | to run | to run |
+| MT-JUD-05 | AI Chat | Case law sources | Ask "Who gets custody of minor children after divorce?" | Answer cites statutes by [n]; any case is named as "Case name (Court, year), para N" and is one of those listed under Sources > Case law (each links to its judgment); no PLD/SCMR citations; a case that wasn't retrieved, if named, is replaced by "[case citation removed — not among the cases retrieved for this answer]" | to run | to run |
+| MT-JUD-06 | Platform | Flag off | Restart without `JUDGMENTS_V2`; open Knowledge Base, Research, AI Chat and `/health` | No Judgments tab, no scope switch, no Case law group; `/health` shows `"judgments_v2": false`; `/api/v1/kb/judgments` is 404 | to run | to run |
+
 ## 6. Contracts (FR-CON-01, 03, 04)
 
 | ID | Module | Requirement | Steps | Expected | Actual | Status |
