@@ -156,17 +156,47 @@ LANGUAGE_INSTRUCTION = {
 }
 
 
-def build_system_prompt(context_block: str, lang: str, *, strict: bool | None = None) -> str:
+# kb-v2 C2 (settings.JUDGMENTS_V2): judgment paragraphs retrieved for a
+# question that passed the statute scope gate go in their own block.
+CASES_RULES = (
+    "REPORTED CASES — the block below holds paragraphs from Pakistani court "
+    "judgments retrieved for this question. They are context only. For these "
+    "cases only, this overrides the rule against citing case names:\n"
+    "1. Cite a case only as \"Case name (Court, year), para N\", exactly as it "
+    "is listed below, and never a case that is not listed.\n"
+    "2. State only what that paragraph says. Never invent a holding, outcome "
+    "or principle the paragraph does not state.\n"
+    "3. Never use a case in place of a statute: the law comes from the "
+    "numbered statute passages [n]; a case may only show how a court applied "
+    "or explained it.\n"
+    "4. Don't put [n] markers on cases, and never give law-report citations "
+    "(PLD, SCMR or similar).\n"
+    "5. If a case doesn't help answer the question, don't mention it."
+)
+
+
+def cases_block(judgments: list[dict]) -> str:
+    """The "Reported cases (context only)" block: name, court, year, paragraph number and text."""
+    return "\n\n".join(f"Case {i + 1}: {j['prefix']}\n{j['paragraph_text']}" for i, j in enumerate(judgments))
+
+
+def build_system_prompt(context_block: str, lang: str, *, strict: bool | None = None,
+                        cases: str | None = None) -> str:
     """The full system prompt for one question: base rules, the retrieved
     authorities, then the language instruction for this question.
-    `strict` (default settings.STRICT_GROUNDING) adds STRICT_GROUNDING_RULES."""
+    `strict` (default settings.STRICT_GROUNDING) adds STRICT_GROUNDING_RULES.
+    `cases` (kb-v2 C2): a cases_block, added with CASES_RULES; None leaves
+    the prompt exactly as without judgments."""
     strict = settings.STRICT_GROUNDING if strict is None else strict
     rules = f"{SYSTEM_PROMPT}\n\n{STRICT_GROUNDING_RULES}" if strict else SYSTEM_PROMPT
+    case_part = (f"{CASES_RULES}\n\n--- Reported cases (context only) ---\n{cases}\n"
+                 "--- End reported cases ---\n\n") if cases else ""
     return (
         f"{rules}\n\n"
         "--- Relevant Pakistani legal authorities (cite by [n]) ---\n"
         f"{context_block}\n"
         "--- End authorities ---\n\n"
+        f"{case_part}"
         f"{LANGUAGE_INSTRUCTION['ur' if lang == 'ur' else 'en']}"
     )
 
@@ -206,6 +236,7 @@ def answer_flags(citations: list[dict] | None) -> dict:
                     otherwise; None for replies with no passages (refusals)
       family_scope  True when the passages came from the family-law index
     """
+    citations = [c for c in citations or [] if c.get("kind") != "case_law"]   # statute passages only
     if not citations:
         return {"confidence": None, "family_scope": False}
     best = max(c.get("relevance") or 0 for c in citations)
@@ -314,6 +345,35 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
     return passages
 
 
+def retrieve_judgments(search_query: str) -> list[dict]:
+    """kb-v2 C2: up to JUDGMENTS_CHAT_K judgment paragraphs (best one per
+    judgment) scoring at least JUDGMENTS_SHOW_MIN; weaker ones are neither
+    shown nor sent to the model. Called only after the statute scope gate
+    passed; never changes it. [] when JUDGMENTS_V2 is off or the index isn't
+    ready."""
+    if not settings.JUDGMENTS_V2:
+        return []
+    from app.kb import judgment_search
+    try:
+        found = judgment_search.search(search_query, top_k=settings.JUDGMENTS_CHAT_K,
+                                       min_score=max(settings.JUDGMENTS_MIN_SCORE, settings.JUDGMENTS_SHOW_MIN))
+    except Exception as e:  # noqa: BLE001 — judgments are extra context; never fail the answer
+        logger.warning(f"Judgment retrieval failed: {e}")
+        return []
+    if found:
+        logger.info("Judgments: " + "; ".join(f"{j['display_name'][:60]} para {j['paragraph']} ({j['score']:.3f})"
+                                              for j in found))
+    return found
+
+
+def case_law_citation(j: dict) -> dict:
+    """Stored with the statute citations (kind "case_law"), shown as the
+    Sources "Case law" group; answer_flags and the [n] numbering skip it."""
+    return {"kind": "case_law", "source": j["display_name"], "doc_id": j["doc_id"], "court": j["court"],
+            "year": j["year"], "case_number": j["case_number"], "paragraph": j["paragraph"],
+            "excerpt": j["text"][:240], "relevance": j["score"]}
+
+
 def source_label(p: dict) -> str:
     """' - s.302 Punishment of qatl-i-amd' for a kb-v2 section passage (its
     number is in the record, not in its text), '' for a v1 chunk. An exact
@@ -327,18 +387,23 @@ def source_label(p: dict) -> str:
 
 
 def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
-                   strict: bool | None = None):
+                   strict: bool | None = None, judgments: list[dict] | None = None):
     """Ask the model to answer from `passages` (history ends with the
     question), then ground its citations: every section cited must appear
     in the passages, and case law (which the statute-only corpus never
     contains) is removed. Returns the CitationCheck result. Shared with
-    the evaluation script so both send the same prompt."""
+    the evaluation script so both send the same prompt.
+
+    `judgments` (kb-v2 C2): retrieved case paragraphs, added as the
+    "Reported cases (context only)" block; the check then keeps only those
+    cases, with their retrieved paragraph numbers. None or []: as before."""
     context_block = "\n\n".join(
         f"[{i + 1}] Source: {embeddings.record_source(p)}{source_label(p)}\n"
         f"{embeddings.record_text(p)}"
         for i, p in enumerate(passages)
     )
-    system = build_system_prompt(context_block, lang, strict=strict)
+    system = build_system_prompt(context_block, lang, strict=strict,
+                                 cases=cases_block(judgments) if judgments else None)
     raw_text = ai.chat(history, system=system)
     checked = check_citations(
         raw_text,
@@ -346,6 +411,7 @@ def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
           **({"section": p["section"]} if p.get("section") else {})}
          for p in passages],
         lang=lang,
+        judgments=judgments or None,
     )
     logger.info(f"Citation check: {checked.summary()}")
     return checked
@@ -459,10 +525,13 @@ class LegalChatService:
             return self._reply(sid, lang, fixed_reply(OUT_OF_SCOPE_REFUSAL, lang),
                                response_time_ms=_ms_since(t0))
 
+        # kb-v2 C2: past cases, only once the statute scope gate has passed.
+        judgments = retrieve_judgments(search_query)
+
         history.append({"role": "user", "content": message})
         # AIServiceUnavailable propagates -> router returns 503; the user
         # message stays saved without a reply.
-        checked = compose_answer(self.ai, passages, history, lang)
+        checked = compose_answer(self.ai, passages, history, lang, judgments=judgments)
 
         citations_payload = [
             {
@@ -474,7 +543,7 @@ class LegalChatService:
                 **citation_extras(p),
             }
             for p in passages
-        ]
+        ] + [case_law_citation(j) for j in judgments]
         # Phase 3 — short DB write: persist the reply.
         return self._reply(
             sid, lang, checked.text,
@@ -507,7 +576,8 @@ class LegalChatService:
         session = self.db.get(ChatSession, session_id)
         session.total_messages = (session.total_messages or 0) + 1
         self.db.commit()
-        return {
+        statutes = [c for c in citations or [] if c.get("kind") != "case_law"]
+        out = {
             "response": content,
             "sources": sources or [],
             "session_id": str(session_id),
@@ -515,11 +585,15 @@ class LegalChatService:
             "citations": [
                 {"n": i + 1, "source": c["source"], "excerpt": c.get("excerpt"),
                  **{k: c[k] for k in CITATION_EXTRAS if c.get(k) is not None}}
-                for i, c in enumerate(citations or [])
+                for i, c in enumerate(statutes)
             ],
             "response_time_ms": response_time_ms,
             **answer_flags(citations),
         }
+        if settings.JUDGMENTS_V2:      # the Sources "Case law" group (kb-v2 C2)
+            out["case_law"] = [{k: v for k, v in c.items() if k != "kind"}
+                               for c in citations or [] if c.get("kind") == "case_law"]
+        return out
 
     def _recent_history(self, session_id: uuid.UUID, *, limit: int) -> list[dict]:
         rows = (

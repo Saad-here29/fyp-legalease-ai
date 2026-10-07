@@ -295,23 +295,110 @@ def _sentence_span(text: str, start: int, end: int) -> tuple[int, int]:
 
 
 # ---------------------------------------------------------------------------
+# Judgments retrieved for the answer (kb-v2 C2)
+# ---------------------------------------------------------------------------
+
+# "Civil Petition No. 1234 of 2022", "C.P. 1234/2022", "CIVIL PETITIONS NO.4657 TO 4659 OF 2022"
+_CASE_NO_RE = re.compile(
+    r"(?i:(?:\b(?:civil|criminal|crl\.?|constitutional|const\.?|jail|family|writ|review|human\s+rights)\s+)?"
+    r"\b(?:petitions?|appeals?|revisions?|references?|case|suit|c\.\s?p\.?\s?l\.?\s?a\.?|c\.\s?p\.?|c\.\s?a\.?"
+    r"|crl\.\s?[ap]\.?|w\.\s?p\.?)\s*(?:nos?\.?\s*)?)"
+    r"(\d{1,6})(?:-[A-Z])?(?:\s*(?i:to|-|&|,|and)\s*\d{1,6})*\s*(?i:of|/)\s*((?:19|20)\d\d)\b")
+_PARA_RE = re.compile(r"(?i:\bpara(?:graph)?s?\.?)\s*(?:(?i:no)\.?\s*)?(\d{1,3})((?:\s*(?:,|and|&)\s*\d{1,3})*)")
+# Words that don't identify a party.
+_CASE_STOP = {"mst", "v", "vs", "versus", "and", "others", "other", "another", "the", "of", "through", "ltd",
+              "petitioner", "petitioners", "respondent", "respondents", "appellant", "appellants", "in", "both",
+              "etc", "pvt", "sh", "syed", "mr", "mrs", "ms", "dr", "its", "by"}
+
+
+@dataclass
+class _Case:
+    name: str                    # as shown to the model (display name)
+    words: set[str]              # party words of the case name and the shown name
+    numbers: set[str]            # case number digits
+    year: str | None             # case number year
+    paragraph: int
+
+
+def _case_words(name: str) -> list[str]:
+    return [w for w in re.findall(r"[a-z]+", (name or "").lower()) if len(w) > 1 and w not in _CASE_STOP]
+
+
+def _as_case(j: dict) -> _Case:
+    num = j.get("case_number") or ""
+    years = re.findall(r"(?:19|20)\d\d(?!\d)", num)
+    digits = set(re.findall(r"\d{1,6}", num)) - set(years[-1:])
+    return _Case(name=j.get("display_name") or j.get("case_name") or num,
+                 words=set(_case_words(j.get("case_name") or "")) | set(_case_words(j.get("display_name") or "")),
+                 numbers=digits, year=years[-1] if years else None, paragraph=int(j.get("paragraph") or 0))
+
+
+def _case_for(m: re.Match, rx: re.Pattern, cases: list[_Case]) -> _Case | None:
+    """The retrieved case a case-name or case-number mention refers to."""
+    if rx is _CASE_NO_RE:
+        num, year = m.group(1), m.group(2)
+        return next((c for c in cases if c.year == year and num in c.numbers), None)
+    words = _case_words(m.group(0))
+    if len(set(words)) < 2:
+        return None
+    return next((c for c in cases if all(w in c.words for w in words)), None)
+
+
+def _case_paragraph_problems(text: str, cases: list[_Case]) -> list[tuple[str, int]]:
+    """[(note item, flag position)] for each "para N" given for a retrieved
+    case (the nearest case mention on the same line, preferring one before
+    it) that isn't the paragraph retrieved for it. A paragraph with no
+    retrieved case named on its line is left alone."""
+    norm = _norm(text)
+    mentions = []
+    for rx in (_CASE_NAME_RE, _CASE_NO_RE):
+        for m in rx.finditer(norm):
+            c = _case_for(m, rx, cases)
+            if c is not None:
+                mentions.append((m.start(), m.end(), c))
+    problems = []
+    for m in _PARA_RE.finditer(norm):
+        line_start = norm.rfind("\n", 0, m.start()) + 1
+        line_end = norm.find("\n", m.end())
+        line_end = len(norm) if line_end == -1 else line_end
+        near = [(m.start() - e if e <= m.start() else s - m.end() + 1000, c)
+                for s, e, c in mentions if line_start <= s < line_end and (e <= m.start() or s >= m.end())]
+        if not near:
+            continue
+        case = min(near, key=lambda x: x[0])[1]
+        nums = [int(m.group(1))] + [int(x) for x in re.findall(r"\d{1,3}", m.group(2) or "")]
+        wrong = [n for n in nums if n != case.paragraph]
+        if wrong:
+            problems.append((f"{case.name}, para {', '.join(map(str, wrong))}: not the paragraph retrieved "
+                             f"(para {case.paragraph})", m.end()))
+    return problems
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 _MARKERS = {
     "en": {
         "case": "[case citation removed — not in LegalEase's statute library]",
+        "case_not_retrieved": "[case citation removed — not among the cases retrieved for this answer]",
         "flag": "(unverified)",
         "note": ("Note: the following references were not found in the statute "
                  "text retrieved for this answer, so they are unverified. Check "
                  "them against the statute before relying on them: "),
+        "note_cases": ("Note: the following references were not found in the statute "
+                       "text or the case paragraphs retrieved for this answer, so they are "
+                       "unverified. Check them before relying on them: "),
     },
     "ur": {
         "case": "[مقدمے کا حوالہ حذف کر دیا گیا — LegalEase کی قانونی لائبریری میں موجود نہیں]",
+        "case_not_retrieved": "[مقدمے کا حوالہ حذف کر دیا گیا — اس جواب کے لیے حاصل کیے گئے مقدمات میں شامل نہیں]",
         "flag": "(غیر مصدقہ)",
         "note": ("نوٹ: درج ذیل حوالہ جات اس جواب کے لیے حاصل کیے گئے قانونی متن میں "
                  "نہیں ملے، اس لیے غیر مصدقہ ہیں۔ ان پر انحصار سے پہلے متعلقہ قانون "
                  "سے تصدیق کر لیں: "),
+        "note_cases": ("نوٹ: درج ذیل حوالہ جات اس جواب کے لیے حاصل کیے گئے قانونی متن یا مقدمات کے "
+                       "پیراگراف میں نہیں ملے، اس لیے غیر مصدقہ ہیں۔ ان پر انحصار سے پہلے تصدیق کر لیں: "),
     },
 }
 
@@ -323,21 +410,31 @@ class CitationCheck:
     unverified: list[str] = field(default_factory=list)
     removed_case_citations: list[str] = field(default_factory=list)
     removed_markers: list[str] = field(default_factory=list)
+    cases_verified: list[str] = field(default_factory=list)    # judgments named and retrieved (kb-v2 C2)
 
     def summary(self) -> str:
-        return (f"{len(self.verified)} verified, {len(self.unverified)} unverified, "
-                f"{len(self.removed_case_citations)} case citations removed, "
-                f"{len(self.removed_markers)} bad [n] markers removed")
+        out = (f"{len(self.verified)} verified, {len(self.unverified)} unverified, "
+               f"{len(self.removed_case_citations)} case citations removed, "
+               f"{len(self.removed_markers)} bad [n] markers removed")
+        return out + (f", {len(self.cases_verified)} retrieved cases cited" if self.cases_verified else "")
 
 
 def _remove_case_citations(text: str, passages_norm: str, marker: str,
-                           removed: list[str]) -> str:
+                           removed: list[str], cases: list[_Case] | None = None,
+                           kept: list[str] | None = None) -> str:
+    """`cases` (judgments retrieved for this answer, kb-v2 C2): a case name
+    or case number matching one of them stays; any other is removed."""
     norm = _norm(text)
     hits: list[tuple[int, int]] = []
-    for rx in (_REPORTER_RE, _CASE_NAME_RE):
+    patterns = (_REPORTER_RE, _CASE_NAME_RE) if cases is None else (_REPORTER_RE, _CASE_NAME_RE, _CASE_NO_RE)
+    for rx in patterns:
         for m in rx.finditer(norm):
             cite = re.sub(r"\s+", " ", m.group(0)).strip()
             if cite in passages_norm:
+                continue
+            if cases is not None and rx is not _REPORTER_RE and _case_for(m, rx, cases) is not None:
+                if kept is not None:
+                    kept.append(cite)
                 continue
             hits.append((m.start(), m.end()))
             removed.append(cite)
@@ -490,17 +587,27 @@ def _act_problems(text: str, passages: list[dict], passages_norm: str) -> list[t
     return problems
 
 
-def check_citations(answer: str, passages: list[dict], lang: str = "en") -> CitationCheck:
+def check_citations(answer: str, passages: list[dict], lang: str = "en",
+                    judgments: list[dict] | None = None) -> CitationCheck:
     """`passages` are the retrieved records (need `source` and `text`), in
-    the same order they were numbered [1..n] in the prompt."""
+    the same order they were numbered [1..n] in the prompt.
+
+    `judgments` (kb-v2 C2, JUDGMENTS_V2): the case paragraphs given to the
+    model (display_name, case_name, case_number, paragraph). A case the
+    answer names must be one of them (by party names, or case number and
+    year), else its sentence is removed; a paragraph number given for one
+    must be the paragraph retrieved, else it is flagged and listed in the
+    note. None: exactly the statute-only check."""
     words = _MARKERS["ur" if lang == "ur" else "en"]
     passages_norm = re.sub(r"\s+", " ", _norm(" ".join(p.get("text") or "" for p in passages)))
     answer = normalize_markers(answer)
     result = CitationCheck(text=answer)
+    cases = None if judgments is None else [_as_case(j) for j in judgments]
 
     # 1) Case-law citations
-    text = _remove_case_citations(answer, passages_norm, words["case"],
-                                  result.removed_case_citations)
+    text = _remove_case_citations(answer, passages_norm,
+                                  words["case"] if cases is None else words["case_not_retrieved"],
+                                  result.removed_case_citations, cases, result.cases_verified)
 
     # 2) [n] markers beyond the passages supplied
     n_passages = len(passages)
@@ -539,11 +646,18 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en") -> Cita
         if item not in seen_unverified:
             seen_unverified[item] = None
             inserts.append((pos, f" {words['flag']}"))
+    # 5) Paragraph numbers given for retrieved cases (kb-v2 C2)
+    if cases:
+        for item, pos in _case_paragraph_problems(text, cases):
+            if item not in seen_unverified:
+                seen_unverified[item] = None
+                inserts.append((pos, f" {words['flag']}"))
     for pos, s in sorted(set(inserts), reverse=True):
         text = text[:pos] + s + text[pos:]
     result.unverified = list(seen_unverified)
     if result.unverified:
-        text = text.rstrip() + "\n\n" + words["note"] + "; ".join(result.unverified) + "."
+        note = words["note"] if cases is None else words["note_cases"]
+        text = text.rstrip() + "\n\n" + note + "; ".join(result.unverified) + "."
 
     result.text = text
     return result

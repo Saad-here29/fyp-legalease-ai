@@ -42,6 +42,11 @@ class CitationRef(BaseModel):
 
 
 class ChatMessageResponse(BaseModel):
+    # With JUDGMENTS_V2 on, also "case_law": the judgment paragraphs given to
+    # the model (doc_id, court, year, case_number, paragraph, excerpt,
+    # relevance). Off: exactly as before.
+    model_config = ConfigDict(extra="allow")
+
     response: str
     sources: list[str]          # distinct statute names, in citation order
     session_id: str
