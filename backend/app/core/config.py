@@ -121,6 +121,10 @@ class Settings(BaseSettings):
     KB_V2: bool = False
     # Similarity threshold used only when KB_V2 is on (RAG_SIMILARITY_THRESHOLD otherwise).
     KB_V2_THRESHOLD: float = 0.65
+    # KB_V2 scope gate: a question with clear legal terms (and no foreign country)
+    # that reaches no passage at the threshold may use passages down to this score
+    # (shown with the weak-match note). Off-topic questions top out at 0.597.
+    KB_V2_SCOPE_RESCUE_FLOOR: float = 0.60
     KB_DIR: str = "./storage/kb"            # records/, raw/, category_map.json (read-only at runtime)
     KB_V2_INDEX_PATH: str = "./storage/kb/faiss_v2.faiss"
     KB_V2_METADATA_PATH: str = "./storage/kb/faiss_v2_meta.json"

@@ -32,6 +32,7 @@ from app.ai.query_rewrite import rewrite_for_search
 from app.core.config import settings
 from app.core.exceptions import NotAuthorized, NotFound
 from app.core.logging import logger
+from app.kb import exact_lookup, scope
 from app.models.chat import ChatMessage, ChatSession
 from app.models.enums import SenderType
 from app.models.user import User
@@ -231,6 +232,34 @@ def citation_extras(passage: dict) -> dict:
     return {k: passage[k] for k in CITATION_EXTRAS if passage.get(k) is not None}
 
 
+def _scope_fallbacks(message: str, search_query: str, retrieved: list[dict]) -> list[dict]:
+    """KB_V2 only, when nothing passed the threshold (see app/kb/scope.py):
+    1. the user's raw question, searched as typed, may pass where the LLM
+       rewrite drifted;
+    2. a question with clear legal terms (and no foreign country) takes the
+       best passages down to KB_V2_SCOPE_RESCUE_FLOOR; the answer then gets
+       the weak-match note (best score < LOW_CONFIDENCE_UPPER)."""
+    raw = embeddings.search(message, top_k=settings.RAG_TOP_K) if message.strip() != search_query.strip() else []
+    passing = [r for r in raw if r.get("relevance", 0) >= embeddings.similarity_threshold()]
+    if passing:
+        logger.info(f"Scope: raw question passes ({passing[0]['relevance']:.3f}) where the rewrite didn't")
+        return passing
+    terms = scope.legal_terms(message)
+    if not terms:
+        return []
+    seen, pool = set(), []
+    for r in sorted(retrieved + raw, key=lambda r: r.get("relevance", 0), reverse=True):
+        key = r.get("doc_id") or (embeddings.record_source(r), r.get("chunk_id"))
+        if key in seen or r.get("relevance", 0) < settings.KB_V2_SCOPE_RESCUE_FLOOR:
+            continue
+        seen.add(key)
+        pool.append(r)
+    if pool:
+        logger.info(f"Scope: legal terms {terms[:4]}; {len(pool[:settings.RAG_TOP_K])} passages from "
+                    f"{pool[0]['relevance']:.3f} down to {settings.KB_V2_SCOPE_RESCUE_FLOOR}")
+    return pool[: settings.RAG_TOP_K]
+
+
 def retrieve_passages(message: str, search_query: str, *, family: str = "auto") -> list[dict]:
     """The passages the model will see: the top RAG_TOP_K for the
     (rewritten) search query that pass the threshold, with contents-list
@@ -257,6 +286,8 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
             r for r in retrieved
             if r.get("relevance", 0) >= embeddings.similarity_threshold()
         ]
+        if not passages and settings.KB_V2:
+            passages = _scope_fallbacks(message, search_query, retrieved)
 
     # A table-of-contents chunk often outranks the section text it lists
     # (fixed-size chunks split sections). Follow it to the sections the
@@ -271,6 +302,15 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
             p for p in passages
             if not section_lookup.is_toc(embeddings.record_text(p))
         ] + extra
+
+    # KB_V2: a section or article named together with a law we hold
+    # ("Section 302 of the Pakistan Penal Code") is fetched directly and
+    # put first, marked exact; semantic results fill the other slots.
+    if settings.KB_V2:
+        exact = exact_lookup.exact_passages(message)
+        if exact:
+            logger.info(f"Exact section lookup: {', '.join(e['doc_id'] for e in exact)}")
+            passages = exact_lookup.merge(exact, passages, settings.RAG_TOP_K)
     return passages
 
 
