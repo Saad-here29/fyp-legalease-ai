@@ -137,6 +137,35 @@ calls:
   rewrite adds "under Muslim Family Laws Ordinance" and MFLO comes first. So
   the filter works when the rewrite is on (it always is with a Groq key).
 
+## Changes in kb-v2 B7 (2026-10-07): restart the backend to get them
+
+All of these apply only with `KB_V2=true`; the master fallback is unchanged.
+
+- **Exact section lookup.** A question naming a section or article of a law
+  we hold puts that record first, marked as the section named in the
+  question. Examples: "Section 302 of the Pakistan Penal Code", "u/s 154
+  CrPC", "Article 10A of the Constitution". It never fires for foreign laws
+  such as "Indian Penal Code".
+- **Section numbers reach the model and the citation check.** Each source
+  line now reads "Act - s.N Heading", so a retrieved section is no longer
+  flagged "(unverified)".
+- **Scope gate.** Before the chat refuses, it also searches the raw
+  question. A question with clear legal terms (dower, nikah, talaq, family
+  court, decree, bail, FIR, "section 9", "… Act") and no foreign country may
+  then use passages down to 0.60 (`KB_V2_SCOPE_RESCUE_FLOOR`), shown with the
+  weak-match note. Off-topic questions are still refused.
+- **Reference completeness.** These now join the "unverified" note:
+  - an Act named in the answer but not in the retrieved text;
+  - a `[n]` that points to a different Act than its sentence names.
+
+  Grouped markers ("[1, 2]", "[1-3]") are split, so every cited source is
+  listed.
+- **Progress wording while chat works:** "Searching the legal library…",
+  "Reading the sources…", "Writing the answer…". This is frontend-only, and
+  the Vite dev server picks it up without a restart.
+- **`STRICT_GROUNDING` stays off.** See
+  `docs/kb_v2_live_check_2026-10-07_b7.md`.
+
 ## Differences to know before switching
 
 - **Same data:** same database, same accounts, same cases and contracts.
