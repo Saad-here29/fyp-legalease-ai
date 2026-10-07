@@ -217,6 +217,32 @@ confirmed, so judgments are marked staged.
   names weren't read cleanly from the first page.
 - Each chat answer with cases costs about 900 more Groq tokens.
 
+## Scraped laws (kb-v2 C3, 2026-10-07): optional, off unless set
+
+Add `$env:SCRAPED_V2 = "true"` before starting the backend (Terminal A) to
+search and list the scraped laws and judgments. `/health` then shows
+`"scraped_v2": true` and the chunk counts (pilot: 2,400 statute chunks,
+5,593 judgment chunks).
+
+**Fetch and embed** (in `backend`, in your own terminal; both stop after a
+time budget and continue when run again):
+
+```powershell
+cd E:\Users\fyp-legalease-ai-main\legalease-kb\backend
+$env:HF_HUB_OFFLINE = "1"; $env:TRANSFORMERS_OFFLINE = "1"; $env:PYTHONIOENCODING = "utf-8"
+$py = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe"
+& $py ..\scripts\scrape_laws.py --stage-files --budget 0          # caps PC 120, KP 60, FSC 100
+& $py ..\scripts\kb\build_index_scraped.py --budget 0
+```
+
+**Weekly:** `scripts\scraping\register_weekly_task.ps1` registers
+`run_weekly.py` every Sunday at 03:00 (run it yourself once).
+
+**Demo path:** Knowledge Base, then "Sources and updates" (fetched, new,
+quarantined and searchable per source); a law with the "Scraped" badge
+(e.g. Stamp Act, 1899): source link, fetch date, "Under review"; Research
+"stamp duty on a bond": Stamp Act sections from the scraped index.
+
 ## Differences to know before switching
 
 - **Same data:** same database, same accounts, same cases and contracts.

@@ -1,5 +1,11 @@
 # Scheduled scraping (prototype, branch `scraping`)
 
+> **kb-v2 C3 (branch `kb-v2`):** a file-staging mode now feeds the knowledge
+> base with no database: `scripts/scrape_laws.py --stage-files`, validation
+> and quarantine, `faiss_scraped*`, `SCRAPED_V2`, and a weekly task. See
+> `docs/knowledge_base_spec.md` § b4 and `docs/DEMO_RUNBOOK.md`. The database
+> modes below are unchanged, and migration a3c5e7f90b12 is still not applied.
+
 This prototype checks Pakistani law websites on a schedule and stages new or
 changed documents for review. It's on the `scraping` branch only, and **not
 merged**.

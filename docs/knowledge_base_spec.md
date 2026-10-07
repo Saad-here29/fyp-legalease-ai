@@ -283,6 +283,71 @@ The judgments are stored with the reply's citations as `kind: "case_law"`
 (not numbered and not counted for the weak-match note) and returned as
 `case_law`, shown under Sources as "Case law" with a link to the judgment.
 
+### b4) Scraped laws and judgments (Phase C3, `SCRAPED_V2`)
+
+**Sources:** the three verified ones in `scripts/scraping/sources.json`:
+Pakistan Code (cap 120; the Acts its category listings name that we don't
+hold come first), Khyber Pakhtunkhwa Code (cap 60) and Federal Shariat Court
+leading judgments (cap 100). Same politeness as before: the identified
+User-Agent (`LegalEase-FYP`, i228795@nu.edu.pk), 2 s between requests,
+robots.txt respected. No database: everything is a file under
+`backend/storage/kb/scraped/` (git-ignored).
+
+| Path | What |
+|---|---|
+| `originals/<source>/<sha16>.pdf|html` | Every listing page, law page and PDF, byte for byte |
+| `originals/manifest.jsonl` | Per file: source, URL (and the URL requested, if redirected), role, fetch date, SHA-256, size, path |
+| `records/statutes/<slug>.jsonl` | Section records (§ a) |
+| `records/judgments/<source>.jsonl` | Judgment records (§ b2) |
+| `quarantine/<source>/<id>.json` | Rejected items: reason, URL, title, a text sample, the original's path |
+| `state.json` | Per URL: text hash, outcome, fetch date, listing metadata |
+| `update_log.jsonl` | One line per source per run (`scrape`), per rebuild (`index`), per `--reparse` |
+
+**Statute records** use the § a schema plus `document_type` (Act,
+Ordinance, Order…) and `amendments` (amending laws named in the text's
+footnotes, e.g. "Subs. by the … Act, 2016"). Title: the law's own short
+title ("This Act may be called …") when its text gives a clean one,
+otherwise the tidied listing title (a KP listing title can name another
+document). Year: the title's. `jurisdiction` Pakistan or KP; `source_tier`
+1; `source_url` the law's page; `scraped_at` the fetch date;
+`original_file` the saved PDF; `status` `under_review` (staged, not
+reviewed) or `repealed` when the listing says so; `provenance_note`
+"Downloaded from the … website (URL) on DATE; staged, not yet reviewed. N
+of M sections found."
+
+**Judgment records** use § b2 with `court` "Federal Shariat Court",
+`source_tier` 1, `source_url` the PDF on the court's site, a real
+provenance note, `fetched_at` and `scraped: true`. When the parties can't
+be read cleanly ("PETITIONER v. 1"), the court's own listing title is the
+case name ("Khulla (Shariat Petition No.16-I of 2022 …)").
+
+**Validation and quarantine** (never indexed): no text layer on most pages;
+near-empty text (statutes under 300 non-space characters, judgments under
+1,500); garbled text (letters under 55% of characters, or over 35% of words
+single letters); a statute with no recognisable sections (none found, or
+under half of those its numbering implies); a missing title or year; a
+law-report copy; the same text twice in one run. **Already held** (skipped,
+logged): a core law (by title), or text identical to an item staged in an
+earlier run. **Unchanged**: same URL, same text hash as last time.
+
+**Index:** `faiss_scraped.*` (statute sections) and
+`faiss_scraped_judgments.*`, built by `scripts/kb/build_index_scraped.py`
+with the faiss_v2 pattern (vector cache by chunk text, saved every 1,000,
+`--budget`); the build refuses the paths of faiss_v2, faiss_judgments and
+the old index. A scraped Act that the old index also holds (same normalised
+title, or the category map's match for the scraped page) has its old-index
+passages left out of search (manifest `excluded_v1_sources`), as the core
+laws' are.
+
+**With `SCRAPED_V2` on:** Research and Chat also search faiss_scraped,
+merged by score; scraped judgments join the judgment search (with
+`JUDGMENTS_V2` on too); the Knowledge Base lists scraped laws and judgments
+with a "Scraped" badge, source link, fetch date and status, and shows
+"Sources and updates" from `GET /api/v1/kb/updates`; Research's "Sources
+checked" line reads the update log (each source's latest check), not the
+database. Off: none of this, and "Sources checked" reads the database as
+before.
+
 ## c) Source whitelist and tiers
 
 | Tier | Sources | Ingested? |
