@@ -7,7 +7,7 @@ was changed and no AI calls were made.
 - the FYP-1 **Proposal** (Jan 2026, 14 pp.), **Mid report** (Mar 2026,
   42 pp.) and **Final report** (May 2026, 56 pp.) in `docs/reports/`;
 - the current code at `80f57f5`;
-- the October 2026 quality pass (`docs/TEST_PLAN.md` § 9);
+- the October 2026 quality pass (`docs/evaluation/test-plan.md` § 9);
 - the September pre-demo audit (`docs/archive/PROJECT_CONTEXT.md`).
 
 **Requirement IDs:**
@@ -336,7 +336,7 @@ These are the claims to fix before the panel reads them.
 | 21 | UC-06: ≤10 results in 2 s with court and year; "view similar cases"; "suggest refined queries" | Final Table 2.6 | 10 results by default; ~3 s; court/year empty for statutes; no similar cases or query suggestions | Correct |
 | 22 | UC-03: client "receives a notification"; non-existent client "prompted to invite" | Final Table 2.3 | No notification. A missing client gets 404 "ask them to sign up first" | Correct |
 | 23 | UC-01: login completes within 1 s | Final Table 2.1 | Login measured at about 6 s (new database connection to Singapore) | Correct, or move the database |
-| 24 | **Unit test tables 4.2–4.5** (12 tests) | Final § 4.3 | See § 3. **They don't match the code**: UT-AUTH-001 says a 24 h token (actual 60 min); UT-AUTH-003 expects 404 `UserNotFound` (actual 401, deliberately, to avoid revealing accounts); UT-CASE-002/003 test `assignCase` to a lawyer (no such function); UT-DOC-001 tests S3; UT-DOC-003 tests BERT with a confidence score; UT-CHAT-001 tests `startChatSession` (sessions start on the first message); UT-CHAT-003 expects `outOfScope: true` and "family law topics" (the actual refusal has no flag) | Replace with the real suite (213 tests, `docs/TEST_PLAN.md`) |
+| 24 | **Unit test tables 4.2–4.5** (12 tests) | Final § 4.3 | See § 3. **They don't match the code**: UT-AUTH-001 says a 24 h token (actual 60 min); UT-AUTH-003 expects 404 `UserNotFound` (actual 401, deliberately, to avoid revealing accounts); UT-CASE-002/003 test `assignCase` to a lawyer (no such function); UT-DOC-001 tests S3; UT-DOC-003 tests BERT with a confidence score; UT-CHAT-001 tests `startChatSession` (sessions start on the first message); UT-CHAT-003 expects `outOfScope: true` and "family law topics" (the actual refusal has no flag) | Replace with the real suite (213 tests, `docs/evaluation/test-plan.md`) |
 
 ---
 

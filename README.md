@@ -184,9 +184,9 @@ npm run build
 
 `docs/README.md` indexes everything. Start with:
 
-- `docs/architecture.md`
-- `docs/api-reference.md`
+- `docs/architecture/system-overview.md`
+- `docs/architecture/api-reference.md`
 - `docs/database-schema.md`
-- `docs/development-guide.md`
+- `docs/runbooks/development-guide.md`
 - `docs/STYLE_GUIDE.md`
 - `docs/retrieval_redesign.md`

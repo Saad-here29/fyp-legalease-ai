@@ -529,7 +529,7 @@ during the audit except the ones approved (commit `8a02485`).
   113 checks, 107 passed.
 - 62 page loads (every route, 3 roles, desktop and phone).
 - About 16k Groq tokens.
-- Details in `docs/TEST_PLAN.md` § 9.
+- Details in `docs/evaluation/test-plan.md` § 9.
 
 **Fixed, each with tests:**
 - **Uploads:**
@@ -754,7 +754,7 @@ SMTP_*
   calls were then stopped.
 - **Tests:** 306 backend tests pass; ruff 21 (all of them existed before);
   frontend lint and build clean.
-- **Live run:** `docs/TEST_PLAN.md` § 13.
+- **Live run:** `docs/evaluation/test-plan.md` § 13.
 - **Open:**
   - email (SMTP);
   - MT-AI-07 and MT-RES-02 not run;

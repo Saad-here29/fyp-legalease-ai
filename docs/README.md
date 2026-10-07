@@ -9,13 +9,13 @@
 ## How the system works
 | Doc | Covers |
 |---|---|
-| [`architecture.md`](architecture.md) | Layers, backend modules, AI pipeline, cross-cutting concerns |
-| [`api-reference.md`](api-reference.md) | Every endpoint, auth, error format, status codes |
+| [`docs/architecture/system-overview.md`](architecture/system-overview.md) | Layers, backend modules, AI pipeline, cross-cutting concerns |
+| [`docs/architecture/api-reference.md`](architecture/api-reference.md) | Every endpoint, auth, error format, status codes |
 | [`database-schema.md`](database-schema.md) | The 14 tables, case status rules, migrations |
 | [`folder-structure.md`](folder-structure.md) | What each folder holds |
-| [`development-guide.md`](development-guide.md) | Running, testing, conventions |
-| [`deployment.md`](deployment.md) | What a production deployment needs |
-| [`TEST_PLAN.md`](TEST_PLAN.md) | Test levels and the test inventory |
+| [`docs/runbooks/development-guide.md`](runbooks/development-guide.md) | Running, testing, conventions |
+| [`docs/runbooks/deployment.md`](runbooks/deployment.md) | What a production deployment needs |
+| [`docs/evaluation/test-plan.md`](evaluation/test-plan.md) | Test levels and the test inventory |
 
 ## Design
 - [`STYLE_GUIDE.md`](STYLE_GUIDE.md): design system v1 (tokens, type,

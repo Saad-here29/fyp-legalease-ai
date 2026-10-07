@@ -313,7 +313,7 @@ database, and holds no case law.
 | **Reliability** | A failed database connection is retried once, then a clear 503; text-less documents refused before any model call; chat history capped at 2,000 tokens so requests stay under Groq's 8,000 tokens a minute |
 | **Performance** | **Weak spot:** the database is on Supabase in Singapore. Each query takes 0.2–0.4 s and a new connection about 4 s, so API calls take about 3–8 s. Chat answers took 9–27 s in testing, document analysis about 8 s, contract drafting about 7 s |
 | **Usability** | Design system v1 on every page, at desktop and phone width; role-specific dashboards; a 404 page for unknown addresses |
-| **Tests** | 306 backend tests (unit and HTTP); no frontend tests; full live run 2026-10-06 (`docs/TEST_PLAN.md` § 13) |
+| **Tests** | 306 backend tests (unit and HTTP); no frontend tests; full live run 2026-10-06 (`docs/evaluation/test-plan.md` § 13) |
 
 ---
 
