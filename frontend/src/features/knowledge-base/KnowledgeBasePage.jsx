@@ -54,7 +54,23 @@ export default function KnowledgeBasePage() {
     >
       <Figures
         items={[
-          { label: "Laws", value: stats ? stats.laws : "–" },
+          {
+            label: "Laws",
+            value: stats ? stats.laws.toLocaleString() : "–",
+            // kb-v2 C7: the 35 core laws, laws sectioned from the corpus, scraped laws
+            helper: stats?.laws_by_set
+              ? [
+                  `${stats.laws_by_set.core} core`,
+                  stats.laws_by_set.corpus ? `${stats.laws_by_set.corpus} sectioned from the corpus` : null,
+                  stats.laws_by_set.scraped ? `${stats.laws_by_set.scraped} scraped` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") +
+                (stats.laws_by_set.corpus && stats.section_index !== "all"
+                  ? " (in search once the all-laws index is built)"
+                  : "")
+              : null,
+          },
           { label: "Section records", value: stats ? stats.section_records.toLocaleString() : "–" },
           {
             label: "Coverage of listed Pakistan Code Acts",

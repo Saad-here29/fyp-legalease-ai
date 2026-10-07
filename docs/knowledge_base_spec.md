@@ -383,6 +383,38 @@ a penalty, unless a passage says so; when a passage only requires something,
 say what it requires and stop. The citation check flags any such term the
 passages don't contain, and any penalty figure ("2 years") they don't state.
 
+### b7) Every law at section level (Phase C7)
+
+**Corpus:** the old index was built from `data/processed/statutes/legal_statutes_corpus.json`
+(main folder, read-only): 901 documents (894 Pakistan Code PDF texts, 7 section tables),
+37,392,219 characters.
+
+**Sectioning** (`scripts/kb/build_records_all.py`, same sectioner and record builder as the core laws):
+kept when the law has a title, a year, at least one numbered section and at least 70% of the
+sections its numbering or contents list implies. Result: **825 laws, 23,879 section records**
+in `backend/storage/kb/records_all/` (git-ignored; `_report.json` lists every document with its
+outcome). Skipped: 40 copies of the 35 core laws, 6 laws held as scraped laws, 3 second corpus
+copies. Left in the old index only (27): 17 below 70% (e.g. Railways Act, 1890: 97 of 148), 8 with
+no numbered sections (e.g. Police Order, 2002; Industrial Relations Act, 2008), 2 with no year.
+Title: the Pakistan Code listing's clean title when the category map matched the copy, else the
+law's own short title, else the tidied corpus title. Jurisdiction from the title (Punjab, Sindh,
+KP, Balochistan, ICT; otherwise Pakistan); community laws (Hindu, Sikh) gated as in B3; category
+from the listing (463 laws) or the overrides; source "LegalEase corpus (Pakistan Code-derived; …)",
+tier 1 when listed, status from the listing; provenance names the corpus title and the detection.
+
+**Index:** `faiss_v2_all.*` = the 35 core laws + records_all: 27,056 records, **99,055 chunks**
+(<=120 tokens with the prefix), of which 87,362 still need a vector (the core laws' and a 500-chunk
+test batch are cached): about **91 minutes** on the laptop at 16 chunks/s, a few minutes on a Colab
+GPU (`scripts/kb/colab_embed.py`). faiss_v2 is never touched: search uses faiss_v2_all only when both
+its files exist (the builder writes them only when every chunk has a vector), and leaves out the
+old-index passages of all 860 laws it holds (`excluded_v1_sources`). `/health` reports `v2_index`
+("all" or "core") and that index's chunk count; the Knowledge Base page shows the laws by set.
+
+**Colab round trip** (checked on 500 chunks, CPU): the export's keys are the builder's
+`vector_key`; the script's `.npz` files load in `VectorCache` unchanged; vectors are float32,
+normalised, and identical to the app's `embed()` (cosine 1.000000); with the file in the cache the
+builder's to-embed count dropped by exactly 500.
+
 ## Final numbers and what is not done (2026-10-07)
 
 | What | Number | From |
