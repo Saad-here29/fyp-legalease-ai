@@ -1,8 +1,9 @@
 """AI Legal Research request/response schemas."""
 
 from datetime import datetime
+from typing import Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from app.schemas.common import APIModel
 
@@ -19,6 +20,24 @@ class ResearchSearchRequest(APIModel):
     category: str | None = Field(default=None, max_length=100)
     jurisdiction: str | None = Field(default=None, max_length=50)
     source_tier: int | None = Field(default=None, ge=1, le=3)
+    # Statutes / Judgments / All (kb-v2 C2). Used only when JUDGMENTS_V2 is
+    # on; otherwise every search is a statute search, as before. Judgments
+    # take year_from, year_to and court; the other filters are statute-only.
+    scope: Literal["statutes", "judgments", "all"] = "statutes"
+
+
+class JudgmentResult(APIModel):
+    """A judgment's best-matching paragraph (app/kb/judgment_search.py)."""
+    doc_id: str                 # /kb/judgments/{doc_id}
+    display_name: str
+    court: str | None
+    year: int | None
+    case_number: str | None
+    paragraph: int
+    snippet: str
+    text: str
+    relevance: float
+    topics: list[str] = []
 
 
 class ResearchResult(APIModel):
@@ -80,6 +99,10 @@ class ResearchIndexStats(APIModel):
 
 
 class ResearchSearchResponse(APIModel):
+    # With JUDGMENTS_V2 on, the response also carries "scope" and
+    # "judgments" (list[JudgmentResult]); off, it is exactly as before.
+    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True, extra="allow")
+
     query: str
     total: int
     results: list[ResearchResult]

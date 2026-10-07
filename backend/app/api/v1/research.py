@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.ai import embeddings
+from app.core.config import settings
 from app.core.logging import logger
 from app.db.session import get_db
 from app.middlewares.auth import CurrentUser
@@ -55,10 +56,12 @@ def search(
     user: CurrentUser,  # auth-gated, but no role restriction — all roles search
     db: Session = Depends(get_db),
 ):
-    results = ResearchService(db).search(
+    scope = payload.scope if settings.JUDGMENTS_V2 else "statutes"
+    service = ResearchService(db)
+    results = [] if scope == "judgments" else service.search(
         query=payload.query,
         top_k=payload.top_k,
-        court=payload.court,
+        court=payload.court if scope == "statutes" else None,   # judgments only, under All
         year_from=payload.year_from,
         year_to=payload.year_to,
         case_type=payload.case_type,
@@ -68,14 +71,22 @@ def search(
     )
     active = any(v not in (None, "") for v in (payload.category, payload.jurisdiction, payload.source_tier,
                                                payload.year_from, payload.year_to))
+    extra = {}
+    if settings.JUDGMENTS_V2:
+        judgments = [] if scope == "statutes" else service.search_judgments(
+            payload.query, year_from=payload.year_from, year_to=payload.year_to, court=payload.court)
+        extra = {"scope": scope, "judgments": [j.model_dump() for j in judgments]}
+        if scope == "judgments":
+            active = any(v is not None for v in (payload.year_from, payload.year_to)) or bool(payload.court)
     return ResearchSearchResponse(
+        **extra,
         query=payload.query,
         total=len(results),
         results=results,
         weak_matches=bool(results)
         and max(r.relevance for r in results) < embeddings.similarity_threshold(),
         filters_active=active,
-        filter_coverage=filter_coverage() if active else None,
+        filter_coverage=filter_coverage() if active and scope != "judgments" else None,
     )
 
 

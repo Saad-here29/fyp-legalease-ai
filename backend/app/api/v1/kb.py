@@ -13,8 +13,9 @@ import json
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse, Response
 
+from app.core.config import settings
 from app.core.exceptions import NotFound
-from app.kb import catalog
+from app.kb import catalog, judgment_catalog, judgment_search
 from app.middlewares.auth import CurrentUser
 
 router = APIRouter()
@@ -84,3 +85,46 @@ def kb_record(record_id: str, user: CurrentUser):
     if rec is None:
         raise NotFound("No record with this id in the knowledge base.")
     return rec
+
+
+# ----- Judgments (kb-v2 C2, settings.JUDGMENTS_V2) ---------------------------
+# Read from storage/kb/judgments/records/*.jsonl, never the database. The
+# original file's path and the file hash are never returned.
+
+def _judgments_on() -> None:
+    if not settings.JUDGMENTS_V2:
+        raise NotFound("Judgments are not enabled on this server.")
+
+
+@router.get("/judgments", summary="Judgments: counts, courts, years, topics and a paginated list")
+def kb_judgments(
+    user: CurrentUser,
+    q: str | None = Query(default=None, max_length=200, description="words in the name, case number or judges"),
+    court: str | None = Query(default=None, max_length=100),
+    year: int | None = Query(default=None, ge=1900, le=2100),
+    topic: str | None = Query(default=None, max_length=50),
+    indexed: bool = Query(default=False, description="only judgments in the search index"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=25, ge=1, le=100),
+):
+    _judgments_on()
+    in_index = judgment_search.indexed_ids()
+    every, found = judgment_catalog.search_list(q=q, court=court, year=year, topic=topic,
+                                                indexed_only=indexed, indexed=in_index)
+    start = (page - 1) * page_size
+    return {
+        "counts": {"judgments": len(every), "indexed": sum(1 for s in every if s["doc_id"] in in_index),
+                   "excluded": judgment_catalog.excluded_counts(), **judgment_search.status()},
+        **judgment_catalog.stats(every),
+        "total": len(found), "page": page, "page_size": page_size,
+        "judgments": [judgment_catalog.public(s, in_index) for s in found[start:start + page_size]],
+    }
+
+
+@router.get("/judgments/{doc_id:path}", summary="One judgment: metadata, numbered paragraphs, provenance, status")
+def kb_judgment(doc_id: str, user: CurrentUser):
+    _judgments_on()
+    out = judgment_catalog.detail(doc_id, judgment_search.indexed_ids())
+    if out is None:
+        raise NotFound("No judgment with this id in the knowledge base.")
+    return out

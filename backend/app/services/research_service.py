@@ -20,7 +20,7 @@ from app.ai import embeddings
 from app.ai.client import get_ai_client
 from app.ai.query_rewrite import rewrite_for_search
 from app.core.config import settings
-from app.schemas.research import ResearchResult, StructuredAnalysis
+from app.schemas.research import JudgmentResult, ResearchResult, StructuredAnalysis
 
 # Map raw corpus filenames → human-readable titles. Anything matching a
 # known statute is renamed; other sources keep their title.
@@ -115,6 +115,29 @@ def filter_coverage() -> dict:
 class ResearchService:
     def __init__(self, db: Session) -> None:
         self.db = db
+        self._search_query: tuple[str, str] | None = None    # (query, rewrite), reused by search_judgments
+
+    def _rewrite(self, query: str) -> str:
+        if self._search_query is None or self._search_query[0] != query:
+            self._search_query = (query, rewrite_for_search(query))
+        return self._search_query[1]
+
+    def search_judgments(self, query: str, *, year_from: int | None = None, year_to: int | None = None,
+                         court: str | None = None) -> list[JudgmentResult]:
+        """Judgments (JUDGMENTS_V2): the best paragraph of each, using the
+        same search query as the statute search. Year and court filters apply;
+        the statute-only filters (category, jurisdiction, tier) don't."""
+        from app.kb import judgment_search
+        hits = judgment_search.search(self._rewrite(query), year_from=year_from, year_to=year_to, court=court)
+        return [
+            JudgmentResult(
+                doc_id=h["doc_id"], display_name=h["display_name"], court=h["court"], year=h["year"],
+                case_number=h["case_number"], paragraph=h["paragraph"],
+                snippet=h["text"][:280] + ("..." if len(h["text"]) > 280 else ""),
+                text=h["paragraph_text"], relevance=h["score"], topics=h["topics"],
+            )
+            for h in hits
+        ]
 
     def search(
         self,
@@ -129,7 +152,7 @@ class ResearchService:
         source_tier: int | None = None,
     ) -> list[ResearchResult]:
         embeddings.build_or_load(self.db)
-        search_query = rewrite_for_search(query)
+        search_query = self._rewrite(query)
         kb_filters = {"category": category, "jurisdiction": jurisdiction, "source_tier": source_tier,
                       "year_from": year_from, "year_to": year_to}
         if not any(v not in (None, "") for v in kb_filters.values()):
