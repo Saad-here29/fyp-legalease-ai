@@ -146,6 +146,24 @@ def _content(resp, max_tokens: int = CHAT_MAX_TOKENS) -> str:
     return choice.message.content or ""
 
 
+class RateLimitedError(Exception):
+    """The provider answered 429 (Groq: 8,000 tokens a minute, 200,000 a day).
+    `retry_after` is the provider's suggested wait in seconds, if it gave one."""
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+def _retry_after(e: Exception) -> float | None:
+    resp = getattr(e, "response", None)
+    headers = getattr(resp, "headers", None) or {}
+    try:
+        return float(headers.get("retry-after")) if headers.get("retry-after") else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _key(value: str | None) -> bool:
     v = (value or "").strip()
     return bool(v) and v != "demo" and not v.startswith("sk-...")
@@ -315,6 +333,41 @@ class AIClient:
         history = [{"role": "user", "content": prompt}]
         sys_msg = "You are a Pakistani legal analyst. Be precise and concise."
         return self.chat(history, system=sys_msg)
+
+    def complete_json(self, prompt: str, system: str, *, max_tokens: int, temperature: float = 0.0,
+                      reasoning_effort: str | None = "low") -> str:
+        """One JSON-mode completion (kb-v2 C4, the Document Analysis reasoning
+        layer). Unlike chat(), a 429 is raised as RateLimitedError (with the
+        provider's retry-after) instead of falling back, so the caller can
+        back off; other failures raise AIServiceUnavailable. If the provider
+        refuses JSON mode (400), the call is repeated once without it."""
+        if not self.enabled:
+            raise AIServiceUnavailable(message="The AI assistant is not configured.")
+        if self.provider not in ("groq", "openai"):
+            return self.chat([{"role": "user", "content": prompt}], system=system, max_tokens=max_tokens,
+                             temperature=temperature)
+        client = self._groq if self.provider == "groq" else self._openai
+        model = settings.GROQ_MODEL if self.provider == "groq" else settings.OPENAI_MODEL
+        kwargs = {"model": model, "temperature": temperature, "max_tokens": max_tokens,
+                  "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}]}
+        if self.provider == "groq" and reasoning_effort:
+            kwargs["extra_body"] = {"reasoning_effort": reasoning_effort}
+        for json_mode in (True, False):
+            try:
+                resp = client.chat.completions.create(
+                    **kwargs, **({"response_format": {"type": "json_object"}} if json_mode else {}))
+                return _content(resp, max_tokens)
+            except Exception as e:  # noqa: BLE001
+                status = getattr(e, "status_code", None)
+                if status == 429:
+                    raise RateLimitedError(f"{self.provider}: rate limit reached", _retry_after(e)) from e
+                if status == 400 and json_mode:
+                    logger.warning(f"{self.provider} refused JSON mode ({e}); retrying without it")
+                    continue
+                logger.warning(f"{self.provider} JSON completion failed: {type(e).__name__}: {e}")
+                raise AIServiceUnavailable(message="The AI service rejected this request.",
+                                           hint=f"{self.provider}: {type(e).__name__}") from e
+        raise AssertionError("unreachable")
 
     # -------- Provider implementations -----------------------------------
 

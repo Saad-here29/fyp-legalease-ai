@@ -148,6 +148,14 @@ class Settings(BaseSettings):
     # scraped is searched or listed, and Research's "Sources checked" line
     # reads the database as before.
     SCRAPED_V2: bool = False
+    # Document Analysis reasoning layer (kb-v2 C4, app/ai/reasoning.py): one
+    # extra JSON model call after the summary and NER, checked without a
+    # second call. Off: the analysis response and what is saved are unchanged.
+    REASONING_V2: bool = False
+    REASONING_INPUT_TOKENS: int = 4200     # document text sent (excerpted above this); + ~500 instructions
+    REASONING_MAX_TOKENS: int = 1500       # reply cap: ~6k tokens per analysis in all
+    REASONING_MAX_WAIT: float = 45.0       # seconds of 429 back-off before giving up
+    REASONING_RELATED_MIN: float = 0.55    # related past judgments (JUDGMENTS_V2) at or above this score
     KB_SCRAPED_INDEX_PATH: str = "./storage/kb/faiss_scraped.faiss"
     KB_SCRAPED_METADATA_PATH: str = "./storage/kb/faiss_scraped_meta.json"
     KB_SCRAPED_JUDGMENTS_INDEX_PATH: str = "./storage/kb/faiss_scraped_judgments.faiss"
