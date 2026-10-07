@@ -3,6 +3,8 @@
     python scripts/scrape_laws.py --dry-run --limit 5               # fetch + compare, write nothing
     python scripts/scrape_laws.py --schema scrapetest_x --limit 10  # write to a throwaway schema
     python scripts/scrape_laws.py --sources "Pakistan Code" --limit 3 --dry-run
+    python scripts/scrape_laws.py --dry-run --limit 3 --out run1.json            # remember hashes
+    python scripts/scrape_laws.py --dry-run --limit 3 --compare-with run1.json   # unchanged / changed, no DB
 
 Sources and their selectors: scripts/scraping/sources.json (only "enabled"
 sources run). Limits: identified User-Agent, 2 s between requests per site
@@ -36,7 +38,12 @@ def main() -> int:
     ap.add_argument("--corpus", type=Path, default=ROOT / "data" / "processed" / "statutes" / "legal_statutes_corpus.json",
                     help="statute corpus whose titles count as already known")
     ap.add_argument("--out", type=Path, default=None, help="write the run summary JSON here")
+    ap.add_argument("--compare-with", type=Path, default=None,
+                    help="dry run only: an earlier --out JSON whose hashes count as the stored versions")
     args = ap.parse_args()
+    if args.compare_with and not args.dry_run:
+        print("--compare-with is for dry runs; a real run compares with the database.", file=sys.stderr)
+        return 2
 
     if not args.dry_run and not args.schema:
         print("Refusing to write without --schema: the scraping tables only exist in throwaway schemas "
@@ -44,6 +51,7 @@ def main() -> int:
         return 2
 
     from app.scraping.fetcher import Fetcher
+    from app.scraping.report import previous_hashes, render
     from app.scraping.runner import load_corpus_titles, run
 
     sources = json.loads(args.sources_file.read_text(encoding="utf-8"))
@@ -89,11 +97,17 @@ def main() -> int:
         db = sessionmaker(bind=engine)()
 
     fetcher = Fetcher(max_pages=args.max_pages, max_pdfs=args.limit)
-    summary = run(sources, fetcher, db=db, corpus_titles=corpus_titles, limit=args.limit, dry_run=args.dry_run)
-    print(json.dumps({k: v for k, v in summary.items() if k != "per_source"}, ensure_ascii=False))
+    previous = None
+    if args.compare_with:
+        previous = previous_hashes(json.loads(args.compare_with.read_text(encoding="utf-8")))
+        print(f"Comparing with {args.compare_with} ({len(previous)} documents)")
+    summary = run(sources, fetcher, db=db, corpus_titles=corpus_titles, limit=args.limit, dry_run=args.dry_run,
+                  previous=previous)
+    print(json.dumps({k: v for k, v in summary.items() if k not in ("per_source", "items")}, ensure_ascii=False))
     for name, c in summary["per_source"].items():
         print(f"  {name:28} checked {c['checked']:3}  new {c['new']:3}  changed {c['changed']:3}  "
               f"unchanged {c['unchanged']:3}  baseline {c['baseline']:3}  errors {c['errors']:3}  {c['status']}")
+    print(render(summary))
     if args.out:
         args.out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     return 0

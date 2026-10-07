@@ -317,3 +317,48 @@ def test_item_stopped_by_the_cap_is_not_counted_as_checked(db_session):
     s = runner_mod.run([dict(KP, enabled=True)], f, db=db_session, corpus_titles=set(), log=lambda *_: None)
     c = s["per_source"]["Khyber Pakhtunkhwa Code"]
     assert c["checked"] == 2 and c["new"] == 2 and c["status"].startswith("stopped: PDF cap")
+
+
+# ---- dry-run summary and comparison without tables (kb-v2 B8) ---------------
+
+from app.scraping.report import previous_hashes, render  # noqa: E402
+
+
+def test_dry_run_compares_with_an_earlier_run_without_a_database():
+    s1 = run_once(None, kp_routes(), dry_run=True)
+    assert [i["outcome"] for i in s1["items"]] == ["new", "new", "new"]
+    assert all(len(i["content_hash"]) == 64 for i in s1["items"])
+    prev = previous_hashes(s1)
+    f, _ = fetcher(kp_routes(text_1619="Trade Testing Board Act text v2 amended"), max_pages=50, max_pdfs=10)
+    s2 = runner_mod.run([dict(KP, enabled=True)], f, db=None, corpus_titles=set(), dry_run=True,
+                        log=lambda *_: None, previous=prev)
+    outcomes = {i["url"].rsplit("/", 1)[-1]: i["outcome"] for i in s2["items"]}
+    assert outcomes == {"1619": "changed", "1618": "unchanged", "1617": "unchanged"}
+    c = s2["per_source"]["Khyber Pakhtunkhwa Code"]
+    assert (c["changed"], c["unchanged"], c["new"]) == (1, 2, 0)
+
+
+def test_summary_table_is_readable_and_says_nothing_is_indexed():
+    s = run_once(None, kp_routes(), dry_run=True, corpus={normalise_title(
+        "THE KHYBER PAKHTUNKHWA TRADE TESTING BOARD ACT, 2025")})
+    out = render(s)
+    lines = out.splitlines()
+    assert "Summary (dry run: nothing was written)" in out
+    header = next(line for line in lines if line.startswith("Source"))
+    for col in ("Source", "URL", "Status", "Hash", "Would stage", "Indexed"):
+        assert col in header
+    rows = [line for line in lines if line.startswith("Khyber Pakhtunkhwa Code")]
+    assert len(rows) == 3 and all(line.rstrip().endswith("no") for line in rows)       # indexed: no
+    assert any("baseline" in r and "no (already in corpus)" in r for r in rows)
+    assert any(" new " in r and " yes " in r for r in rows)
+    h = s["items"][0]["content_hash"][:8]
+    assert h in out and s["items"][0]["content_hash"][:9] not in out
+    assert "3 documents: 2 new, 0 changed, 0 unchanged, 1 already in the corpus, 0 failed" in out
+
+
+def test_cli_compare_with_needs_dry_run(tmp_path):
+    prev = tmp_path / "run1.json"
+    prev.write_text('{"items": []}', encoding="utf-8")
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "scrape_laws.py"), "--compare-with", str(prev)],
+                       capture_output=True, text=True, timeout=120)
+    assert r.returncode == 2 and "for dry runs" in r.stderr

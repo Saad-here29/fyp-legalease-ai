@@ -8,8 +8,11 @@ For each built source: listing pages -> items -> (document page ->) PDF -> text
   stored, same hash                               -> unchanged
   stored, different hash                          -> "changed": new version,
       staged; the previous version is kept (is_latest = false)
-Every outcome is counted per source in the run summary. --dry-run fetches and
-compares but writes nothing.
+Every outcome is counted per source in the run summary, and listed per
+document in summary["items"] (source, title, URL, hash, outcome). --dry-run
+fetches and compares but writes nothing; without a database it compares with
+`previous` (URL -> hash from an earlier run's summary), so change detection
+can be shown with no tables at all.
 """
 
 from __future__ import annotations
@@ -18,6 +21,7 @@ import math
 import uuid
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import requests
 from sqlalchemy.orm import Session
@@ -54,11 +58,13 @@ def classify(previous: ScrapedDocument | None, new_hash: str, title: str, conten
 
 
 def run(sources: list[dict], fetcher: Fetcher, *, db: Session | None, corpus_titles: set[str],
-        limit: int | None = None, dry_run: bool = False, log=print) -> dict:
+        limit: int | None = None, dry_run: bool = False, log=print,
+        previous: dict[str, str] | None = None) -> dict:
     built = [s for s in sources if s.get("enabled")]
     per_item_quota = math.ceil(limit / len(built)) if limit and built else None
     run_row = ScrapeRun(id=uuid.uuid4(), started_at=now(), dry_run=dry_run)
     summary: dict[str, dict] = {}
+    items_out: list[dict] = []
     stop = False
     for src in built:
         counts = {"checked": 0, "new": 0, "changed": 0, "unchanged": 0, "baseline": 0, "errors": 0,
@@ -92,8 +98,13 @@ def run(sources: list[dict], fetcher: Fetcher, *, db: Session | None, corpus_tit
                         text = pdf_text(pdf.content)
                         h = content_hash(text)
                         prev = _latest(db, item.url)
+                        if prev is None and db is None and previous and item.url in previous:
+                            prev = SimpleNamespace(content_hash=previous[item.url])   # an earlier dry run
                         kind = classify(prev, h, item.title, src["content_type"], corpus_titles)
                         counts[kind] += 1
+                        items_out.append({"source": src["name"], "title": item.title, "url": item.url,
+                                          "pdf_url": pdf_url, "content_hash": h, "outcome": kind,
+                                          "chars": len(text)})
                         log(f"  {kind:9} {item.title[:70]} ({len(text)} chars)")
                         if dry_run or db is None or kind == "unchanged":
                             continue
@@ -112,6 +123,9 @@ def run(sources: list[dict], fetcher: Fetcher, *, db: Session | None, corpus_tit
                         raise
                     except (requests.RequestException, ValueError, RuntimeError, DisallowedError) as e:
                         counts["errors"] += 1
+                        items_out.append({"source": src["name"], "title": item.title, "url": item.url,
+                                          "pdf_url": None, "content_hash": None, "outcome": "error",
+                                          "error": f"{type(e).__name__}: {str(e)[:120]}"})
                         if len(counts["error_samples"]) < 3:
                             counts["error_samples"].append(f"{item.url}: {type(e).__name__}: {str(e)[:120]}")
                         log(f"  ERROR {item.url}: {e}")
@@ -136,4 +150,4 @@ def run(sources: list[dict], fetcher: Fetcher, *, db: Session | None, corpus_tit
     return {"started_at": run_row.started_at.isoformat(), "finished_at": run_row.finished_at.isoformat(),
             "pages_checked": fetcher.pages, "requests": fetcher.requests_made, "pdfs": fetcher.pdfs,
             "new": run_row.new_count, "changed": run_row.changed_count, "errors": run_row.error_count,
-            "dry_run": dry_run, "per_source": summary}
+            "dry_run": dry_run, "per_source": summary, "items": items_out}
