@@ -221,6 +221,11 @@ def _passage_index(passages: list[dict]) -> list[tuple[str, str]]:
             entries.append((_canon(num), "".join(_statute_words(alias))))
         for m in _HEADING_RE.finditer(text):
             entries.append((_canon(m.group(1)), source))
+        # A knowledge-base (kb-v2) record holds one section; its number is in
+        # the record, not in the text ("Section 302" was flagged unverified
+        # even when the s.302 record itself was retrieved).
+        if p.get("section") and re.match(r"\d", str(p["section"])):
+            entries.append((_canon(str(p["section"])), source))
     return entries
 
 
@@ -389,10 +394,96 @@ def _remove_case_citations(text: str, passages_norm: str, marker: str,
 _FULLWIDTH_MARKER = re.compile(r"【\s*(\d{1,2}(?:\s*,\s*\d{1,2})*)\s*(?:†[^】]*)?】")
 
 
+_GROUPED_MARKER = re.compile(r"\[(\d{1,2}(?:\s*(?:,|[-–—])\s*\d{1,2})+)\](?!\()")
+
+
+def _expand_group(group: str) -> str:
+    out: list[int] = []
+    for part in group.split(","):
+        bounds = [int(x) for x in re.split(r"\s*[-–—]\s*", part.strip()) if x]
+        if len(bounds) == 2 and 0 < bounds[1] - bounds[0] <= 10:
+            out.extend(range(bounds[0], bounds[1] + 1))
+        else:
+            out.extend(bounds)
+    return "".join(f"[{n}]" for n in out)
+
+
 def normalize_markers(text: str) -> str:
-    """Rewrite "【5†L1-L3】" to "[5]" and "【4, 5】" to "[4][5]"; other text unchanged."""
-    return _FULLWIDTH_MARKER.sub(
+    """Rewrite "【5†L1-L3】" to "[5]", "【4, 5】" and "[4, 5]" to "[4][5]", and
+    "[1-3]" to "[1][2][3]", so every cited source is counted; other text unchanged."""
+    text = _FULLWIDTH_MARKER.sub(
         lambda m: "".join(f"[{n.strip()}]" for n in m.group(1).split(",")), text)
+    return _GROUPED_MARKER.sub(lambda m: _expand_group(m.group(1)), text)
+
+
+# ---------------------------------------------------------------------------
+# Acts named in the answer (kb-v2 B7)
+# ---------------------------------------------------------------------------
+
+_ACT_WORD = r"(?:[A-Z][A-Za-z'\-]*|\((?:[A-Z][A-Za-z]*\s?)+\))"
+_ACT_NAME_RE = re.compile(
+    rf"\b({_ACT_WORD}(?:\s+(?:{_ACT_WORD}|of|and|the|for|on|in|to|e))*\s+(?:Act|Ordinance|Order|Code))\b"
+    r"(?:,?\s*(\d{4}))?")
+_ACT_ABBR_RE = re.compile(r"(?<![\w.])(PPC|CrPC|Cr\.\s?P\.\s?C\.?|CPC|MFLO|QSO|DMMA)(?![\w])")
+_LEAD_WORDS = re.compile(
+    r"^(?:(?:The|Under|According|To|In|Per|As|By|Section|Sections|Article|Articles|This|That|Both|Unlike|Also|"
+    r"And|Of|While|From|With|See|If|When|Whereas|Similarly|Moreover|However|Here|Note)\s+)+", re.I)
+_ABBR_TITLE = {"ppc": "Pakistan Penal Code", "crpc": "Code of Criminal Procedure", "cpc": "Code of Civil Procedure",
+               "mflo": "Muslim Family Laws Ordinance", "qso": "Qanun-e-Shahadat Order",
+               "dmma": "Dissolution of Muslim Marriages Act"}
+
+
+def _named_acts(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, name) of each Act / Ordinance / Order / Code named in the text."""
+    out = []
+    for m in _ACT_NAME_RE.finditer(text):
+        name = m.group(1)
+        lead = _LEAD_WORDS.match(name)
+        start = m.start(1) + (lead.end() if lead else 0)
+        name = text[start:m.end(1)]
+        if len(name.split()) < 2:              # "Act", "the Code": too generic
+            continue
+        out.append((start, m.end(), name + (f", {m.group(2)}" if m.group(2) else "")))
+    taken = [(s, e) for s, e, _ in out]
+    for m in _ACT_ABBR_RE.finditer(text):
+        if not any(s <= m.start() < e for s, e in taken):
+            key = re.sub(r"[^a-z]", "", m.group(1).lower())
+            out.append((m.start(), m.end(), _ABBR_TITLE.get(key, m.group(1))))
+    return sorted(out)
+
+
+def _matches_source(name: str, source: str) -> bool:
+    return _owner_matches(_statute_words(name), _squash(source))
+
+
+def _act_problems(text: str, passages: list[dict], passages_norm: str) -> list[tuple[str, int]]:
+    """[(note item, position for the inline flag)] for (a) Acts named but not
+    retrieved and (b) [n] markers whose source isn't the Act named in their sentence."""
+    sources = [p.get("source") or "" for p in passages]
+    texts_squashed = _squash(passages_norm)
+    acts = _named_acts(_norm(text))
+    problems: list[tuple[str, int]] = []
+    seen: set[str] = set()
+    for _start, end, name in acts:
+        words = _statute_words(name)
+        if not words or any(_matches_source(name, s) for s in sources) or _owner_matches(words, texts_squashed):
+            continue
+        if name not in seen:
+            seen.add(name)
+            problems.append((f"Act named but not found in the retrieved text: {name}", end))
+    for m in re.finditer(r"\[(\d{1,2})\](?!\()", text):
+        n = int(m.group(1))
+        if not 1 <= n <= len(sources):
+            continue
+        left, right = _sentence_span(text, m.start(), m.end())
+        named = [name for s, e, name in acts if left <= s < right and _statute_words(name)]
+        cited_text = _squash(_norm(passages[n - 1].get("text") or ""))
+        # fine if [n] is that Act, or its text mentions the Act ("s.3: the Arbitration Act shall not apply")
+        if named and not any(_matches_source(name, sources[n - 1])
+                             or _owner_matches(_statute_words(name), cited_text) for name in named):
+            problems.append((f"[{n}] cites {sources[n - 1]}, but the sentence names {' / '.join(dict.fromkeys(named))}",
+                             m.end()))
+    return problems
 
 
 def check_citations(answer: str, passages: list[dict], lang: str = "en") -> CitationCheck:
@@ -434,6 +525,17 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en") -> Cita
         inserts.append((ref.end, f" {flag}"))
         seen_unverified[tag] = None
     for pos, s in sorted(inserts, reverse=True):
+        text = text[:pos] + s + text[pos:]
+
+    # 4) Acts named in the answer (kb-v2 B7): (a) each must be a retrieved
+    #    source or appear in the retrieved text; (b) a [n] marker must point
+    #    to a source matching an Act named in its own sentence.
+    inserts = []
+    for item, pos in _act_problems(text, passages, passages_norm):
+        if item not in seen_unverified:
+            seen_unverified[item] = None
+            inserts.append((pos, f" {words['flag']}"))
+    for pos, s in sorted(set(inserts), reverse=True):
         text = text[:pos] + s + text[pos:]
     result.unverified = list(seen_unverified)
     if result.unverified:
