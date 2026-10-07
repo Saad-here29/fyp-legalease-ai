@@ -151,7 +151,7 @@ def exact_passages(question: str) -> list[dict]:
             "section": r.get("section"), "heading": r.get("heading"),
             "source_tier": r.get("source_tier"), "source_url": r.get("source_url"),
             "category": r.get("category"), "year": r.get("year"), "jurisdiction": r.get("jurisdiction"),
-            "audience": r.get("audience") or "general", "kb": "v2",
+            "audience": r.get("audience") or "general", "kb": "v2", "status": r.get("status"),
             "exact_match": True, "relevance": 1.0,
         })
         if len(hits) == MAX_EXACT:

@@ -18,6 +18,7 @@ Pipeline (Final Report Algorithm 5):
 
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from functools import lru_cache
@@ -444,16 +445,32 @@ def case_law_citation(j: dict) -> dict:
             "excerpt": j["text"][:240], "relevance": j["score"]}
 
 
+REPEALED_RULE = (
+    "REPEALED LAWS: a passage whose source line says REPEALED is from a law that has been repealed. If you use "
+    "it, say plainly that the law has been repealed and is no longer in force."
+)
+
+
+def repealed_note(answer: str, passages: list[dict]) -> str:
+    """kb-v2 C8: an answer drawing on a repealed law must say so; if it doesn't, a note is added."""
+    titles = list(dict.fromkeys(embeddings.record_source(p) for p in passages if p.get("status") == "repealed"))
+    if not titles or re.search(r"repeal", answer or "", re.I):
+        return answer
+    return (answer or "").rstrip() + "\n\nNote: " + "; ".join(titles) + (
+        " has" if len(titles) == 1 else " have") + " been repealed and may no longer be in force."
+
+
 def source_label(p: dict) -> str:
     """' - s.302 Punishment of qatl-i-amd' for a kb-v2 section passage (its
     number is in the record, not in its text), '' for a v1 chunk. An exact
     match for the section the user named says so."""
     sec, head = p.get("section"), p.get("heading")
+    repealed = " (REPEALED: this law has been repealed)" if p.get("status") == "repealed" else ""
     if not sec:
-        return ""
+        return repealed
     label = f"s.{sec}" if str(sec)[:1].isdigit() else str(sec)
     out = f" - {label}" + (f" {head}" if head else "")
-    return out + (" (the section named in the question)" if p.get("exact_match") else "")
+    return out + (" (the section named in the question)" if p.get("exact_match") else "") + repealed
 
 
 def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
@@ -474,7 +491,11 @@ def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
     )
     system = build_system_prompt(context_block, lang, strict=strict,
                                  cases=cases_block(judgments) if judgments else None)
+    if any(p.get("status") == "repealed" for p in passages):
+        system = system.replace("--- Relevant Pakistani legal authorities", REPEALED_RULE +
+                                "\n\n--- Relevant Pakistani legal authorities", 1)
     raw_text = ai.chat(history, system=system)
+    raw_text = repealed_note(raw_text, passages)
     checked = check_citations(
         raw_text,
         [{"source": embeddings.record_source(p), "text": embeddings.record_text(p),

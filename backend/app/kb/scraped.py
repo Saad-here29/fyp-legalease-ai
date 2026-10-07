@@ -155,6 +155,9 @@ def search_statutes(query: str, top_k: int, filters: dict | None = None, *, qvec
             "jurisdiction": c["jurisdiction"], "audience": c.get("audience") or "general",
             "doc_id": d, "kb": "scraped", "relevance": s,
         }
+        hit["status"] = c.get("status")
+        if c.get("status") == "repealed" and not (filters or {}).get("include_repealed"):
+            continue                           # kb-v2 C8: repealed laws are left out by default
         if embeddings.passes_filters(hit, filters):
             hits.append(hit)
     hits.sort(key=lambda h: h["relevance"], reverse=True)

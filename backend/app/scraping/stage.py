@@ -175,7 +175,10 @@ def text_problem(text: str, info: dict, min_chars: int) -> str | None:
 
 _YEAR = re.compile(r"(?<!\d)(1[89]\d\d|20\d\d)(?!\d)")
 _DOC_TYPE = re.compile(r"\b(Constitution|Ordinance|Order|Regulations?|Rules|Code|Act)\b", re.I)
-_REPEALED = re.compile(r"\(\s*Repeal(?:ed)?\b[^)]*\)?", re.I)      # "(Repealed by Act XVI of 2020)", "(Repeal by …"
+# Pakistan Code writes a law's status into its title: "(Repealed by Act XVI of 2020)", "(Repeal by Ord. 52
+# of 2001, s.610)", "(Repealed)". A repealing Act's own name, "Federal Court (Repeal) Act, 2014", is not one.
+_REPEALED = re.compile(r"\(\s*Repeal(?:ed)?\s+(?:by|vide|through|under|w\.?\s?e\.?\s?f)\b[^)]*\)?|\(\s*Repealed\s*\)",
+                       re.I)
 _SHORT_TITLE = re.compile(
     r"\b(?:This|The)\s+(?:Act|Ordinance|Order|Regulations?)\s+may\s+be\s+called\s+(?:as\s+)?(?:the\s+)?"
     r"(.{5,220}?(?:1[89]\d\d|20\d\d))\s*\)?\s*[.;,]", re.I)
@@ -218,7 +221,11 @@ def clean_title(title: str) -> tuple[str, bool]:
     """(title without "(Repealed by …)", whether it says repealed)."""
     t = " ".join((title or "").split())
     repealed = bool(_REPEALED.search(t))
-    return _REPEALED.sub("", t).strip(" ,"), repealed
+    t = _REPEALED.sub("", t).strip(" ,")
+    while t.count(")") > t.count("(") and ")" in t:      # "(... s.3(w.e.f 31-05-2011))" leaves one ")"
+        i = t.rfind(")")
+        t = (t[:i] + t[i + 1:]).strip(" ,")
+    return t, repealed
 
 
 def year_of(title: str, text: str = "") -> int | None:

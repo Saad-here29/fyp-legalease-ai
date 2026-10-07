@@ -150,6 +150,7 @@ class ResearchService:
         category: str | None = None,
         jurisdiction: str | None = None,
         source_tier: int | None = None,
+        include_repealed: bool = False,
     ) -> list[ResearchResult]:
         embeddings.build_or_load(self.db)
         search_query = self._rewrite(query)
@@ -164,13 +165,15 @@ class ResearchService:
                     "year_from": year_from,
                     "year_to": year_to,
                     "case_type": case_type,
+                    "include_repealed": include_repealed,
                 },
             )
         else:
             # Strict knowledge-base filters: search a wider pool, keep only
             # passages whose law's metadata is known and matches.
             pool = embeddings.search(search_query, top_k=min(50, top_k * 10),
-                                     filters={"court": court, "case_type": case_type})
+                                     filters={"court": court, "case_type": case_type,
+                                              "include_repealed": include_repealed})
             hits = [h for h in (with_kb_metadata(h) for h in pool) if matches_kb_filters(h, kb_filters)][:top_k]
 
         results: list[ResearchResult] = []

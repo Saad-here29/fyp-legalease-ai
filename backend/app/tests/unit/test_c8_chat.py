@@ -183,3 +183,85 @@ def test_model_refusal_carries_no_sources_or_cases(db_session, chat_user, monkey
     svc.ai = Model("This question is outside the scope of Pakistani law I can answer on.")
     reply = svc.send(chat_user, "Recommend a cricket bat for the law exam")
     assert reply["citations"] == [] and reply["sources"] == [] and reply["case_law"] == []
+
+
+# --------------------------------------------------------------------------- repealed laws (C8 item 6)
+
+@pytest.mark.parametrize("title, clean, repealed", [
+    ("Women in Distress Act, 1996 (Repealed by Act XVI of 2020)", "Women in Distress Act, 1996", True),
+    ("Boilers Act, 1923(Repeal by Ord. 52 of 2001, s,610)", "Boilers Act, 1923", True),
+    ("Agricultural Census Act, 1958 (Repealed by Act XiV of 2011 s.3(w.e.f 31-05-2011))",
+     "Agricultural Census Act, 1958", True),
+    ("Some Act, 1900 (Repealed)", "Some Act, 1900", True),
+    ("Federal Court(Repeal) Act, 2014", "Federal Court(Repeal) Act, 2014", False),       # a repealing Act: in force
+    ("Jute (Repeal) Ordinance, 1983", "Jute (Repeal) Ordinance, 1983", False),
+])
+def test_repeal_read_from_the_title(title, clean, repealed):
+    from app.scraping.stage import clean_title
+    assert clean_title(title) == (clean, repealed)
+
+
+def test_repealed_note_and_label():
+    p = {"source": "Boilers Act, 1923", "section": "3", "heading": "Definitions", "status": "repealed", "text": "x"}
+    assert chat.source_label(p).endswith("(REPEALED: this law has been repealed)")
+    assert chat.repealed_note("A boiler must be registered [1].", [p]).endswith(
+        "Note: Boilers Act, 1923 has been repealed and may no longer be in force.")
+    assert chat.repealed_note("The Boilers Act, 1923 was repealed in 2001 [1].", [p]) == \
+        "The Boilers Act, 1923 was repealed in 2001 [1]."
+    assert chat.repealed_note("Fine [1].", [{**p, "status": "current"}]) == "Fine [1]."
+
+
+def test_repealed_rule_only_when_a_repealed_passage_is_sent():
+    class AI:
+        system = ""
+
+        def chat(self, history, system=None):
+            AI.system = system
+            return "Short answer: see [1]."
+    p = {"source": "Boilers Act, 1923", "section": "3", "heading": "Definitions", "status": "repealed",
+         "text": "In this Act boiler means ...", "relevance": 0.8}
+    out = chat.compose_answer(AI(), [p], [{"role": "user", "content": "q"}], "en")
+    assert "REPEALED LAWS:" in AI.system and "has been repealed" in out.text
+    chat.compose_answer(AI(), [{**p, "status": "current"}], [{"role": "user", "content": "q"}], "en")
+    assert "REPEALED LAWS:" not in AI.system
+
+
+def test_search_leaves_out_repealed_unless_asked(monkeypatch):
+    import numpy as np
+
+    from app.ai import embeddings
+    chunks = [{"doc_id": f"x/s{i}", "title": t, "section": "1", "heading": "h", "source_tier": 1, "category": None,
+               "year": 1900, "jurisdiction": "Pakistan", "source_type": "statute", "source_url": None, "status": st,
+               "source": "s", "audience": "general", "start": 0, "end": 5, "window": 1, "chunk_text": "text"}
+              for i, (t, st) in enumerate((("Old Act, 1900", "repealed"), ("Live Act, 1950", "current")))]
+
+    class Index:
+        ntotal = 2
+
+        def search(self, q, k):
+            return np.array([[0.9, 0.8]]), np.array([[0, 1]])
+    monkeypatch.setattr(index_v2._V2_INDEX, "index", Index())
+    monkeypatch.setattr(index_v2._V2_INDEX, "chunks", chunks)
+    monkeypatch.setattr(index_v2._V2_INDEX, "texts", {"x/s0": "old", "x/s1": "live"})
+    monkeypatch.setattr(index_v2._V2_INDEX, "excluded", set())
+    monkeypatch.setattr(embeddings, "embed", lambda t: np.ones((1, 4), np.float32))
+    monkeypatch.setattr(embeddings, "_search_v1", lambda q, k, f=None, **kw: [
+        {"source": "THE OLD COPY ACT, 1901", "text": "v1", "relevance": 0.7},
+        {"source": "THE LIVE COPY ACT, 1951", "text": "v1", "relevance": 0.6}])
+    monkeypatch.setattr(index_v2, "catalog_repealed", lambda: frozenset({"THE OLD COPY ACT, 1901"}))
+    monkeypatch.setattr(settings, "HYBRID_SEARCH", False)
+    default = [h["source"] for h in index_v2.search("q", 5)]
+    assert default == ["Live Act, 1950", "THE LIVE COPY ACT, 1951"]
+    wanted = [h["source"] for h in index_v2.search("q", 5, {"include_repealed": True})]
+    assert wanted == ["Old Act, 1900", "Live Act, 1950", "THE OLD COPY ACT, 1901", "THE LIVE COPY ACT, 1951"]
+
+
+def test_research_passes_include_repealed(monkeypatch):
+    from app.services import research_service
+    seen = []
+    monkeypatch.setattr(research_service.embeddings, "build_or_load", lambda *a: 1)
+    monkeypatch.setattr(research_service, "rewrite_for_search", lambda q: q)
+    monkeypatch.setattr(research_service.embeddings, "search", lambda q, top_k, filters=None: seen.append(filters) or [])
+    research_service.ResearchService(None).search("boilers", include_repealed=True)
+    research_service.ResearchService(None).search("boilers")
+    assert seen[0]["include_repealed"] is True and seen[1]["include_repealed"] is False

@@ -24,6 +24,8 @@ class ResearchSearchRequest(APIModel):
     # on; otherwise every search is a statute search, as before. Judgments
     # take year_from, year_to and court; the other filters are statute-only.
     scope: Literal["statutes", "judgments", "all"] = "statutes"
+    # kb-v2 C8: repealed laws are left out of search unless asked for.
+    include_repealed: bool = False
 
 
 class JudgmentResult(APIModel):

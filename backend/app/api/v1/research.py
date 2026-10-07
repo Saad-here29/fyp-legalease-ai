@@ -72,6 +72,7 @@ def search(
         category=payload.category,
         jurisdiction=payload.jurisdiction,
         source_tier=payload.source_tier,
+        include_repealed=payload.include_repealed,
     )
     active = any(v not in (None, "") for v in (payload.category, payload.jurisdiction, payload.source_tier,
                                                payload.year_from, payload.year_to))

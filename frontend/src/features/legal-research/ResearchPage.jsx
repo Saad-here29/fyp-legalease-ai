@@ -75,6 +75,9 @@ export default function ResearchPage() {
   );
   // Sent only when judgments are on, so the request is unchanged otherwise.
   const scopePayload = judgmentsInfo ? { scope, ...(court && { court }) } : {};
+  // kb-v2 C8: repealed laws are left out unless asked for (sent only when ticked).
+  const includeRepealed = params.get("rep") === "1";
+  if (includeRepealed) scopePayload.include_repealed = true;
   const setFilter = (key, value) => {
     const next = new URLSearchParams(params);
     if (value === "") next.delete(key);
@@ -84,7 +87,7 @@ export default function ResearchPage() {
   };
   const clearFilters = () => {
     const next = new URLSearchParams(params);
-    ["cat", "jur", "tier", "yf", "yt", "court"].forEach((key) => next.delete(key));
+    ["cat", "jur", "tier", "yf", "yt", "court", "rep"].forEach((key) => next.delete(key));
     setParams(next, { replace: true });
   };
   const { data: kbStats } = useQuery({ queryKey: ["kb-stats"], queryFn: kbApi.stats, staleTime: 5 * 60 * 1000 });
@@ -182,6 +185,7 @@ export default function ResearchPage() {
         court={court}
         courts={Object.keys(judgmentsInfo?.courts || {}).filter((c) => c !== "Unknown")}
         filters={filters}
+        includeRepealed={includeRepealed}
         setFilter={setFilter}
         clearFilters={clearFilters}
         categories={kbStats?.categories || []}
@@ -399,7 +403,8 @@ const SCOPES = [
   ["all", "All"],
 ];
 
-function FilterBar({ scope, setScope, court, courts, filters, setFilter, clearFilters, categories, jurisdictions, coverage }) {
+function FilterBar({ scope, setScope, court, courts, filters, setFilter, clearFilters, categories, jurisdictions, coverage,
+  includeRepealed }) {
   const [yf, setYf] = useState(filters.year_from);
   const [yt, setYt] = useState(filters.year_to);
   const statuteFilters = scope !== "judgments";
@@ -490,6 +495,17 @@ function FilterBar({ scope, setScope, court, courts, filters, setFilter, clearFi
         </label>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+        {statuteFilters && (
+          <label className="inline-flex items-center gap-2 min-h-[44px] font-ds-sans text-[15px] text-ds-text">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={!!includeRepealed}
+              onChange={(e) => setFilter("rep", e.target.checked ? "1" : "")}
+            />
+            Include repealed laws
+          </label>
+        )}
         {coverage && statuteFilters && (
           <p className="ds-body text-ds-text-2">
             Filters cover laws with known metadata ({coverage.known.toLocaleString()} of {coverage.total.toLocaleString()}).

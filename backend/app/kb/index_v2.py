@@ -359,6 +359,14 @@ def passage(chunk: dict, full: str) -> str:
     return full[a: b if b > 0 else len(full)]
 
 
+def catalog_repealed() -> frozenset[str]:
+    from app.kb import catalog
+    try:
+        return catalog.repealed_v1_sources()
+    except Exception:  # noqa: BLE001 — a missing catalog must not break search
+        return frozenset()
+
+
 def _with_cosine(doc_ids: list[str], query: str, qvec, best: dict, floor: float) -> list[str]:
     """The given sections that pass audience gating; one not in `best` gets its
     true cosine (closest chunk) and is kept only at `floor` or above."""
@@ -400,6 +408,7 @@ def search(query: str, top_k: int, filters: dict | None = None, *, hint_ids: lis
     hits: list[dict] = []
     lexical_rank: list[str] = []
     hint_rank: list[str] = []
+    include_repealed = bool((filters or {}).get("include_repealed"))
     if _V2_INDEX.load():
         scores, ids = _V2_INDEX.index.search(qvec, min(_V2_INDEX.index.ntotal, top_k * 30))
         best: dict[str, tuple[float, int]] = {}
@@ -424,12 +433,15 @@ def search(query: str, top_k: int, filters: dict | None = None, *, hint_ids: lis
                 "section": c["section"], "heading": c["heading"], "source_tier": c["source_tier"],
                 "source_url": c["source_url"], "category": c["category"], "year": c["year"],
                 "jurisdiction": c["jurisdiction"], "audience": c.get("audience") or "general",
-                "doc_id": d, "kb": "v2", "relevance": s,
+                "doc_id": d, "kb": "v2", "relevance": s, "status": c.get("status"),
             }
+            if c.get("status") == "repealed" and not include_repealed:
+                continue                       # kb-v2 C8: repealed laws are left out by default
             if embeddings.passes_filters(hit, filters):
                 hits.append(hit)
     old = embeddings._search_v1(query, top_k * 8, filters, qvec=qvec)
-    hits += [h for h in old if h.get("source") not in _V2_INDEX.excluded]
+    repealed_v1 = frozenset() if include_repealed else catalog_repealed()
+    hits += [h for h in old if h.get("source") not in _V2_INDEX.excluded and h.get("source") not in repealed_v1]
     hits.sort(key=lambda h: h["relevance"], reverse=True)
     if lexical_rank or hint_rank:
         from app.kb import lexical

@@ -139,6 +139,30 @@ def _load() -> dict:
             "v1_meta": _v1_metadata(cmap, laws)}
 
 
+def repealed_v1_sources() -> frozenset[str]:
+    """kb-v2 C8: old-index source names (corpus titles) of laws the Pakistan
+    Code listing marks repealed, and of sectioned corpus laws whose status is
+    repealed. Cached per catalog version."""
+    d = data()
+    cached = d.get("_repealed_v1")
+    if cached and cached[0] == d.get("key"):
+        return cached[1]
+    out: set[str] = set()
+    for c in d["cmap"].get("categories", []):
+        for law in c.get("laws", []):
+            m = law.get("match")
+            if law.get("status") == "repealed" and m and m.get("how") != "possible":
+                out.update(x["title"] for x in m.get("corpus", []))
+    report = kb_dir() / "records_all" / "_report.json"
+    if report.exists():
+        repealed = {law["title"] for law in d["laws"].values() if law.get("status") == "repealed"}
+        for doc in json.loads(report.read_text(encoding="utf-8")).get("documents", []):
+            if doc.get("outcome") == "sectioned" and doc.get("title") in repealed:
+                out.add(doc["corpus_title"])
+    d["_repealed_v1"] = (d.get("key"), frozenset(out))
+    return d["_repealed_v1"][1]
+
+
 def _v1_metadata(cmap: dict, laws: dict) -> dict[str, dict]:
     """Old-index source name -> {category, year, jurisdiction, source_tier}, for
     titles that matched a Pakistan Code category listing (exact or near)."""
