@@ -11,6 +11,61 @@ accounts**, on the same ports, so you can switch between them in a minute.
 Use **PowerShell**, one terminal per server, and start them yourself.
 Close any terminal that still runs the other mode first (ports 8000 and 5173).
 
+## One-click start (kb-v2 C5): use this first
+
+```powershell
+cd E:\Users\fyp-legalease-ai-main\legalease-kb
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1          # everything on
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1 -Safe    # fallback: all four flags off
+```
+
+It stops whatever listens on ports 8000 and 5173, opens the backend and the frontend in two new windows
+(with `KB_V2`, `JUDGMENTS_V2`, `REASONING_V2`, `SCRAPED_V2` all on, or all off with `-Safe`, plus the
+Hugging Face offline variables and the main folder's venv), waits for `/health`, prints it, and says in
+yellow if any flag isn't as expected or an index is empty. Then open http://localhost:5173.
+
+Options: `-BackendPort 8100 -FrontendPort 5273` (a second copy, e.g. for testing), `-Python <python.exe>`.
+Checked on 2026-10-07 on 8100/5273: full mode reported all four flags on (judgments 64,322 chunks, scraped
+2,400 + 5,593); `-Safe` stopped that copy and came back with all four off.
+
+### Final numbers (2026-10-07)
+
+| What | Number | From |
+|---|---:|---|
+| Core laws (section records) | 35 laws, 3,177 records | `backend/storage/kb/records/*.jsonl` |
+| Core index (faiss_v2) | 11,193 chunks | `faiss_v2_meta.json` |
+| Scraped laws (pilot, caps 10) | 20 laws (Pakistan Code 10, KP Code 10), 589 records | `storage/kb/scraped/records/statutes/` |
+| Scraped index (faiss_scraped) | 2,400 chunks; 6 old-index copies replaced | `faiss_scraped_meta.json` |
+| Judgments indexed (pilot) | 400 judgments, 64,322 chunks (complete, 2026-10-07) | `faiss_judgments_meta.json` |
+| Judgments listed (Knowledge Base) | 2,554 distinct usable (3,739 usable records, 486 excluded) | `storage/kb/judgments/records/` |
+| Scraped FSC judgments | 10 judgments, 5,593 chunks | `faiss_scraped_judgments_meta.json` |
+| Scraping sources (last run) | Pakistan Code, KP Code, Federal Shariat Court: 10 fetched each, 30 new, 0 quarantined, 0 errors | `storage/kb/scraped/update_log.jsonl` |
+| Query hints | 7 (talaq, khula, dower, maintenance, custody, inheritance, nikah registration) | `storage/kb/query_hints.json` |
+| Retrieval, 36 questions, top 5 | 25/36 without hints, 30/36 with; none worse | `docs/query_hints_eval_2026-10-07.md` |
+| Backend tests | 603 passing | `pytest app/tests` |
+
+### What is not done
+
+- **Scraping:** only the 10/10/10 pilot has been fetched; the full run (caps 120 / 60 / 100) and the weekly task
+  (`register_weekly_task.ps1`) are ready but not run or registered. Supreme Court and Lahore High Court
+  block crawlers; the other courts and provincial codes need their own parsers. Migration a3c5e7f90b12 is
+  still not applied (file staging only).
+- **Judgments:** 400 of the 2,554 distinct usable judgments are indexed (the pilot). The dataset's source and
+  licence are unconfirmed, so all judgments are staged, not reviewed. 1,227 are shown by case number because
+  their party names weren't read cleanly; 172 have neither name nor number. The Supreme Court PDF archive
+  (`archive__4__1.zip`) was not found.
+- **Retrieval:** G03, G13, G20, G22, G25 and G26 still miss their section in the top 5 (contract formation,
+  the qatl-i-amd definition, QSO attestation, writ jurisdiction, declaratory suits, minors' contracts). Query
+  hints cover family law only, in English only.
+- **Grounding:** the quote check (reasoning) and the consequence check (chat) work on words: they prove a
+  quote or a term is in the source, not that the conclusion drawn from it is right, nor who a penalty
+  applies to (MFLO s.5(4) punishes the person who fails to report a marriage, not the spouses).
+- **Reasoning layer:** tested with a mocked model only; no live Groq run yet. With the summary in the same
+  minute, Groq's 8,000 tokens/minute often means one 429 and a back-off. The saved reasoning (inside
+  `identified_clauses`) isn't shown again after the page is left.
+- **Browser:** the C2–C5 screens (Judgments tab, Research switch, Case law sources, Sources and updates,
+  Reasoning tab) passed lint and build but haven't been clicked through end to end.
+
 ## Primary: kb-v2 from the worktree
 
 **Terminal A: backend** (http://localhost:8000)

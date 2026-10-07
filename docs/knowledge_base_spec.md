@@ -366,6 +366,61 @@ Plus `counts` (returned, kept, dropped, dropped_reasons, flagged, statutes),
 `coverage` (partial, note, tokens), `related_cases_note`, `disclaimer`
 ("AI-assisted analysis; verify against the original").
 
+### b6) Query hints and the consequence rule (Phase C5)
+
+**Query hints** (`backend/storage/kb/query_hints.json`, committed;
+`app/kb/query_hints.py`): with `KB_V2` and `QUERY_HINTS` on, a question
+containing a trigger (whole word or phrase) and none of its "unless" words gets
+the hint's search terms appended before embedding. No hints for a question
+naming another country's law. Terms name Acts, sections and procedural words,
+never conclusions (a test bans words like void, entitled, must). Evaluated in
+`docs/query_hints_eval_2026-10-07.md`: 25/36 -> 30/36 in the top 5, none
+worse, no off-topic question lifted past 0.65.
+
+**Consequence rule** (with `KB_V2` on): the chat prompt says not to call
+anything void, invalid, illegal, unlawful, unenforceable or punishable, or give
+a penalty, unless a passage says so; when a passage only requires something,
+say what it requires and stop. The citation check flags any such term the
+passages don't contain, and any penalty figure ("2 years") they don't state.
+
+## Final numbers and what is not done (2026-10-07)
+
+| What | Number | From |
+|---|---:|---|
+| Core laws (section records) | 35 laws, 3,177 records | `backend/storage/kb/records/*.jsonl` |
+| Core index (faiss_v2) | 11,193 chunks | `faiss_v2_meta.json` |
+| Scraped laws (pilot, caps 10) | 20 laws (Pakistan Code 10, KP Code 10), 589 records | `storage/kb/scraped/records/statutes/` |
+| Scraped index (faiss_scraped) | 2,400 chunks; 6 old-index copies replaced | `faiss_scraped_meta.json` |
+| Judgments indexed (pilot) | 400 judgments, 64,322 chunks (complete, 2026-10-07) | `faiss_judgments_meta.json` |
+| Judgments listed (Knowledge Base) | 2,554 distinct usable (3,739 usable records, 486 excluded) | `storage/kb/judgments/records/` |
+| Scraped FSC judgments | 10 judgments, 5,593 chunks | `faiss_scraped_judgments_meta.json` |
+| Scraping sources (last run) | Pakistan Code, KP Code, Federal Shariat Court: 10 fetched each, 30 new, 0 quarantined, 0 errors | `storage/kb/scraped/update_log.jsonl` |
+| Query hints | 7 (talaq, khula, dower, maintenance, custody, inheritance, nikah registration) | `storage/kb/query_hints.json` |
+| Retrieval, 36 questions, top 5 | 25/36 without hints, 30/36 with; none worse | `docs/query_hints_eval_2026-10-07.md` |
+| Backend tests | 603 passing | `pytest app/tests` |
+
+**Not done:**
+
+- **Scraping:** only the 10/10/10 pilot has been fetched; the full run (caps 120 / 60 / 100) and the weekly task
+  (`register_weekly_task.ps1`) are ready but not run or registered. Supreme Court and Lahore High Court
+  block crawlers; the other courts and provincial codes need their own parsers. Migration a3c5e7f90b12 is
+  still not applied (file staging only).
+- **Judgments:** 400 of the 2,554 distinct usable judgments are indexed (the pilot). The dataset's source and
+  licence are unconfirmed, so all judgments are staged, not reviewed. 1,227 are shown by case number because
+  their party names weren't read cleanly; 172 have neither name nor number. The Supreme Court PDF archive
+  (`archive__4__1.zip`) was not found.
+- **Retrieval:** G03, G13, G20, G22, G25 and G26 still miss their section in the top 5 (contract formation,
+  the qatl-i-amd definition, QSO attestation, writ jurisdiction, declaratory suits, minors' contracts). Query
+  hints cover family law only, in English only.
+- **Grounding:** the quote check (reasoning) and the consequence check (chat) work on words: they prove a
+  quote or a term is in the source, not that the conclusion drawn from it is right, nor who a penalty
+  applies to (MFLO s.5(4) punishes the person who fails to report a marriage, not the spouses).
+- **Reasoning layer:** tested with a mocked model only; no live Groq run yet. With the summary in the same
+  minute, Groq's 8,000 tokens/minute often means one 429 and a back-off. The saved reasoning (inside
+  `identified_clauses`) isn't shown again after the page is left.
+- **Browser:** the C2–C5 screens (Judgments tab, Research switch, Case law sources, Sources and updates,
+  Reasoning tab) passed lint and build but haven't been clicked through end to end.
+
 ## c) Source whitelist and tiers
 
 | Tier | Sources | Ingested? |
