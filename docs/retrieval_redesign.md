@@ -106,7 +106,7 @@ The live audit retrieved:
 2. **Chunks ignore section boundaries.** s. 10 sits mid-chunk between the
    end of s. 9 and the start of s. 11.
 3. **The cleaner glues words and destroys line structure.**
-   - In `scripts/clean_statute_corpus.py`, `_fix_letter_spacing()` turns
+   - In `scripts/kb/clean_statute_corpus.py`, `_fix_letter_spacing()` turns
      `\n` into a space and then deletes all spaces.
    - Every line break in the 109 letter-spaced documents therefore joins
      two words: "freeconsent", "arenot", "1872CONTENTSSECTIONS:".
@@ -677,7 +677,7 @@ Compare roughly 3 hours for the same embedding on this machine's CPU.
 **Why record:** the rewrite is a model call, non-deterministic, and not
 logged. Both indexes must be fed the **same** rewrites.
 
-**How:** add a `--record-rewrites` mode to `scripts/eval_research_retrieval.py`.
+**How:** add a `--record-rewrites` mode to `scripts/kb/eval_research_retrieval.py`.
 - It calls the backend's `AIClient.rewrite_search_query()` directly, not
   through HTTP: `/research/search` doesn't return the rewrite, and would
   also embed and search for no reason.

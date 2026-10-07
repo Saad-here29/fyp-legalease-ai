@@ -294,7 +294,7 @@ time budget and continue when run again):
 cd E:\Users\fyp-legalease-ai-main\legalease-kb\backend
 $env:HF_HUB_OFFLINE = "1"; $env:TRANSFORMERS_OFFLINE = "1"; $env:PYTHONIOENCODING = "utf-8"
 $py = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe"
-& $py ..\scripts\scrape_laws.py --stage-files --budget 0          # caps PC 120, KP 60, FSC 100
+& $py ..\scripts\scraping\scrape_laws.py --stage-files --budget 0          # caps PC 120, KP 60, FSC 100
 & $py ..\scripts\kb\build_index_scraped.py --budget 0
 ```
 

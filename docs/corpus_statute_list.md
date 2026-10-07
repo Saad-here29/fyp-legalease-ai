@@ -13,7 +13,7 @@ Generated 2026-09-28 from the live FAISS metadata (`backend/storage/faiss/legal_
 
 ## Provenance — what is and isn't recorded
 
-- **Recorded:** how the raw files were cleaned and merged (`data/processed/statutes/README.md`, `scripts/clean_statute_corpus.py`) and how chunks were built (`ai-services/corpus_builder/build_corpus.py`: 800-character windows, 100-character overlap).
+- **Recorded:** how the raw files were cleaned and merged (`data/processed/statutes/README.md`, `scripts/kb/clean_statute_corpus.py`) and how chunks were built (`ai-services/corpus_builder/build_corpus.py`: 800-character windows, 100-character overlap).
 - **Recorded:** which raw file each statute came from — the *Source* column below — taken from the `source_type` field of the cleaned corpus.
 - **Not recorded:** where the two raw datasets themselves came from — who compiled `Datatset For FAISS.csv`, how and when the Pakistan Code PDFs behind `pakistan_code_pdf_data.json` were collected and text-extracted, and which edition/date of each statute they reflect. `data/README.md` only says the raw data is "not published anywhere else yet". This should be documented before relying on the corpus in the report; it is not guessed here.
 - **Not recorded per chunk:** the index stores only `source` (title), `source_type` and `chunk_id` — no section numbers, years or jurisdiction.

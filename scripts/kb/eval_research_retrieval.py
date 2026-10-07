@@ -5,9 +5,9 @@ RAG_SIMILARITY_THRESHOLD.
 
 Needs the backend running. From the project root, with the backend venv:
 
-    python scripts/eval_research_retrieval.py              # all questions
-    python scripts/eval_research_retrieval.py --limit 5    # quick check, writes nothing
-    python scripts/eval_research_retrieval.py --out my.json
+    python scripts/kb/eval_research_retrieval.py              # all questions
+    python scripts/kb/eval_research_retrieval.py --limit 5    # quick check, writes nothing
+    python scripts/kb/eval_research_retrieval.py --out my.json
 
 Authentication, in order:
   1. LEGALEASE_TOKEN: an access token (e.g. copied from a login response).
@@ -33,7 +33,7 @@ from pathlib import Path
 
 import requests
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BACKEND = ROOT / "backend"
 QA_CSV = ROOT / "data" / "processed" / "qa_eval" / "Legal_QA_dataset_From_lawyers_clean.csv"
 DEFAULT_OUT = ROOT / "data" / "processed" / "qa_eval" / "retrieval_eval_results.json"

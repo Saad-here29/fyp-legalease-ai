@@ -30,16 +30,16 @@ because the scraper waits 2 seconds between requests to a site.
 
 ```powershell
 # 1. Pakistan Code (federal statutes)
-& $PY scripts\scrape_laws.py --dry-run --sources "Pakistan Code" --limit 2 --corpus $C
+& $PY scripts\scraping\scrape_laws.py --dry-run --sources "Pakistan Code" --limit 2 --corpus $C
 
 # 2. Khyber Pakhtunkhwa Code (provincial statutes); remembers the hashes
-& $PY scripts\scrape_laws.py --dry-run --sources "Khyber Pakhtunkhwa Code" --limit 2 --corpus $C --out $env:TEMP\kp_run1.json
+& $PY scripts\scraping\scrape_laws.py --dry-run --sources "Khyber Pakhtunkhwa Code" --limit 2 --corpus $C --out $env:TEMP\kp_run1.json
 
 # 3. Federal Shariat Court (judgments: staged only, never shown in the app)
-& $PY scripts\scrape_laws.py --dry-run --sources "Federal Shariat Court" --limit 2 --corpus $C
+& $PY scripts\scraping\scrape_laws.py --dry-run --sources "Federal Shariat Court" --limit 2 --corpus $C
 
 # 4. Khyber Pakhtunkhwa Code again, compared with run 2: change detection
-& $PY scripts\scrape_laws.py --dry-run --sources "Khyber Pakhtunkhwa Code" --limit 2 --corpus $C --compare-with $env:TEMP\kp_run1.json
+& $PY scripts\scraping\scrape_laws.py --dry-run --sources "Khyber Pakhtunkhwa Code" --limit 2 --corpus $C --compare-with $env:TEMP\kp_run1.json
 ```
 
 `--out` writes to your temp folder, not the repository. Nothing else is

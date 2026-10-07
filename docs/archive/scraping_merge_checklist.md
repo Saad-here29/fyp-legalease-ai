@@ -81,9 +81,9 @@ public schema, pass `--schema public` once that guard is relaxed. That's a
 one-line change; review and commit it separately, after step 5.
 
 - [ ] **Dry run first:**
-  `python ..\scripts\scrape_laws.py --dry-run --limit 5`
+  `python ..\scripts\scraping\scrape_laws.py --dry-run --limit 5`
 - [ ] **Then a small real run:**
-  `python ..\scripts\scrape_laws.py --schema public --limit 5 --out logs\scrape_first.json`
+  `python ..\scripts\scraping\scrape_laws.py --schema public --limit 5 --out logs\scrape_first.json`
 - [ ] **Verify:** `select source_name, status, change_kind, count(*) from
   scraped_documents group by 1, 2, 3;` shows staged and baseline rows only,
   and `scrape_runs` has one row.

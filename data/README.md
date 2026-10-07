@@ -54,7 +54,7 @@ Two commands, run from the project root with the backend venv active
 # 1. Clean + merge the raw statute sources, clean the QA eval set.
 #    Writes data/processed/statutes/legal_statutes_corpus.json (901 docs)
 #    and data/processed/qa_eval/Legal_QA_dataset_From_lawyers_clean.csv.
-python scripts/clean_statute_corpus.py
+python scripts/kb/clean_statute_corpus.py
 
 # 2. Chunk + embed the merged corpus and build the FAISS index.
 #    Writes backend/storage/faiss/legal_corpus.faiss + legal_corpus_meta.json.
@@ -106,7 +106,7 @@ Known limitations of the statute corpus, found by measurement on
    (e.g. "Muslim Family Laws Ordinance, 1961" and "THE MUSLIM FAMILY LAWS
    ORDINAN CE, 1961", from the CSV and PDF sources). This doubles their
    share of results and shows OCR titles to users. De-duplicate at the
-   cleaning step (`scripts/clean_statute_corpus.py`), keeping the cleaner
+   cleaning step (`scripts/kb/clean_statute_corpus.py`), keeping the cleaner
    copy, and repair OCR-split words in titles.
 4. **No year or court metadata.** Statute records carry only source, type,
    chunk id and text, so year/court search filters can't work (they were

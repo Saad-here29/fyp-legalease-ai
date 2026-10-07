@@ -15,13 +15,13 @@ Two commands, run from the project root with the backend venv:
           about 450 tokens. Resumes where it stopped; never falls back to
           another provider; stops on the first failed call.
 
-            python scripts/eval_chat_quality.py record --arm v2 --out docs/eval/chat_quality/rewrites_v2.json
+            python scripts/kb/eval_chat_quality.py record --arm v2 --out docs/eval/chat_quality/rewrites_v2.json
 
   replay  Runs retrieval offline on saved rewrites, through the chat's own
           retrieve_passages(), and writes what each question would get.
           No Groq calls.
 
-            python scripts/eval_chat_quality.py replay --rewrites docs/eval/chat_quality/rewrites_v2.json --out ...
+            python scripts/kb/eval_chat_quality.py replay --rewrites docs/eval/chat_quality/rewrites_v2.json --out ...
 
   compare Prints per-question gains and losses between two replays.
 """
@@ -37,7 +37,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BACKEND = ROOT / "backend"
 QA_CSV = ROOT / "data" / "processed" / "qa_eval" / "Legal_QA_dataset_From_lawyers_clean.csv"
 GOLD_MD = ROOT / "docs" / "retrieval_gold_set_draft.md"

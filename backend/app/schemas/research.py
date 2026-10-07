@@ -80,7 +80,7 @@ class SourceUpdate(APIModel):
 
 
 class ScrapeUpdates(APIModel):
-    """Freshness from the latest scraping run (scripts/scrape_laws.py).
+    """Freshness from the latest scraping run (scripts/scraping/scrape_laws.py).
     available is false until the scraping tables exist and a run has finished.
     New and changed documents are staged for review, not searchable."""
     available: bool = False

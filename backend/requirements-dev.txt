@@ -16,5 +16,5 @@ black==24.8.0
 mypy==1.11.2
 
 # ===== Scripts =====
-# scripts/eval_research_retrieval.py calls a running backend over HTTP
+# scripts/kb/eval_research_retrieval.py calls a running backend over HTTP
 requests==2.34.2

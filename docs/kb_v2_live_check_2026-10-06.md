@@ -49,7 +49,7 @@ Note: Research is not model-free. Every search runs the LLM query rewrite
     `has_table("scrape_runs")` first and returns "not available", so the line
     is hidden.
   - **`app/scraping/runner.py`:** writes them, but runs only from
-    `scripts/scrape_laws.py`, never from the server.
+    `scripts/scraping/scrape_laws.py`, never from the server.
   - **`create_all`:** runs only on SQLite, so the server never tries to
     create them.
   - **No errors** in the backend log.

@@ -4,7 +4,7 @@
     python ../scripts/scraping/run_weekly.py
     python ../scripts/scraping/run_weekly.py --scrape-budget 0 --embed-budget 0   # no time limits
 
-1. scripts/scrape_laws.py --stage-files: fetch the three verified sources up
+1. scripts/scraping/scrape_laws.py --stage-files: fetch the three verified sources up
    to their caps, save originals, validate (quarantine), stage records,
    write one update-log line per source;
 2. scripts/kb/build_index_scraped.py: embed what changed into faiss_scraped*
@@ -51,7 +51,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     py = sys.executable
     with out.open("a", encoding="utf-8") as log:
-        scrape = [py, str(ROOT / "scripts" / "scrape_laws.py"), "--stage-files", "--budget", str(args.scrape_budget),
+        scrape = [py, str(ROOT / "scripts" / "scraping" / "scrape_laws.py"), "--stage-files", "--budget", str(args.scrape_budget),
                   "--skip-within-hours", str(args.skip_within_hours)] + (["--caps", args.caps] if args.caps else [])
         rc1 = step("scrape", scrape, log)
         if rc1 not in (0, 3):

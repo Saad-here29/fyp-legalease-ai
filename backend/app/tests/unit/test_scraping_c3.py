@@ -418,7 +418,7 @@ def test_weekly_runner_exit_codes(monkeypatch, tmp_path):
 
 
 def test_scrape_script_caps():
-    sys.path.insert(0, str(ROOT / "scripts"))
+    sys.path.insert(0, str(ROOT / "scripts" / "scraping"))
     import scrape_laws
     assert scrape_laws.parse_caps("") == {"Pakistan Code": 800, "Khyber Pakhtunkhwa Code": 60,
                                           "Federal Shariat Court": 100}
@@ -455,6 +455,6 @@ def test_paged_listing_walks_each_letter_until_a_page_adds_nothing(kb):
 
 def test_kp_source_has_the_full_listing_and_pc_cap_is_800():
     assert KP["paged_listing"]["url"].endswith("/homepage/alphabetical/{letter}/{offset}")
-    sys.path.insert(0, str(ROOT / "scripts"))
+    sys.path.insert(0, str(ROOT / "scripts" / "scraping"))
     import scrape_laws
     assert scrape_laws.DEFAULT_CAPS["Pakistan Code"] == 800

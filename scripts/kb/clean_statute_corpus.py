@@ -19,7 +19,7 @@ Outputs (data/processed/):
 `data/raw/qa_eval/combined_legal_dataset.csv` is intentionally left untouched
 and separate — it's a distinct, larger eval/reference set, not merged here.
 
-Run from the project root:  python scripts/clean_statute_corpus.py
+Run from the project root:  python scripts/kb/clean_statute_corpus.py
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw"
 OUT = ROOT / "data" / "processed"
 

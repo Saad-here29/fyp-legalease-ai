@@ -54,7 +54,7 @@ RAW_DIR = ROOT / "ai-services" / "data" / "raw"
 JUDGMENTS_DIR = RAW_DIR / "judgments"
 ARCHIVE_PATH = RAW_DIR / "archive.zip"
 
-# Cleaned/merged statute corpus (see scripts/clean_statute_corpus.py) — one
+# Cleaned/merged statute corpus (see scripts/kb/clean_statute_corpus.py) — one
 # JSON file of {title, source_type, text} records, built from data/raw/statutes/.
 PROCESSED_STATUTES_PATH = ROOT / "data" / "processed" / "statutes" / "legal_statutes_corpus.json"
 
@@ -217,7 +217,7 @@ def read_txt(path: Path) -> str:
 
 def collect_processed_statute_docs() -> list[dict]:
     """Load the cleaned/merged statute corpus built by
-    scripts/clean_statute_corpus.py, if present."""
+    scripts/kb/clean_statute_corpus.py, if present."""
     if not PROCESSED_STATUTES_PATH.exists():
         print(f"   ! Processed statute corpus not found at {PROCESSED_STATUTES_PATH} — skipping")
         return []

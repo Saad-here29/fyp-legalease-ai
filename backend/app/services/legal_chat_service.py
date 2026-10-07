@@ -318,7 +318,7 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
     full index is searched as before. Family passages carry
     "family_window".
 
-    The evaluation script (scripts/eval_chat_quality.py) replays this
+    The evaluation script (scripts/kb/eval_chat_quality.py) replays this
     function offline, so chat and evaluation can't drift apart."""
     passages: list[dict] = []
     if family_scope_applies(message, search_query, family):

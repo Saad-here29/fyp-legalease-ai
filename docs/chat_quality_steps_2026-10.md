@@ -18,7 +18,7 @@ switched off**; nothing has shipped. The flags are in `backend/.env`:
 
 **Method:**
 - **Recording:** rewrites were recorded once per setup with the backend's own
-  code (`scripts/eval_chat_quality.py record`). That was the only Groq use.
+  code (`scripts/kb/eval_chat_quality.py record`). That was the only Groq use.
 - **Replay:** everything else was replayed offline through the chat's own
   `retrieve_passages()`. Raw data: `docs/eval/chat_quality/`.
 - **Question sets:** the 8 review questions (R1–R8), the 78 lawyer questions

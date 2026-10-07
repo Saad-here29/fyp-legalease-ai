@@ -1,16 +1,16 @@
 """Scheduled scraping of Pakistani law websites into a staging table (prototype).
 
-    python scripts/scrape_laws.py --dry-run --limit 5               # fetch + compare, write nothing
-    python scripts/scrape_laws.py --schema scrapetest_x --limit 10  # write to a throwaway schema
-    python scripts/scrape_laws.py --sources "Pakistan Code" --limit 3 --dry-run
-    python scripts/scrape_laws.py --dry-run --limit 3 --out run1.json            # remember hashes
-    python scripts/scrape_laws.py --dry-run --limit 3 --compare-with run1.json   # unchanged / changed, no DB
+    python scripts/scraping/scrape_laws.py --dry-run --limit 5               # fetch + compare, write nothing
+    python scripts/scraping/scrape_laws.py --schema scrapetest_x --limit 10  # write to a throwaway schema
+    python scripts/scraping/scrape_laws.py --sources "Pakistan Code" --limit 3 --dry-run
+    python scripts/scraping/scrape_laws.py --dry-run --limit 3 --out run1.json            # remember hashes
+    python scripts/scraping/scrape_laws.py --dry-run --limit 3 --compare-with run1.json   # unchanged / changed, no DB
 
 kb-v2 C3, file staging (no database; run from backend/):
-    python ../scripts/scrape_laws.py --stage-files                        # default caps PC 800, KP 60, FSC 100
-    python ../scripts/scrape_laws.py --stage-files --caps "Pakistan Code=10,Khyber Pakhtunkhwa Code=10,Federal Shariat Court=10"
-    python ../scripts/scrape_laws.py --stage-files --budget 0             # no time limit
-    python ../scripts/scrape_laws.py --stage-files --reparse              # rebuild records from saved originals, no network
+    python ../scripts/scraping/scrape_laws.py --stage-files                        # default caps PC 800, KP 60, FSC 100
+    python ../scripts/scraping/scrape_laws.py --stage-files --caps "Pakistan Code=10,Khyber Pakhtunkhwa Code=10,Federal Shariat Court=10"
+    python ../scripts/scraping/scrape_laws.py --stage-files --budget 0             # no time limit
+    python ../scripts/scraping/scrape_laws.py --stage-files --reparse              # rebuild records from saved originals, no network
 Writes backend/storage/kb/scraped/ (originals + manifest, records, quarantine,
 state.json, update_log.jsonl). Pakistan Code fetches the Acts its category
 listings name that we don't hold first. Stops after --budget seconds (default
@@ -33,7 +33,7 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
 

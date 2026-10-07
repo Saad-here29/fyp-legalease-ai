@@ -1,7 +1,7 @@
 # Scheduled scraping (prototype, branch `scraping`)
 
 > **kb-v2 C3 (branch `kb-v2`):** a file-staging mode now feeds the knowledge
-> base with no database: `scripts/scrape_laws.py --stage-files`, validation
+> base with no database: `scripts/scraping/scrape_laws.py --stage-files`, validation
 > and quarantine, `faiss_scraped*`, `SCRAPED_V2`, and a weekly task. See
 > `docs/knowledge_base_spec.md` § b4 and `docs/DEMO_RUNBOOK.md`. The database
 > modes below are unchanged, and migration a3c5e7f90b12 is still not applied.
@@ -89,7 +89,7 @@ source URL and fetch date kept for provenance.
 ## Design
 
 ```
-scripts/scrape_laws.py            CLI (schedule target)
+scripts/scraping/scrape_laws.py            CLI (schedule target)
 scripts/scraping/sources.json     one entry per site: URLs, XPath selectors, check result, status
 scripts/scraping/check_sources.py the robots/terms check
 backend/app/scraping/fetcher.py   polite HTTP: User-Agent, 2 s per site, retries, caps, robots.txt
@@ -173,9 +173,9 @@ counts, only when `available`. Search is unchanged.
 
 ```powershell
 # from the project root, with the backend venv
-python scripts/scrape_laws.py --dry-run --limit 5                       # fetch and compare, write nothing
-python scripts/scrape_laws.py --schema scrapetest_x --limit 10          # write to a throwaway schema
-python scripts/scrape_laws.py --sources "Khyber Pakhtunkhwa Code" --limit 3 --dry-run
+python scripts/scraping/scrape_laws.py --dry-run --limit 5                       # fetch and compare, write nothing
+python scripts/scraping/scrape_laws.py --schema scrapetest_x --limit 10          # write to a throwaway schema
+python scripts/scraping/scrape_laws.py --sources "Khyber Pakhtunkhwa Code" --limit 3 --dry-run
 ```
 
 To create a throwaway schema with the tables, run `alembic -x schema=NAME
@@ -189,7 +189,7 @@ paths):
 
 ```powershell
 $py  = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe"
-$arg = "scripts\scrape_laws.py --schema scraping --limit 40 --out logs\scrape_last.json"
+$arg = "scripts\scraping\scrape_laws.py --schema scraping --limit 40 --out logs\scrape_last.json"
 $act = New-ScheduledTaskAction -Execute $py -Argument $arg -WorkingDirectory "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main"
 $trg = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3am
 Register-ScheduledTask -TaskName "LegalEase weekly law check" -Action $act -Trigger $trg -Description "Polite weekly check of Pakistani law sites; stages new/changed documents"
@@ -197,7 +197,7 @@ Register-ScheduledTask -TaskName "LegalEase weekly law check" -Action $act -Trig
 
 **cron (Linux server):**
 ```
-0 3 * * 0  cd /srv/legalease && backend/venv/bin/python scripts/scrape_laws.py --schema scraping --limit 40 --out logs/scrape_last.json >> logs/scrape.log 2>&1
+0 3 * * 0  cd /srv/legalease && backend/venv/bin/python scripts/scraping/scrape_laws.py --schema scraping --limit 40 --out logs/scrape_last.json >> logs/scrape.log 2>&1
 ```
 
 Until the merge is approved, `--schema` must name a throwaway schema. After
@@ -210,7 +210,7 @@ need a small change to allow writing there.
    version diff) and sets it to `approved` or `rejected`. Judgments are not
    approved while the app is "statutes only".
 2. **Clean.** Approved statute text goes through the corpus cleaner
-   (`scripts/clean_statute_corpus.py`, as used for the current corpus):
+   (`scripts/kb/clean_statute_corpus.py`, as used for the current corpus):
    - remove headers, footers, watermarks and page numbers;
    - split the text into sections;
    - record the source URL and fetch date in the metadata.
@@ -224,7 +224,7 @@ need a small change to allow writing there.
    - For a changed statute, remove its old chunks first. A rebuild of that
      statute is simpler than surgery on the index.
 5. **Verify,** then switch:
-   - run the offline replay (`scripts/eval_chat_quality.py`);
+   - run the offline replay (`scripts/kb/eval_chat_quality.py`);
    - run the 78-question and off-topic checks;
    - switch the backend to the new index only if nothing regresses;
    - keep the old index for rollback.

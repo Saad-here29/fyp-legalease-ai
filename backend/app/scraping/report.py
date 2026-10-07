@@ -1,4 +1,4 @@
-"""Human-readable end-of-run summary for scripts/scrape_laws.py (kb-v2 B8).
+"""Human-readable end-of-run summary for scripts/scraping/scrape_laws.py (kb-v2 B8).
 
 One row per document checked: source, URL, outcome, the first 8 characters
 of its content hash, and what a real run would do with it. Nothing the

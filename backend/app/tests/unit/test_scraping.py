@@ -307,7 +307,7 @@ def test_stats_endpoint_is_additive(client, monkeypatch):
 
 
 def test_cli_refuses_to_write_without_a_schema():
-    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "scrape_laws.py"), "--limit", "1"],
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "scraping" / "scrape_laws.py"), "--limit", "1"],
                        capture_output=True, text=True)
     assert r.returncode == 2 and "Refusing to write without --schema" in r.stderr
 
@@ -359,6 +359,6 @@ def test_summary_table_is_readable_and_says_nothing_is_indexed():
 def test_cli_compare_with_needs_dry_run(tmp_path):
     prev = tmp_path / "run1.json"
     prev.write_text('{"items": []}', encoding="utf-8")
-    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "scrape_laws.py"), "--compare-with", str(prev)],
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "scraping" / "scrape_laws.py"), "--compare-with", str(prev)],
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 2 and "for dry runs" in r.stderr

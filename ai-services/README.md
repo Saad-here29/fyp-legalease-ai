@@ -13,7 +13,7 @@ Neither output is in git.
 1. **Clean the data** (needs the raw data under `data/raw/`; see
    [`data/README.md`](../data/README.md)). From the project root:
    ```powershell
-   backend\venv\Scripts\python scripts\clean_statute_corpus.py
+   backend\venv\Scripts\python scripts\kb\clean_statute_corpus.py
    ```
 2. **Build the index:**
    ```powershell
