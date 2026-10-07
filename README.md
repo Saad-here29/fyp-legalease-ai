@@ -1,176 +1,158 @@
 # LegalEase AI
 
-**AI-powered legal assistance and practice management for the Pakistani legal sector.**
+LegalEase AI is a web platform for the Pakistani legal sector. Lawyers manage
+their cases and clients. Lawyers, clients and law students can:
+- ask legal questions;
+- search Pakistani law;
+- have documents analysed;
+- draft contracts.
 
-A web platform with five working parts:
+AI answers are grounded in a knowledge base built from Pakistani laws at
+section level and from court judgments. Each answer cites the passages it
+used. The backend is FastAPI with PostgreSQL. The frontend is React. The
+language model is reached through the Groq API.
 
-- case management;
-- an AI legal chat assistant grounded in Pakistani statutes (English and
-  Urdu);
-- semantic legal research;
-- document analysis;
-- contract drafting with a compliance check.
-
-All of it sits behind role-based access for lawyers, clients and students.
-
-> Final Year Project — Department of Software Engineering, NUCES (FAST) Islamabad — Session 2022-2026
-
----
-
-## Team
-
-| Member | Roll No. | Lead Role |
-|--------|----------|-----------|
-| Saadullah | 22I-8795 | Frontend / UX |
-| Ali Mehmood Khan | 22I-2547 | Backend / AI |
-| Muhammad Uzair Siddique | 22I-6181 | Platform / Data |
-
-**Supervisor:** Ms. Fatima Gillani
-**Co-Supervisor:** Mr. Farrukh Bashir
+> Final Year Project, Department of Software Engineering, NUCES (FAST) Islamabad, Session 2022–2026
 
 ---
 
-## What's built
+## Modules
 
 | Module | What it does |
 |---|---|
-| Authentication | Signup with an emailed 6-digit code, login, password reset, lockout after 5 failed logins; sign-out revokes every token |
-| Case management | Five-state case lifecycle, client linking by email, documents, activity timeline |
-| AI legal chat | Answers from about 900 Pakistani statutes with `[n]` citations and a short answer; refuses out-of-scope questions; English and Urdu |
-| Legal research | Semantic search over the same library, AI analysis of a passage, save to a case |
-| Document analysis | Text extraction (PDF, DOCX, TXT), AI summary, clauses and risks, entities from a fine-tuned legal NER model |
-| Contract drafting | NDA, employment and service agreements, version history, required-clause and unfilled-placeholder checks |
-| Dashboards | One each for lawyers, clients and students |
+| **Legal Research** | Semantic search over the knowledge base, filtered by category and jurisdiction. AI analysis of a passage. Results can be saved to a case. A Knowledge Base page lists every law, section and judgment held, with its source. |
+| **AI Chat** | Answers in English or Urdu from retrieved passages, with `[n]` citations. A deterministic checker removes citation markers that point to no passage. It also flags sections, figures and legal consequences that the passages don't contain. Out-of-scope questions are declined. |
+| **Document Analysis** | Text extraction from PDF, DOCX and TXT, with Tesseract OCR for scans and images. An AI summary with clauses and points to review. Entities come from a fine-tuned legal NER model. An optional reasoning view (issues, arguments, statutes cited) shows the quoted evidence for every item. |
+| **Contract Drafting** | NDA, employment and service agreement templates, with version history and checks for required clauses and unfilled placeholders. |
+| **Case Management** | A five-state case lifecycle, client linking by email, case documents, an activity timeline and hearing dates. |
 
-**Not built:** the Practice Simulator and Notifications.
+Also built: sign-up with an emailed code, login with lockout after 5 failed
+attempts, sign-out that revokes tokens, and role-based dashboards for lawyers,
+clients and students. **Not built:** the Practice Simulator and Notifications.
 
-The search library holds **statutes only**, with no court judgments.
+## Architecture
 
----
+```
+ Browser ── React 19 + Vite (frontend/) ──HTTP/JSON, cookies──▶ FastAPI (backend/app)
+                                                                  │
+               ┌──────────────────────┬───────────────────────────┼──────────────────────┐
+               ▼                      ▼                           ▼                      ▼
+     PostgreSQL (Supabase)   Knowledge base on disk       Groq LLM API          Local models (CPU)
+     users, cases, docs,     FAISS indexes + section      answers, summaries,   multilingual MiniLM
+     chats, contracts,       records, judgments,          drafting, reasoning   embeddings; legal NER;
+     audit log               scraped laws (storage/kb)                          Tesseract OCR
+```
 
-## Tech stack
+Each request flows from the routers (`api/v1`) to the services and repositories,
+then to the database. AI features go through `ai/` and `kb/`: retrieval
+(vector search plus BM25 keyword search), then the model call, then
+deterministic checks on the model's output. For details, see
+[docs/architecture/system-overview.md](docs/architecture/system-overview.md)
+and [docs/knowledge_base_spec.md](docs/knowledge_base_spec.md).
 
-| Area | Stack |
-|---|---|
-| **Frontend** | React 19, Vite 5, Tailwind CSS (design system v1: `docs/STYLE_GUIDE.md`), React Router 6, TanStack Query 5, Zustand 5, Axios |
-| **Backend** | Python 3.11, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2, PyJWT, bcrypt |
-| **Database** | PostgreSQL (Supabase in development) |
-| **AI** | Groq `openai/gpt-oss-120b` (OpenAI and Gemini as optional fallbacks), `sentence-transformers` multilingual MiniLM embeddings, FAISS, a fine-tuned DistilBERT legal NER model (PyTorch, CPU) |
-| **Documents** | PyMuPDF, PyPDF2, python-docx; Tesseract OCR (English + Urdu) for scanned PDFs and images, with pages rendered by PyMuPDF (no Poppler needed) |
-| **Testing** | pytest (317 backend tests), ruff, ESLint |
+## Knowledge base
 
----
+These numbers were read from the index files in `backend/storage/kb/` on
+2026-10-08. The four optional flags in the last column default to off. The
+demo script turns them on.
+
+| Index | Contents | Searchable chunks | Used when |
+|---|---|---:|---|
+| Core laws (`faiss_v2`) | 35 core Pakistani laws, 3,081 section records | 11,193 | `KB_V2` |
+| All laws (`faiss_v2_all`) | The 35 core laws plus 223 more from the statute corpus: 258 laws, 9,401 section records | 43,610 | `KB_V2`, when present |
+| Scraped laws (`faiss_scraped`) | 724 laws from the Pakistan Code and the Khyber Pakhtunkhwa Code, 22,455 section records (32 laws marked repealed) | 82,023 | `SCRAPED_V2` |
+| Judgments (`faiss_judgments`) | 400 judgments, mostly the Supreme Court of Pakistan, by paragraph | 64,322 | `JUDGMENTS_V2` |
+| Scraped judgments (`faiss_scraped_judgments`) | 18 Federal Shariat Court judgments | 10,416 | `SCRAPED_V2` |
+| Original index (`storage/faiss/legal_corpus`) | The statute corpus as plain chunks (the fallback) | 53,739 | flags off |
+
+`GET /health` reports which of these the running server is using.
 
 ## Repository layout
 
 ```
-backend/       FastAPI app, Alembic migrations, tests          → backend/README.md
-frontend/      React app (design system v1)                     → frontend/README.md
-ai-services/   corpus/index builder, NER training notebook      → ai-services/README.md
-scripts/       data cleaning, retrieval evaluation, setup       → scripts/README.md
-data/          statute corpus and evaluation data (not in git)  → data/README.md
-docs/          architecture, API, schema, design, retrieval, reports → docs/README.md
-docs/archive/PROJECT_CONTEXT.md   project status, decisions and known gaps
-docs/runbooks/demo-brief.md        what to show and say in the demo
+backend/
+  app/
+    api/v1/        HTTP routers: auth, cases, chat, research, documents, contracts, kb
+    services/      business rules, role checks, AI orchestration (chat, research, cases, contracts)
+    ai/            LLM client, embeddings, citation checker, document reasoning, NER, summaries
+    kb/            knowledge base: records, catalog, indexes, hybrid search, judgments, query hints
+    scraping/      law-update scraper: fetch, parse, stage, quarantine, update log
+    models/        SQLAlchemy tables
+    schemas/       Pydantic request and response models
+    repositories/  data access for users
+    middlewares/   current user, audit helpers
+    core/          settings and feature flags, security, cookies, errors, logging
+    db/            engine, sessions, column types
+    utils/         email, placeholders
+    tests/         pytest suite (unit/ and HTTP tests) with fixtures
+  alembic/         database migrations
+  storage/         (not in git) FAISS indexes, section records, judgments, models
+frontend/src/
+  features/        one folder per screen group: auth, dashboard, case-management, chatbot,
+                   legal-research, knowledge-base, document-analysis, contract-drafting, landing
+  components/, layouts/, routes/, api/, store/, lib/, constants/
+scripts/           start_demo.ps1, setup.ps1, knowledge base builders (kb/), scraping jobs (scraping/), evaluations
+ai-services/       original corpus builder and the NER training notebook
+data/              raw and processed corpus (not in git; see data/README.md)
+docs/              documentation; index in docs/README.md
 ```
-
----
 
 ## Setup
 
-### Prerequisites
+First-time setup, on Windows.
 
-- **Software:** Python **3.11**, Node.js **20+**, Git.
-- **Database:** a PostgreSQL database URL, such as a Supabase project.
-- **API key:** a **Groq** key (free at console.groq.com). It powers chat,
-  research analysis, document summaries and contract drafting.
-- **Large files that aren't in git (ask the team):**
-  - **the search index**, `backend/storage/faiss/legal_corpus.faiss` and
-    `legal_corpus_meta.json` (it can be rebuilt; see `ai-services/README.md`);
-  - **the legal NER model**, `backend/storage/models/legal_ner/` (without it,
-    set `NER_ENABLED=false`; document analysis then runs without entities);
-  - **the raw data** under `data/` (needed only to rebuild the index).
-- **For scanned PDFs and images:** Tesseract OCR with the English and Urdu
-  language data, and `TESSERACT_CMD` in `backend/.env` pointing at
-  `tesseract.exe`. Poppler isn't needed. Without Tesseract, PDF, DOCX and TXT
-  uploads still work and image uploads are turned off.
 
-### Backend
+You need:
+- Python 3.11 and Node.js 20+;
+- a PostgreSQL URL (the team uses Supabase);
+- a Groq API key;
+- the large files that aren't in git: `backend/storage/` (indexes and the
+  NER model). Ask the team for these.
+
+Tesseract with English and Urdu data is optional. It's needed only for scanned
+PDFs and images.
 
 ```powershell
 cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements-dev.txt   # runtime + tests/lint; production: requirements.txt
-copy .env.example .env                # then fill in DATABASE_URL, SECRET_KEY, GROQ_API_KEY
+python -m venv venv; venv\Scripts\activate
+pip install -r requirements-dev.txt     # PyTorch comes from the CPU index
+copy .env.example .env                  # fill in DATABASE_URL, SECRET_KEY, GROQ_API_KEY
 alembic upgrade head
-```
 
-`requirements.txt` installs **PyTorch from the CPU index**
-(`--extra-index-url https://download.pytorch.org/whl/cpu`). The app runs its
-models on the CPU, and the default Linux build would add about 2.5 GB of
-CUDA libraries.
-
-### Frontend
-
-```powershell
-cd frontend
+cd ..\frontend
 npm install
-copy .env.example .env    # VITE_API_BASE_URL defaults to http://localhost:8000/api/v1
+copy .env.example .env                  # VITE_API_BASE_URL defaults to http://localhost:8000/api/v1
 ```
 
----
+`scripts/setup.ps1` does the venv, dependency and `.env` steps in one go. You still fill in `.env` and run the migration yourself. Day-to-day work is covered in
+[docs/runbooks/development-guide.md](docs/runbooks/development-guide.md).
 
-## What is switched on
+## Running it
 
-| Feature | In the running app | Why |
-|---|---|---|
-| OCR (Tesseract eng+urd; scanned PDFs, PNG, JPG) | **On** | Verified live 2026-10-05/06 |
-| Legal NER in document analysis | **On** | Entities returned live on the Crl.P. 187-P PDF and OCR'd images |
-| Sign-out revokes access + refresh tokens | **On** | Old tokens 401 live |
-| Chat history cap (last 10 messages, 2,000 tokens) | **On** | Unit tests; not exercised live (would need a long conversation) |
-| Case types (family + general) and case fields | **On** | Migration `e7b3c9d14a02` applied 2026-10-06 |
-| Research weak-match note | **On** | Off-topic search shows it live |
-| `REWRITE_V2` (rewrite at temperature 0, no statute names) | Off | Made 17 of the 78 lawyer questions go unanswered (`docs/chat_quality_steps_2026-10.md`) |
-| `STRICT_GROUNDING` (stricter answer prompt) | Off | Not measured yet; waiting for approval of a ~15k-token run |
-| `LOW_CONFIDENCE_NOTE` (0.65–0.70) | Off | Measured and ready; waiting for approval to switch on |
-| `FAMILY_INDEX` (family-law side index + switch) | Off | Mixed results; and the chatbot is general Pakistani law (supervisor's decision) |
-| Email (SMTP) | Off | `SMTP_USERNAME`/`SMTP_PASSWORD` not set; codes go to the server log |
-
-Flags live in `backend/.env`; see `backend/.env.example`.
-
-## Running
-
-Start each server **in its own terminal window**, and leave both open:
+To start the demo:
 
 ```powershell
-# Window 1 — backend (http://localhost:8000)
-cd backend
-venv\Scripts\activate
-set HF_HUB_OFFLINE=1
-set TRANSFORMERS_OFFLINE=1
-uvicorn app.main:app --port 8000
-
-# Window 2 — frontend (http://localhost:5173)
-cd frontend
-npm run dev
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1         # all four flags on
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1 -Safe   # fallback: all flags off
 ```
 
-- `HF_HUB_OFFLINE` / `TRANSFORMERS_OFFLINE` stop the cached embedding model
-  from checking huggingface.co at startup. That check can hang. Leave them
-  off the first time, so the model downloads once.
-- API docs are at `http://localhost:8000/docs` when `APP_ENV=development`.
-- Signup codes are emailed only when the `SMTP_*` settings are filled in.
-  Otherwise they appear in the backend window as
-  `[DEV OTP] email -> code`.
+The script:
+1. frees ports 8000 and 5173;
+2. starts the backend and the frontend in their own windows;
+3. waits for `/health` and prints it, so you can see that the flags are as
+   expected.
 
----
+The app is at http://localhost:5173. The API docs are at
+http://127.0.0.1:8000/docs, in development mode. What to show and say is in
+[docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) and
+[docs/runbooks/demo-brief.md](docs/runbooks/demo-brief.md).
 
-## Tests and checks
+## Tests
 
 ```powershell
 cd backend
-pytest                    # 317 tests, offline (no AI calls)
+$env:HF_HUB_OFFLINE = "1"; $env:TRANSFORMERS_OFFLINE = "1"; $env:GROQ_API_KEY = ""
+python -m pytest app/tests        # 679 tests, offline: no AI calls, an in-memory database
 ruff check app
 
 cd ..\frontend
@@ -178,15 +160,16 @@ npm run lint
 npm run build
 ```
 
----
+## Team
 
-## Documentation
+| Member | Roll No. | Lead role |
+|---|---|---|
+| Saadullah | 22I-8795 | Frontend / UX |
+| Ali Mehmood Khan | 22I-2547 | Backend / AI |
+| Muhammad Uzair Siddique | 22I-6181 | Platform / Data |
 
-`docs/README.md` indexes everything. Start with:
+**Supervisor:** Ms. Fatima Gillani · **Co-supervisor:** Mr. Farrukh Bashir
 
-- `docs/architecture/system-overview.md`
-- `docs/architecture/api-reference.md`
-- `docs/database-schema.md`
-- `docs/runbooks/development-guide.md`
-- `docs/STYLE_GUIDE.md`
-- `docs/retrieval_redesign.md`
+## Screenshots
+
+*Placeholder: screenshots of the dashboard, AI Chat, Document Analysis and the Knowledge Base page to be added.*
