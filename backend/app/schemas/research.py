@@ -89,6 +89,9 @@ class ScrapeUpdates(APIModel):
     changed: int | None = None
     errors: int | None = None
     sources: list[SourceUpdate] = []
+    # kb-v2 C3 (SCRAPED_V2): staged documents that pass validation are
+    # searchable once embedded, so the page doesn't say "not yet searchable".
+    searchable: bool = False
 
 
 class ResearchIndexStats(APIModel):

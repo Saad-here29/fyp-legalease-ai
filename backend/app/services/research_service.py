@@ -73,7 +73,7 @@ def with_kb_metadata(hit: dict) -> dict:
     if "_kb_meta" in hit:
         return hit
     out = dict(hit)
-    if hit.get("kb") == "v2":
+    if hit.get("kb") in ("v2", "scraped"):          # scraped: kb-v2 C3
         out["kb_law_id"] = (hit.get("doc_id") or "").split("/")[1] if "/" in (hit.get("doc_id") or "") else None
         if not out.get("category"):           # a chunk built before the category override existed
             out["category"] = catalog.override_category(hit.get("source"))
@@ -214,7 +214,7 @@ class ResearchService:
                     source_tier=h.get("source_tier"),
                     source_url=h.get("source_url"),
                     kb_law_id=h.get("kb_law_id"),
-                    kb_record_id=h.get("doc_id") if h.get("kb") == "v2" else None,
+                    kb_record_id=h.get("doc_id") if h.get("kb") in ("v2", "scraped") else None,
                 )
             )
         return results

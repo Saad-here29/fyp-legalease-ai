@@ -42,8 +42,12 @@ def index_stats():
     except Exception as e:  # noqa: BLE001 — a count on the page must never fail the endpoint
         logger.warning(f"Filter coverage unavailable: {e}")
         coverage = None
-    return {**embeddings.index_stats(), "updates": cached_scrape_updates(SessionLocal),
-            "filter_coverage": coverage}
+    if settings.SCRAPED_V2:              # kb-v2 C3: the update log file, no database
+        from app.kb import scraped
+        updates = scraped.research_updates()
+    else:
+        updates = cached_scrape_updates(SessionLocal)
+    return {**embeddings.index_stats(), "updates": updates, "filter_coverage": coverage}
 
 
 @router.post(

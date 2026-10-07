@@ -11,6 +11,10 @@ law-report copy), with the same judgment from two datasets shown once (same
 case number and year; the copy in the search index wins, then the one with
 more metadata found, as in the pilot selection).
 
+With SCRAPED_V2 on (kb-v2 C3), judgments scraped from court websites
+(KB_DIR/scraped/records/judgments/*.jsonl) are listed too, with their source
+URL and fetch date.
+
 Never returned: the original file's path and the file / content hashes.
 """
 
@@ -26,7 +30,8 @@ from app.core.logging import logger
 from app.kb import judgments as jd
 
 PUBLIC = ("doc_id", "display_name", "case_name", "court", "year", "judges", "case_number", "citation",
-          "topics", "source", "source_type", "status", "provenance_note", "paragraph_count")
+          "topics", "source", "source_type", "status", "provenance_note", "paragraph_count",
+          "source_url", "fetched_at", "scraped")
 
 _LOCK = threading.Lock()
 _STATE: dict = {"sig": None, "usable": {}, "excluded": Counter(), "files": 0}
@@ -37,9 +42,16 @@ def records_dir() -> Path:
     return Path(settings.KB_DIR) / "judgments" / "records"
 
 
+def record_files() -> list[Path]:
+    files = sorted(records_dir().glob("*.jsonl"))
+    if settings.SCRAPED_V2:
+        files += sorted((Path(settings.KB_DIR) / "scraped" / "records" / "judgments").glob("*.jsonl"))
+    return files
+
+
 def _signature() -> tuple:
     out = []
-    for p in sorted(records_dir().glob("*.jsonl")):
+    for p in record_files():
         try:
             st = p.stat()
         except OSError:
@@ -56,6 +68,7 @@ def _summary(rec: dict, path: Path, offset: int) -> dict:
         "source": rec.get("source"), "source_type": rec.get("source_type", "case_law"),
         "status": rec.get("status", "staged"), "provenance_note": rec.get("provenance_note", jd.PROVENANCE),
         "paragraph_count": len(rec.get("paragraphs") or []),
+        "source_url": rec.get("source_url"), "fetched_at": rec.get("fetched_at"), "scraped": bool(rec.get("scraped")),
         "_path": path, "_offset": offset, "_dkey": jd.dedupe_key(rec),
         "_rank": (sum(bool(rec.get(f)) for f in ("case_name", "court", "judges", "case_number")),
                   (rec.get("quality") or {}).get("chars", 0)),

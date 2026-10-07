@@ -10,6 +10,10 @@ app is unaffected.
 
 search(): embed the query, keep the BEST paragraph per judgment, drop those
 under JUDGMENTS_MIN_SCORE, return the top JUDGMENTS_TOP_K.
+
+With SCRAPED_V2 also on (kb-v2 C3), judgments scraped from court websites
+(faiss_scraped_judgments.*, app/kb/scraped.py) are searched too and merged
+by score.
 """
 
 from __future__ import annotations
@@ -44,8 +48,14 @@ def _sig(*files: Path) -> tuple | None:
     return tuple(out)
 
 
+def scraped_paths() -> tuple[Path, Path]:
+    return Path(settings.KB_SCRAPED_JUDGMENTS_INDEX_PATH), Path(settings.KB_SCRAPED_JUDGMENTS_METADATA_PATH)
+
+
 class _Index:
-    def __init__(self) -> None:
+    def __init__(self, paths_fn=None, *, scraped: bool = False) -> None:
+        self.paths = paths_fn or paths
+        self.scraped = scraped               # needs SCRAPED_V2 as well
         self.index = None
         self.chunks: list[dict] = []
         self.doc_ids: frozenset[str] = frozenset()
@@ -59,9 +69,9 @@ class _Index:
     def ready(self) -> bool:
         """Loaded and current (reloads on a changed file). False when the flag
         is off, a file is missing, or the files can't be read as a pair."""
-        if not settings.JUDGMENTS_V2:
+        if not settings.JUDGMENTS_V2 or (self.scraped and not settings.SCRAPED_V2):
             return False
-        sig = _sig(*paths())
+        sig = _sig(*self.paths())
         if sig is None:
             if self.index is not None:
                 logger.warning("Judgments index files gone; judgment search returns nothing")
@@ -76,7 +86,7 @@ class _Index:
                 return True
             try:
                 import faiss
-                idx, meta = paths()
+                idx, meta = self.paths()
                 data = json.loads(meta.read_text(encoding="utf-8"))
                 index = faiss.read_index(str(idx))
                 chunks = data["chunks"]
@@ -91,11 +101,23 @@ class _Index:
             self.index, self.chunks, self.sig, self.failed = index, chunks, sig, None
             self.doc_ids = frozenset(c["doc_id"] for c in chunks)
             logger.info(f"Judgments index ready: {index.ntotal} chunks, {len(self.doc_ids)} judgments "
-                        f"({paths()[0]})")
+                        f"({self.paths()[0]})")
         return True
 
 
 _INDEX = _Index()
+_SCRAPED = _Index(scraped_paths, scraped=True)
+
+
+def _ready() -> list[_Index]:
+    return [ix for ix in (_INDEX, _SCRAPED) if ix.ready() and ix.index.ntotal]
+
+
+def scraped_status() -> int | None:
+    """Chunks in the scraped judgments index (None when a flag is off)."""
+    if not (settings.JUDGMENTS_V2 and settings.SCRAPED_V2):
+        return None
+    return _SCRAPED.index.ntotal if _SCRAPED.ready() else 0
 
 
 def status() -> dict:
@@ -108,7 +130,7 @@ def status() -> dict:
 
 
 def indexed_ids() -> frozenset[str]:
-    return _INDEX.doc_ids if _INDEX.ready() else frozenset()
+    return frozenset().union(*(ix.doc_ids for ix in (_INDEX, _SCRAPED) if ix.ready()))
 
 
 def window_text(chunk: dict) -> str:
@@ -130,30 +152,33 @@ def search(query: str, *, top_k: int | None = None, min_score: float | None = No
     """Best paragraph per judgment, score >= min_score, top_k judgments.
     Each hit: doc_id, display_name, case_name, court, year, case_number,
     paragraph, text (the matched window), paragraph_text, prefix, score, topics."""
-    if not query.strip() or not _INDEX.ready():
+    indexes = _ready() if query.strip() else []
+    if not indexes:
         return []
     from app.ai import embeddings
     top_k = settings.JUDGMENTS_TOP_K if top_k is None else top_k
     min_score = settings.JUDGMENTS_MIN_SCORE if min_score is None else min_score
-    index, chunks = _INDEX.index, _INDEX.chunks
     qvec = embeddings.embed([query])
-    scores, ids = index.search(qvec, min(index.ntotal, max(top_k * 60, 600)))
     best: dict[str, tuple[float, dict]] = {}
-    for s, i in zip(scores[0], ids[0], strict=True):
-        if not 0 <= i < len(chunks) or float(s) < min_score:
-            continue
-        c = chunks[i]
-        if c["doc_id"] in best:
-            continue
-        yr = c.get("year")
-        if (year_from is not None and (yr is None or yr < year_from)) or \
-           (year_to is not None and (yr is None or yr > year_to)) or not _court_ok(c.get("court"), court):
-            continue
-        best[c["doc_id"]] = (float(s), c)
-        if len(best) >= top_k:
-            break
+    for ix in indexes:
+        index, chunks, found = ix.index, ix.chunks, 0
+        scores, ids = index.search(qvec, min(index.ntotal, max(top_k * 60, 600)))
+        for s, i in zip(scores[0], ids[0], strict=True):
+            if not 0 <= i < len(chunks) or float(s) < min_score:
+                continue
+            c = chunks[i]
+            if c["doc_id"] in best:
+                continue
+            yr = c.get("year")
+            if (year_from is not None and (yr is None or yr < year_from)) or \
+               (year_to is not None and (yr is None or yr > year_to)) or not _court_ok(c.get("court"), court):
+                continue
+            best[c["doc_id"]] = (float(s), c)
+            found += 1
+            if found >= top_k:
+                break
     hits = []
-    for s, c in sorted(best.values(), key=lambda x: -x[0]):
+    for s, c in sorted(best.values(), key=lambda x: -x[0])[:top_k]:
         summ = catalog.summary(c["doc_id"]) or {}
         rec = {"case_name": summ.get("case_name", c.get("case_name")), "court": summ.get("court", c.get("court")),
                "year": summ.get("year", c.get("year")), "case_number": summ.get("case_number")}
@@ -183,5 +208,6 @@ def _around(full: str, window: str, limit: int) -> str:
 
 
 def reset() -> None:
-    global _INDEX
+    global _INDEX, _SCRAPED
     _INDEX = _Index()
+    _SCRAPED = _Index(scraped_paths, scraped=True)

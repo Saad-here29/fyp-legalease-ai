@@ -164,7 +164,20 @@ def run_mode() -> dict:
         "threshold": settings.KB_V2_THRESHOLD if settings.KB_V2 else settings.RAG_SIMILARITY_THRESHOLD,
         "judgments_v2": settings.JUDGMENTS_V2,
         **_judgments_status(),
+        "scraped_v2": settings.SCRAPED_V2,
+        **_scraped_status(),
     }
+
+
+def _scraped_status() -> dict:
+    """Chunks in faiss_scraped and faiss_scraped_judgments (None when
+    SCRAPED_V2 is off; 0 while an index is missing or being written)."""
+    from app.kb import scraped
+    try:
+        return scraped.status()
+    except Exception as e:  # noqa: BLE001 — /health must never fail
+        logger.warning(f"Scraped status unavailable: {e}")
+        return {"scraped_chunks": 0, "scraped_judgment_chunks": 0}
 
 
 def _judgments_status() -> dict:

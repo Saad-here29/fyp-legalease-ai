@@ -128,3 +128,13 @@ def kb_judgment(doc_id: str, user: CurrentUser):
     if out is None:
         raise NotFound("No judgment with this id in the knowledge base.")
     return out
+
+
+# ----- Sources and updates (kb-v2 C3, settings.SCRAPED_V2) -------------------
+
+@router.get("/updates", summary="Scraping update log: per run and source, fetched / new / changed / quarantined / indexed")
+def kb_updates(user: CurrentUser, limit: int = Query(default=60, ge=1, le=500)):
+    if not settings.SCRAPED_V2:
+        raise NotFound("Scraped sources are not enabled on this server.")
+    from app.kb import scraped
+    return scraped.updates(limit)

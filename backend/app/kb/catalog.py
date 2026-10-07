@@ -58,10 +58,18 @@ def source_label(source: str | None) -> str:
     return SOURCE_LABELS.get(source or "", source or "")
 
 
+def law_files() -> list[Path]:
+    """Core law record files, plus scraped laws (kb-v2 C3) with SCRAPED_V2 on."""
+    d = kb_dir()
+    files = sorted((d / "records").glob("*.jsonl"))
+    if settings.SCRAPED_V2:
+        files += sorted((d / "scraped" / "records" / "statutes").glob("*.jsonl"))
+    return files
+
+
 def _files() -> list[Path]:
     d = kb_dir()
-    return sorted((d / "records").glob("*.jsonl")) + [d / "category_map.json", Path(settings.KB_V2_METADATA_PATH),
-                                                      OVERRIDES_PATH]
+    return law_files() + [d / "category_map.json", Path(settings.KB_V2_METADATA_PATH), OVERRIDES_PATH]
 
 
 def _stamp() -> tuple:
@@ -71,7 +79,7 @@ def _stamp() -> tuple:
 def _load() -> dict:
     laws: dict[str, dict] = {}
     records: dict[str, dict] = {}
-    for path in sorted((kb_dir() / "records").glob("*.jsonl")):
+    for path in law_files():
         recs = [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()]
         if not recs:
             continue
@@ -100,6 +108,12 @@ def _load() -> dict:
             "sections": len(recs),
             "original_file": first.get("original_file"),
             "record_ids": [r["doc_id"] for r in recs],
+            # kb-v2 C3: fetched from an official website by the scraper
+            "scraped": path.parent.name == "statutes" and path.parent.parent.name == "records"
+                       and path.parent.parent.parent.name == "scraped",
+            "fetched_at": first.get("scraped_at"),
+            "document_type": first.get("document_type"),
+            "amendments": first.get("amendments") or [],
         }
         for r in recs:
             records[r["doc_id"]] = {**r, "_law": law_id}
@@ -195,12 +209,13 @@ def stats() -> dict:
         "categories": sorted({c["name"] for c in d["cmap"].get("categories", []) if c.get("listed_count")}
                              | {o["category"] for o in category_overrides()}),
         "kb_v2_search": settings.KB_V2,
+        "scraped_laws": sum(1 for law in laws if law.get("scraped")),      # kb-v2 C3 (0 with SCRAPED_V2 off)
     }
 
 
 PUBLIC_LAW_FIELDS = ("doc_id", "title", "category", "category_source", "jurisdiction", "year", "act_number", "source", "source_label",
                      "source_tier", "source_url", "status", "audience", "source_version", "provenance_note",
-                     "sectioned", "sections")
+                     "sectioned", "sections", "scraped", "fetched_at", "document_type", "amendments")
 
 
 def public_law(law: dict) -> dict:
