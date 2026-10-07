@@ -151,12 +151,12 @@ rules can't find is null (or an empty list), never guessed.
 |---|---|---|
 | `doc_id` | string | `judgment/<source>/<first 16 hex of the file's SHA-256>` |
 | `case_name` | string or null | "Petitioner v. Respondent", from the parties block or a "versus" line |
-| `court` | string or null | Matched against the known courts (Supreme Court of Pakistan, Federal Shariat Court, the five High Courts, Family Court) |
+| `court` | string or null | Matched against the known courts (Supreme Court of Pakistan, Federal Shariat Court, the five High Courts, Family Court) **in the heading only** (first 800 characters, letters only, so OCR spacing like "S UPREME COURT" still matches); a lower court named later in the text is never taken as the court |
 | `year` | integer or null | From "Date of hearing / decision / judgment", else the case number's year |
 | `judges` | list of strings | Names from the "Present / Coram / Bench" block, else the signatures at the end; up to 5 |
-| `case_number` | string or null | e.g. "Civil Petition No. 1234 of 2022", "Crl.P. 187-P/2026" |
+| `case_number` | string or null | e.g. "Civil Petition No. 1234 of 2022", "Crl.P. 187-P/2026". For the parquet dataset, when the rules find none, it is taken from the row's file id (e.g. `C.A.10_2021.pdf`) and `case_number_from` says so |
 | `citation` | string or null | **Neutral or court citation only** (e.g. "2024 SCP 15"). Publisher citations (PLD, SCMR, YLR…) are never stored as the citation; any seen are listed in `report_citations_seen` |
-| `topics` | list of strings | Rule-based keywords, each needing at least 2 mentions in the text: family, dower, khula, talaq, dissolution, nikah, custody, guardianship, maintenance, bail, murder, contract, property, constitutional |
+| `topics` | list of strings | Rule-based keywords, each needing at least 2 mentions in the text: family, dower, khula, talaq, dissolution, nikah, custody, guardianship, maintenance, bail, murder, contract, property, constitutional. `custody` and `maintenance` match only the family sense (custody of a minor / hizanat; maintenance of a wife or minor / nafqa), not criminal custody |
 | `paragraphs` | list of `{n, text}` | The judgment's own numbered paragraphs (`n` = its number; `0` = the heading, parties and bench). Without numbering: blank-line blocks numbered 1, 2, … |
 | `source_type` | `"case_law"` | Always |
 | `source` | string | The dataset's name, as given to the inventory script |
@@ -172,9 +172,17 @@ rules can't find is null (or an empty list), never guessed.
 **Excluded from the index (kept in the records with the reason):**
 - **Near-empty:** under 1,500 characters.
 - **Needs OCR:** most pages have no text layer.
-- **Duplicates:** the same text, or the same case name and year.
+- **Duplicates:** the same text, or the same case number (its digits) and
+  year. Only when neither copy has a case number: the same case name and year.
 - **Law-report copies:** a publisher's citation (PLD, SCMR, YLR…) in the
-  header plus headnotes. These are listed separately, not indexed.
+  first 300 characters plus headnotes (including the "(a) … ---" style).
+  A whole source can be marked with `inventory_judgments.py --law-reports`.
+  These are listed separately, not indexed.
+
+**Pilot** (`scripts/kb/build_index_judgments.py --pilot 400`): duplicates
+*across* sources are removed first (same case number and year; the copy with
+the most metadata is kept), then family-law judgments, then a round-robin by
+year that prefers judges not yet in the pilot.
 
 **Chunks.** Windows of at most 120 tokens (the embedding model's tokenizer)
 from **one paragraph**, with the prefix
