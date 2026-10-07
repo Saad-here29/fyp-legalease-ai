@@ -308,6 +308,25 @@ class _V2:
         self.texts: dict[str, str] = {}
         self.excluded: set[str] = set()
         self.lock = threading.Lock()
+        self.bm25 = None                        # app.kb.lexical.BM25 over the sections (kb-v2 C8), built on first use
+        self.doc_chunks: dict[str, list[int]] = {}
+
+    def lexical(self):
+        """The BM25 index over this index's sections, and doc_id -> chunk rows."""
+        if self.bm25 is None:
+            from app.kb import lexical
+            with self.lock:
+                if self.bm25 is None:
+                    rows: dict[str, list[int]] = {}
+                    for i, c in enumerate(self.chunks):
+                        rows.setdefault(c["doc_id"], []).append(i)
+                    bm = lexical.BM25()
+                    for d, idxs in rows.items():
+                        c = self.chunks[idxs[0]]
+                        bm.add(d, [(c.get("heading") or "", 3), (c.get("title") or "", 1), (self.texts.get(d, ""), 1)],
+                               extra=lexical.section_token(c.get("section")))
+                    self.doc_chunks, self.bm25 = rows, bm
+        return self.bm25
 
     def load(self) -> int:
         if self.index is not None:
@@ -340,11 +359,40 @@ def passage(chunk: dict, full: str) -> str:
     return full[a: b if b > 0 else len(full)]
 
 
+def _lexical_candidates(query: str, qvec, best: dict) -> list[str]:
+    """Sections BM25 ranks for the question (kb-v2 C8), best first. One not
+    already found by vector search gets its true cosine (its closest chunk)
+    and is kept only at HYBRID_MIN_COSINE or above."""
+    import numpy as np
+
+    from app.kb import lexical
+    ranked = []
+    for d, _score in _V2_INDEX.lexical().search(lexical.query_tokens(query), top=20):
+        rows = _V2_INDEX.doc_chunks.get(d) or []
+        if not rows:
+            continue
+        c = _V2_INDEX.chunks[rows[0]]
+        if not names_audience(query, c.get("audience"), c["title"]):
+            continue
+        if d not in best:
+            vecs = np.vstack([_V2_INDEX.index.reconstruct(int(i)) for i in rows])
+            sims = vecs @ qvec[0]
+            j = int(np.argmax(sims))
+            if float(sims[j]) < settings.HYBRID_MIN_COSINE:
+                continue
+            best[d] = (float(sims[j]), int(rows[j]))
+        ranked.append(d)
+    return ranked
+
+
 def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
-    """faiss_v2 + the v1 index (without the laws v2 holds), merged by score."""
+    """faiss_v2 + the v1 index (without the laws v2 holds). Ranked by score;
+    with HYBRID_SEARCH on, by reciprocal rank fusion of that ranking and a
+    BM25 ranking of the sections (relevance stays the cosine score)."""
     from app.ai import embeddings
     qvec = embeddings.embed([query])
     hits: list[dict] = []
+    lexical_rank: list[str] = []
     if _V2_INDEX.load():
         scores, ids = _V2_INDEX.index.search(qvec, min(_V2_INDEX.index.ntotal, top_k * 30))
         best: dict[str, tuple[float, int]] = {}
@@ -356,6 +404,8 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
                 d = c["doc_id"]
                 if d not in best:
                     best[d] = (float(s), int(i))
+        if settings.HYBRID_SEARCH:
+            lexical_rank = _lexical_candidates(query, qvec, best)
         for d, (s, i) in best.items():
             c = _V2_INDEX.chunks[i]
             hit = {
@@ -371,6 +421,13 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     old = embeddings._search_v1(query, top_k * 8, filters, qvec=qvec)
     hits += [h for h in old if h.get("source") not in _V2_INDEX.excluded]
     hits.sort(key=lambda h: h["relevance"], reverse=True)
+    if lexical_rank:
+        from app.kb import lexical
+
+        def key(h):
+            return h.get("doc_id") if h.get("kb") == "v2" else f"v1:{id(h)}"
+        fused = lexical.rrf([[key(h) for h in hits], lexical_rank])
+        hits.sort(key=lambda h: (-fused.get(key(h), 0.0), -h["relevance"]))
     return hits[:top_k]
 
 

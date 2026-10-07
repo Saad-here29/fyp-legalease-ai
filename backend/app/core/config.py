@@ -160,6 +160,10 @@ class Settings(BaseSettings):
     # a question that names a family-law topic, before embedding. Only with
     # KB_V2 on; never shown to the model.
     QUERY_HINTS: bool = True
+    # Hybrid retrieval (kb-v2 C8, app/kb/lexical.py): BM25 over section headings and
+    # text fused with the vector ranking (reciprocal rank fusion). KB_V2 only.
+    HYBRID_SEARCH: bool = True
+    HYBRID_MIN_COSINE: float = 0.40     # a section found only by words must still be this close in meaning
     QUERY_HINTS_PATH: str = "./storage/kb/query_hints.json"
     REASONING_V2: bool = False
     REASONING_INPUT_TOKENS: int = 4200     # document text sent (excerpted above this); + ~500 instructions
