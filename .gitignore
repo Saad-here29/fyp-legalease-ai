@@ -76,6 +76,7 @@ backend/storage/*
 !backend/storage/kb/
 backend/storage/kb/*
 !backend/storage/kb/category_map.json
+!backend/storage/kb/query_hints.json
 # Family-law side index vectors (rebuilt automatically)
 backend/cache/
 *.pdf.tmp

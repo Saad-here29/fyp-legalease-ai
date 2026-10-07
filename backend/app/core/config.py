@@ -151,6 +151,11 @@ class Settings(BaseSettings):
     # Document Analysis reasoning layer (kb-v2 C4, app/ai/reasoning.py): one
     # extra JSON model call after the summary and NER, checked without a
     # second call. Off: the analysis response and what is saved are unchanged.
+    # Query hints (kb-v2 C5, app/kb/query_hints.py): search terms appended to
+    # a question that names a family-law topic, before embedding. Only with
+    # KB_V2 on; never shown to the model.
+    QUERY_HINTS: bool = True
+    QUERY_HINTS_PATH: str = "./storage/kb/query_hints.json"
     REASONING_V2: bool = False
     REASONING_INPUT_TOKENS: int = 4200     # document text sent (excerpted above this); + ~500 instructions
     REASONING_MAX_TOKENS: int = 1500       # reply cap: ~6k tokens per analysis in all

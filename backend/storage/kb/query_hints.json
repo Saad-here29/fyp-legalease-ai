@@ -1,0 +1,47 @@
+{
+  "about": "kb-v2 C5 query hints (app/kb/query_hints.py). Retrieval only: when a trigger appears in the question (whole word, any case) and no 'unless' word does, the hint's search terms are appended to the query before it is embedded. Terms name where the law is (Acts, sections, procedural words), never what it says or concludes. Applied only with KB_V2 and QUERY_HINTS on. Evaluated in docs/query_hints_eval_2026-10-07.md.",
+  "hints": [
+    {
+      "id": "talaq",
+      "triggers": ["talaq", "talak", "divorce", "divorced", "divorcing"],
+      "unless": ["christian", "hindu", "parsi", "sikh", "khula", "khulla"],
+      "terms": "Muslim Family Laws Ordinance 1961 section 7 talaq notice in writing Chairman Union Council arbitration council"
+    },
+    {
+      "id": "khula",
+      "triggers": ["khula", "khulla", "dissolution of marriage", "dissolve marriage", "dissolve her marriage", "dissolve the marriage"],
+      "unless": ["christian", "hindu", "parsi", "sikh"],
+      "terms": "Family Courts Act 1964 section 10 khula dissolution of marriage Dissolution of Muslim Marriages Act 1939"
+    },
+    {
+      "id": "dower",
+      "triggers": ["dower", "mehr", "mahr", "haq mehr", "haq mahr"],
+      "unless": [],
+      "terms": "Muslim Family Laws Ordinance section 10 dower Family Courts Act Schedule dower"
+    },
+    {
+      "id": "maintenance",
+      "triggers": ["maintenance", "nafqa", "nafaqa", "nafaqah", "nan nafqa"],
+      "unless": ["maintenance of public order", "maintenance of order"],
+      "terms": "Muslim Family Laws Ordinance section 9 maintenance Family Courts Act Schedule maintenance"
+    },
+    {
+      "id": "custody",
+      "triggers": ["custody of", "custody of her", "child custody", "guardian", "guardianship", "hizanat", "minor child", "minor children", "ward"],
+      "unless": ["police custody", "judicial custody", "physical remand", "remand"],
+      "terms": "Guardians and Wards Act 1890 custody guardian of the minor welfare of the minor section 17 section 25"
+    },
+    {
+      "id": "inheritance",
+      "triggers": ["inheritance", "inherit", "inherits", "heir", "heirs", "succession", "mirath", "estate of a deceased"],
+      "unless": [],
+      "terms": "Muslim Personal Law (Shariat) Application Act 1962 succession Muslim Family Laws Ordinance section 4 succession"
+    },
+    {
+      "id": "nikah_registration",
+      "triggers": ["nikah", "nikahnama", "nikah nama", "nikah registrar", "marriage registration", "register a marriage", "register the marriage", "registration of marriage"],
+      "unless": ["christian", "hindu", "parsi", "sikh"],
+      "terms": "Muslim Family Laws Ordinance section 5 registration of marriages Nikah Registrar"
+    }
+  ]
+}

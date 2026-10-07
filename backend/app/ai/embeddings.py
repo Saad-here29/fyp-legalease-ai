@@ -130,6 +130,9 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     and merged with this one (app/kb/index_v2.py); off, this is exactly the
     v1 search.
     """
+    if settings.KB_V2 and settings.QUERY_HINTS:   # kb-v2 C5: retrieval-only search terms
+        from app.kb import query_hints
+        query = query_hints.expand(query)
     if settings.SCRAPED_V2:              # kb-v2 C3: also the scraped laws (app/kb/scraped.py)
         from app.kb import scraped
         return scraped.merged_search(query, top_k, filters)
