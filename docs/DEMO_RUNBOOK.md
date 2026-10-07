@@ -46,6 +46,14 @@ Checked on 2026-10-07 on 8100/5273: full mode reported all four flags on (judgme
 
 ### What is not done
 
+**C8 update (2026-10-07):** hybrid retrieval (BM25 + vectors), hint exact sections, full-section
+context, supporting sections after the gate, repealed laws left out, case and refusal rules. Results
+by set and what still fails: `docs/eval/c8_report.md` (gold 21/26, live 5/5, unseen 31/40 in the top 5;
+19 / 5 / 29 reach the model). Embedding still to do: `scripts/kb/export_for_colab.py` writes ONE file
+(116,844 chunks) for the all-laws, scraped-laws and scraped-judgments indexes; see the Colab steps in
+the spec, § b7.
+
+
 - **Scraping:** only the 10/10/10 pilot has been fetched; the full run (caps 120 / 60 / 100) and the weekly task
   (`register_weekly_task.ps1`) are ready but not run or registered. Supreme Court and Lahore High Court
   block crawlers; the other courts and provincial codes need their own parsers. Migration a3c5e7f90b12 is

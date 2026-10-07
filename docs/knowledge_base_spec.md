@@ -415,6 +415,27 @@ old-index passages of all 860 laws it holds (`excluded_v1_sources`). `/health` r
 normalised, and identical to the app's `embed()` (cosine 1.000000); with the file in the cache the
 builder's to-embed count dropped by exactly 500.
 
+### b8) Accuracy pass (Phase C8)
+
+- **Hybrid retrieval** (`app/kb/lexical.py`, `HYBRID_SEARCH`): BM25 over each section's heading (x3),
+  title, text and its own number ("sec302"), with a glossary of statutory terms of art (qatl/murder,
+  talaq/divorce, mehr/dower ...), fused with the vector ranking by reciprocal rank fusion; relevance
+  stays the cosine score, and a section found only by its words needs 0.40.
+- **Query hints** carry `exact_sections` ([law, section], resolved against the records when loaded)
+  as a third ranking; triggers are word sets, never a question's phrase (a test checks no three-word
+  sequence of a hint is in any evaluation question).
+- **Chat:** full section text (<=700 tokens, top 4); after the 0.65 gate passes, sections in the
+  hybrid top 5 down to 0.55 join (`CHAT_SUPPORT_MIN`); refusals carry no sources or cases; a
+  foreign-law question not naming Pakistan is refused before retrieval.
+- **Repealed laws:** status from the Pakistan Code title; left out of Chat and Research by default
+  (`include_repealed`), labelled when named.
+- **Colab steps (all three indexes):** `python ../scripts/kb/export_for_colab.py` writes
+  `backend/storage/kb/colab/chunks_for_colab.jsonl`; embed it with `scripts/kb/colab_embed.py` on a
+  Colab GPU; copy the `.npz` files into `storage/kb/vector_cache/`, `vector_cache_scraped/` and
+  `vector_cache_scraped_judgments/`; then run `build_index_v2_all.py --budget 0` and
+  `build_index_scraped.py --budget 0`.
+- Results by set: `docs/eval/c8_report.md`.
+
 ## Final numbers and what is not done (2026-10-07)
 
 | What | Number | From |
