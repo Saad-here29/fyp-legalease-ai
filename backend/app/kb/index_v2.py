@@ -359,15 +359,12 @@ def passage(chunk: dict, full: str) -> str:
     return full[a: b if b > 0 else len(full)]
 
 
-def _lexical_candidates(query: str, qvec, best: dict) -> list[str]:
-    """Sections BM25 ranks for the question (kb-v2 C8), best first. One not
-    already found by vector search gets its true cosine (its closest chunk)
-    and is kept only at HYBRID_MIN_COSINE or above."""
+def _with_cosine(doc_ids: list[str], query: str, qvec, best: dict, floor: float) -> list[str]:
+    """The given sections that pass audience gating; one not in `best` gets its
+    true cosine (closest chunk) and is kept only at `floor` or above."""
     import numpy as np
-
-    from app.kb import lexical
-    ranked = []
-    for d, _score in _V2_INDEX.lexical().search(lexical.query_tokens(query), top=20):
+    out = []
+    for d in doc_ids:
         rows = _V2_INDEX.doc_chunks.get(d) or []
         if not rows:
             continue
@@ -378,14 +375,23 @@ def _lexical_candidates(query: str, qvec, best: dict) -> list[str]:
             vecs = np.vstack([_V2_INDEX.index.reconstruct(int(i)) for i in rows])
             sims = vecs @ qvec[0]
             j = int(np.argmax(sims))
-            if float(sims[j]) < settings.HYBRID_MIN_COSINE:
+            if float(sims[j]) < floor:
                 continue
             best[d] = (float(sims[j]), int(rows[j]))
-        ranked.append(d)
-    return ranked
+        out.append(d)
+    return out
 
 
-def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
+def _lexical_candidates(query: str, qvec, best: dict) -> list[str]:
+    """Sections BM25 ranks for the question (kb-v2 C8), best first. One not
+    already found by vector search gets its true cosine (its closest chunk)
+    and is kept only at HYBRID_MIN_COSINE or above."""
+    from app.kb import lexical
+    found = [d for d, _score in _V2_INDEX.lexical().search(lexical.query_tokens(query), top=20)]
+    return _with_cosine(found, query, qvec, best, settings.HYBRID_MIN_COSINE)
+
+
+def search(query: str, top_k: int, filters: dict | None = None, *, hint_ids: list[str] | None = None) -> list[dict]:
     """faiss_v2 + the v1 index (without the laws v2 holds). Ranked by score;
     with HYBRID_SEARCH on, by reciprocal rank fusion of that ranking and a
     BM25 ranking of the sections (relevance stays the cosine score)."""
@@ -393,6 +399,7 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     qvec = embeddings.embed([query])
     hits: list[dict] = []
     lexical_rank: list[str] = []
+    hint_rank: list[str] = []
     if _V2_INDEX.load():
         scores, ids = _V2_INDEX.index.search(qvec, min(_V2_INDEX.index.ntotal, top_k * 30))
         best: dict[str, tuple[float, int]] = {}
@@ -406,6 +413,9 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
                     best[d] = (float(s), int(i))
         if settings.HYBRID_SEARCH:
             lexical_rank = _lexical_candidates(query, qvec, best)
+            if hint_ids:              # kb-v2 C8: a matching hint's exact sections, a third ranking
+                _V2_INDEX.lexical()
+                hint_rank = _with_cosine(hint_ids, query, qvec, best, settings.HYBRID_MIN_COSINE)
         for d, (s, i) in best.items():
             c = _V2_INDEX.chunks[i]
             hit = {
@@ -421,12 +431,12 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     old = embeddings._search_v1(query, top_k * 8, filters, qvec=qvec)
     hits += [h for h in old if h.get("source") not in _V2_INDEX.excluded]
     hits.sort(key=lambda h: h["relevance"], reverse=True)
-    if lexical_rank:
+    if lexical_rank or hint_rank:
         from app.kb import lexical
 
         def key(h):
             return h.get("doc_id") if h.get("kb") == "v2" else f"v1:{id(h)}"
-        fused = lexical.rrf([[key(h) for h in hits], lexical_rank])
+        fused = lexical.rrf([[key(h) for h in hits], lexical_rank, hint_rank])
         hits.sort(key=lambda h: (-fused.get(key(h), 0.0), -h["relevance"]))
     return hits[:top_k]
 

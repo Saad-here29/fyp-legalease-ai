@@ -68,14 +68,14 @@ def test_terms_are_search_terms_never_conclusions():
 def test_expand_appends_terms_and_keeps_the_question():
     q = "What is the procedure for talaq?"
     out = query_hints.expand(q)
-    assert out.startswith(q + " ") and "section 7" in out and "Union Council" in out
+    assert out.startswith(q + " ") and "union council" in out and "notice" in out
 
 
 def test_hints_apply_only_with_kb_v2_and_the_switch(monkeypatch):
     seen = []
     monkeypatch.setattr(embeddings, "_search_v1", lambda q, k, f=None, **kw: seen.append(q) or [])
     from app.kb import index_v2
-    monkeypatch.setattr(index_v2, "search", lambda q, k, f=None: seen.append(q) or [])
+    monkeypatch.setattr(index_v2, "search", lambda q, k, f=None, **kw: seen.append(q) or [])
     monkeypatch.setattr(settings, "SCRAPED_V2", False)
     q = "What is the procedure for talaq?"
     monkeypatch.setattr(settings, "KB_V2", False)
@@ -85,7 +85,7 @@ def test_hints_apply_only_with_kb_v2_and_the_switch(monkeypatch):
     embeddings.search(q, 5)
     monkeypatch.setattr(settings, "QUERY_HINTS", True)
     embeddings.search(q, 5)
-    assert seen[0] == q and seen[1] == q and seen[2].startswith(q + " ") and "section 7" in seen[2]
+    assert seen[0] == q and seen[1] == q and seen[2].startswith(q + " ") and "union council" in seen[2]
 
 
 def test_missing_or_broken_file_means_no_hints(monkeypatch, tmp_path):

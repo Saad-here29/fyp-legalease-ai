@@ -1,47 +1,56 @@
 {
-  "about": "kb-v2 C5 query hints (app/kb/query_hints.py). Retrieval only: when a trigger appears in the question (whole word, any case) and no 'unless' word does, the hint's search terms are appended to the query before it is embedded. Terms name where the law is (Acts, sections, procedural words), never what it says or concludes. Applied only with KB_V2 and QUERY_HINTS on. Evaluated in docs/query_hints_eval_2026-10-07.md.",
+  "about": "kb-v2 query hints (app/kb/query_hints.py). Retrieval only. A hint fires when one of its triggers is in the question: a trigger is a list of words that must ALL appear (any order, whole words), never a phrase from a question. 'unless' words (whole words) stop it. 'terms' are procedural search words appended before embedding; 'exact_sections' are [law title, section] pairs, checked against the records when the file is loaded (a missing one is dropped and logged), that join the hybrid ranking. Never a conclusion. A test fails if any three-word sequence of a hint appears in an evaluation question. Applied with KB_V2 and QUERY_HINTS on.",
   "hints": [
     {
       "id": "talaq",
-      "triggers": ["talaq", "talak", "divorce", "divorced", "divorcing"],
+      "triggers": [["talaq"], ["talak"], ["divorce"], ["divorced"], ["divorcing"]],
       "unless": ["christian", "hindu", "parsi", "sikh", "khula", "khulla"],
-      "terms": "Muslim Family Laws Ordinance 1961 section 7 talaq notice in writing Chairman Union Council arbitration council"
+      "terms": "talaq notice in writing chairman union council arbitration council",
+      "exact_sections": [["Muslim Family Laws Ordinance, 1961", "7"]]
     },
     {
       "id": "khula",
-      "triggers": ["khula", "khulla", "dissolution of marriage", "dissolve marriage", "dissolve her marriage", "dissolve the marriage"],
+      "triggers": [["khula"], ["khulla"], ["dissolution", "marriage"], ["dissolve", "marriage"], ["dissolved", "marriage"]],
       "unless": ["christian", "hindu", "parsi", "sikh"],
-      "terms": "Family Courts Act 1964 section 10 khula dissolution of marriage Dissolution of Muslim Marriages Act 1939"
+      "terms": "khula dissolution decree family court written statement grounds",
+      "exact_sections": [["West Pakistan Family Courts Act, 1964", "9"], ["West Pakistan Family Courts Act, 1964", "Schedule item 1"],
+                         ["Dissolution of Muslim Marriages Act, 1939", "2"]]
     },
     {
       "id": "dower",
-      "triggers": ["dower", "mehr", "mahr", "haq mehr", "haq mahr"],
+      "triggers": [["dower"], ["mehr"], ["mahr"]],
       "unless": [],
-      "terms": "Muslim Family Laws Ordinance section 10 dower Family Courts Act Schedule dower"
+      "terms": "dower mehr payment demand",
+      "exact_sections": [["Muslim Family Laws Ordinance, 1961", "10"], ["West Pakistan Family Courts Act, 1964", "Schedule item 2"]]
     },
     {
       "id": "maintenance",
-      "triggers": ["maintenance", "nafqa", "nafaqa", "nafaqah", "nan nafqa"],
-      "unless": ["maintenance of public order", "maintenance of order"],
-      "terms": "Muslim Family Laws Ordinance section 9 maintenance Family Courts Act Schedule maintenance"
+      "triggers": [["maintenance"], ["nafqa"], ["nafaqa"], ["nafaqah"]],
+      "unless": ["order", "police", "public"],
+      "terms": "maintenance wife husband arbitration council",
+      "exact_sections": [["Muslim Family Laws Ordinance, 1961", "9"], ["West Pakistan Family Courts Act, 1964", "Schedule item 3"]]
     },
     {
       "id": "custody",
-      "triggers": ["custody of", "custody of her", "child custody", "guardian", "guardianship", "hizanat", "minor child", "minor children", "ward"],
-      "unless": ["police custody", "judicial custody", "physical remand", "remand"],
-      "terms": "Guardians and Wards Act 1890 custody guardian of the minor welfare of the minor section 17 section 25"
+      "triggers": [["custody"], ["guardian"], ["guardianship"], ["hizanat"]],
+      "unless": ["police", "judicial", "remand", "arrest", "arrested", "accused"],
+      "terms": "guardian welfare ward",
+      "exact_sections": [["Guardians and Wards Act, 1890", "17"], ["Guardians and Wards Act, 1890", "25"]]
     },
     {
       "id": "inheritance",
-      "triggers": ["inheritance", "inherit", "inherits", "heir", "heirs", "succession", "mirath", "estate of a deceased"],
+      "triggers": [["inheritance"], ["inherit"], ["inherits"], ["heir"], ["heirs"], ["succession"], ["mirath"]],
       "unless": [],
-      "terms": "Muslim Personal Law (Shariat) Application Act 1962 succession Muslim Family Laws Ordinance section 4 succession"
+      "terms": "succession heirs personal law shariat",
+      "exact_sections": [["West Pakistan Muslim Personal Law (Shariat) Application Act, 1962", "2"],
+                         ["Muslim Family Laws Ordinance, 1961", "4"]]
     },
     {
       "id": "nikah_registration",
-      "triggers": ["nikah", "nikahnama", "nikah nama", "nikah registrar", "marriage registration", "register a marriage", "register the marriage", "registration of marriage"],
+      "triggers": [["nikah"], ["nikahnama"], ["registration", "marriage"], ["register", "marriage"], ["registered", "marriage"]],
       "unless": ["christian", "hindu", "parsi", "sikh"],
-      "terms": "Muslim Family Laws Ordinance section 5 registration of marriages Nikah Registrar"
+      "terms": "nikah registrar union council licence",
+      "exact_sections": [["Muslim Family Laws Ordinance, 1961", "5"]]
     }
   ]
 }

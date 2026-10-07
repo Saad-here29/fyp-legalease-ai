@@ -161,12 +161,12 @@ def search_statutes(query: str, top_k: int, filters: dict | None = None, *, qvec
     return hits[:top_k]
 
 
-def merged_search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
+def merged_search(query: str, top_k: int, filters: dict | None = None, *, hint_ids: list[str] | None = None) -> list[dict]:
     """The usual search plus faiss_scraped; old-index passages of a scraped
     Act are left out."""
     from app.ai import embeddings
     from app.kb import index_v2
-    base = index_v2.search(query, top_k * 2, filters) if settings.KB_V2 else \
+    base = index_v2.search(query, top_k * 2, filters, hint_ids=hint_ids) if settings.KB_V2 else \
         embeddings._search_v1(query, top_k * 4, filters)
     if not _INDEX.ready():
         return base[:top_k]
