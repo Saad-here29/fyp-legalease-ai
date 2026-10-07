@@ -135,6 +135,52 @@ fixes the shape for later; scraped judgments stay staged.
 Also stored for provenance, as in (a): `original_file`, `scraped_at`,
 `content_hash`, and `text` (kept out of git).
 
+### b2) Judgment records from the team's dataset (Phase C1)
+
+**Where they live:**
+- **Code:** `backend/app/kb/judgments.py`.
+- **Records:** `backend/storage/kb/judgments/records/<source>.jsonl`
+  (git-ignored).
+- **Index:** a separate one, `backend/storage/kb/faiss_judgments.*`. It is
+  not searched by the app yet.
+
+**Fields.** All metadata comes from rules on the first pages. A field the
+rules can't find is null (or an empty list), never guessed.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `doc_id` | string | `judgment/<source>/<first 16 hex of the file's SHA-256>` |
+| `case_name` | string or null | "Petitioner v. Respondent", from the parties block or a "versus" line |
+| `court` | string or null | Matched against the known courts (Supreme Court of Pakistan, Federal Shariat Court, the five High Courts, Family Court) |
+| `year` | integer or null | From "Date of hearing / decision / judgment", else the case number's year |
+| `judges` | list of strings | Names from the "Present / Coram / Bench" block, else the signatures at the end; up to 5 |
+| `case_number` | string or null | e.g. "Civil Petition No. 1234 of 2022", "Crl.P. 187-P/2026" |
+| `citation` | string or null | **Neutral or court citation only** (e.g. "2024 SCP 15"). Publisher citations (PLD, SCMR, YLR…) are never stored as the citation; any seen are listed in `report_citations_seen` |
+| `topics` | list of strings | Rule-based keywords, each needing at least 2 mentions in the text: family, dower, khula, talaq, dissolution, nikah, custody, guardianship, maintenance, bail, murder, contract, property, constitutional |
+| `paragraphs` | list of `{n, text}` | The judgment's own numbered paragraphs (`n` = its number; `0` = the heading, parties and bench). Without numbering: blank-line blocks numbered 1, 2, … |
+| `source_type` | `"case_law"` | Always |
+| `source` | string | The dataset's name, as given to the inventory script |
+| `source_tier` | `2` | A team-supplied dataset, not fetched from a court website |
+| `source_url` | null | Unknown for the supplied files |
+| `original_file` | string | The file's path (or `archive.zip!member`). **Large files are not copied into the repository** |
+| `file_sha256` | string | SHA-256 of the original file's bytes |
+| `content_hash` | string | SHA-256 of the whitespace-normalised text |
+| `provenance_note` | string | Always "dataset supplied by the team; original source and licence to be confirmed" |
+| `status` | `"staged"` | Not shown to users until reviewed |
+| `quality` | object | `chars`, `near_empty`, `needs_ocr`, `law_report`, `exclude` (the reason, or null) |
+
+**Excluded from the index (kept in the records with the reason):**
+- **Near-empty:** under 1,500 characters.
+- **Needs OCR:** most pages have no text layer.
+- **Duplicates:** the same text, or the same case name and year.
+- **Law-report copies:** a publisher's citation (PLD, SCMR, YLR…) in the
+  header plus headnotes. These are listed separately, not indexed.
+
+**Chunks.** Windows of at most 120 tokens (the embedding model's tokenizer)
+from **one paragraph**, with the prefix
+`"<case_name> (<court>, <year>) - para <N>:"` counted inside the 120. A hit
+cites the judgment and the paragraph number.
+
 ## c) Source whitelist and tiers
 
 | Tier | Sources | Ingested? |
