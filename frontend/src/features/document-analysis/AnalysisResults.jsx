@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { AlertCircle, AlertTriangle } from "lucide-react";
 import Markdown from "@/lib/Markdown";
+import ReasoningPanel from "./ReasoningPanel";
 
 // Display names for the NER model's entity types (backend app/ai/ner.py).
 const ENTITY_LABELS = {
@@ -23,7 +25,43 @@ const ENTITY_LABELS = {
 //   left  — written by the language model (summary, points to review)
 //   right — extracted by the NER model (parties, dates, references)
 // No page references on values: the analysis API doesn't return any.
+// With REASONING_V2 on (kb-v2 C4) the response carries "reasoning" (or null
+// with "reasoning_error"), and a tab bar offers Summary & entities / Reasoning.
+// Without that key the page is exactly as before.
 export default function AnalysisResults({ analysis }) {
+  const [tab, setTab] = useState("summary");
+  if (!("reasoning" in analysis)) return <SummaryAndEntities analysis={analysis} />;
+  const tabs = [
+    ["summary", "Summary & entities"],
+    ["reasoning", `Reasoning${analysis.reasoning ? ` (${analysis.reasoning.counts.kept})` : ""}`],
+  ];
+  return (
+    <div className="mt-12">
+      <div className="flex gap-2 border-b border-ds-rule" role="tablist" aria-label="Analysis views">
+        {tabs.map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`min-h-[48px] px-4 -mb-px font-ds-sans text-[16px] border-b-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ink ${
+              tab === key ? "border-ds-ink font-semibold text-ds-text" : "border-transparent text-ds-text-2 hover:text-ds-text"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === "summary" ? (
+        <SummaryAndEntities analysis={analysis} />
+      ) : (
+        <ReasoningPanel reasoning={analysis.reasoning} error={analysis.reasoning_error} />
+      )}
+    </div>
+  );
+}
+
+function SummaryAndEntities({ analysis }) {
   // Risks are shown once, as "Points to review" rows, so drop the summary's
   // own risk section (section 5 of the prompt in AIClient.summarise).
   const summary = analysis.risks.length ? withoutRiskSection(analysis.summary) : analysis.summary;
