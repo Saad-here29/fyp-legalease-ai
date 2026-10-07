@@ -1,0 +1,70 @@
+{
+  "document_type": {"text": "Supreme Court order converting a bail petition into an appeal and granting post-arrest bail",
+                    "evidence": "This petition is, therefore, converted into appeal and allowed."},
+  "issues": [
+    {"text": "Whether the petitioner has made out a case of further inquiry for post-arrest bail.",
+     "evidence": "Petitioner has made out a case of further inquiry entitling him for grant of post-arrest bail"},
+    {"text": "Whether the courts below were right to refuse bail on medical grounds.",
+     "evidence": "has summarily been turned down without ascertaining and recording a finding"}
+  ],
+  "arguments": {
+    "petitioner": [
+      {"text": "The petitioner is 78 years old and suffers from hypertension, diabetes and ischemic heart disease.",
+       "evidence": "Petitioner is a man of advanced age (78 Years) with infirm health"},
+      {"text": "A joint role is alleged and no weapon was recovered from him.",
+       "evidence": "a joint role has been assigned to the Petitioner alongwith co-accused namely Siraj"},
+      {"text": "He was falsely implicated in FIR No. 999/2025.",
+       "evidence": "Petitioner is innocent who has been falsely implicated by the complainant party"}
+    ],
+    "complainant": [
+      {"text": "The petitioner was named with a specific role and remained an absconder.",
+       "evidence": "the Petitioner remained absconder for a considerable period of time"},
+      {"text": "The Medical Board did not find the illness life-threatening.",
+       "evidence": "did not declare the illness of the Petitioner as life-threatening"}
+    ],
+    "state": [
+      {"text": "The State relied on a confession recorded before a magistrate.",
+       "evidence": "the accused confessed his guilt before the Judicial Magistrate"}
+    ]
+  },
+  "court_reasoning": [
+    {"text": "All three accused were given a joint role of firing at the complainant party.",
+     "evidence": "All the three of the same family have been assigned a joint role of making firing with pistols"},
+    {"text": "The FIR does not show whose shot caused the deaths, so the petitioner's role needs further inquiry.",
+     "evidence": "no specific detail has been given to prima facie show the injury on the body of complainant party"},
+    {"text": "No recovery was made from the petitioner and the empties came from one pistol.",
+     "evidence": "no recovery has been effected from the Petitioner whereas the empties found at the place of incident have reportedly been fired from the same pistol"},
+    {"text": "The medical ground was turned down without finding that treatment is available in custody.",
+     "evidence": "Medical ground raised by the Petitioner, despite of Medical Board's opinion confirming the said diseases, has summarily been turned down"}
+  ],
+  "holding_or_outcome": {"text": "Bail after arrest granted on bonds of Rs. 200,000 with one surety; the High Court judgment of 10.07.2026 set aside.",
+                         "evidence": "the appellant is granted bail after arrest subject to his furnishing bail bonds in the sum of Rs.200,000/- with one surety"},
+  "statutes_cited": [
+    {"act": "PPC", "section": "302/324/34", "evidence": "registered under sections 302/324/34 PPC"},
+    {"act": "Code of Criminal Procedure", "section": "497", "evidence": "bail under section 497 of the Code of Criminal Procedure"}
+  ],
+  "strong_points": [
+    {"text": "Age and illness are confirmed by the Standing Medical Board.",
+     "evidence": "The Standing Medical Board is of the opinion that patient is known case of hypertension, diabetes mellitus and ischemic heart disease"},
+    {"text": "No weapon was recovered from the petitioner.",
+     "evidence": "no recovery of weapon has been effected from the Petitioner"}
+  ],
+  "weak_points": [
+    {"text": "The petitioner was nominated in the FIR with a specific role.",
+     "evidence": "Petitioner has been nominated in the FIR with a specific role of causing firearm injury to Saadullah (deceased)"},
+    {"text": "He absconded for a long time.",
+     "evidence": "remained absconder for a considerable period of time"}
+  ],
+  "risks": [
+    {"text": "Bail can be cancelled if the petitioner misuses it or absconds again, as he did after the 2022 incident.",
+     "evidence": "the Petitioner remained absconder for a considerable period of time"},
+    {"text": "The trial court must accept the surety, set on 15.08.2026.",
+     "evidence": "to the satisfaction of the learned Trial Court"}
+  ],
+  "open_questions": [
+    {"text": "Whose shot caused each death has not been established.",
+     "evidence": "no specific detail has been given to prima facie show the injury on the body of complainant party resulted in death of the deceased"},
+    {"text": "Whether treatment is available in judicial custody was not recorded.",
+     "evidence": "without ascertaining and recording a finding to the effect that such medical facility and treatment is available"}
+  ]
+}
