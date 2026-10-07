@@ -16,7 +16,7 @@ _HEADING = re.compile(
     r"^\s*(?P<mark>#{1,6}\s*|\*\*\s*)?(?P<num>[1-9])\s*[).:]\s*(?P<title>[^\n]*)$",
     re.MULTILINE,
 )
-_SECTION_WORDS = ("summary", "part", "date", "clause", "obligation", "risk")
+_SECTION_WORDS = ("summary", "part", "date", "clause", "obligation", "risk", "review")
 _BULLET = re.compile(r"^\s*(?:[-*+•]|\d{1,2}[.)])\s+(?P<item>.+)$")
 _TABLE_SEP = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
 
@@ -92,12 +92,13 @@ def extract_clauses_and_risks(summary: str) -> tuple[list[str], list[str]]:
     the summary doesn't follow the requested structure."""
     sections = _section_bodies(summary or "")
 
-    def find(num: int, keyword: str) -> list[str]:
-        if num in sections and keyword in sections[num][0].lower():
+    def find(num: int, *keywords: str) -> list[str]:
+        if num in sections and any(k in sections[num][0].lower() for k in keywords):
             return _items(sections[num][1])
         for title, body in sections.values():   # numbering drifted
-            if keyword in title.lower():
+            if any(k in title.lower() for k in keywords):
                 return _items(body)
         return []
 
-    return find(4, "clause"), find(5, "risk")
+    # Section 5 is "Risk flags ..." or, with REASONING_V2 (kb-v2 C10), "Points to review ...".
+    return find(4, "clause"), find(5, "risk", "review")

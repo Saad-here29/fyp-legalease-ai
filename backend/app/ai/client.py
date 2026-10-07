@@ -315,7 +315,9 @@ class AIClient:
         except AIServiceUnavailable:
             return query
 
-    def summarise(self, text: str, hint: str = "") -> str:
+    def summarise(self, text: str, hint: str = "", *, focus_gaps: bool = False) -> str:
+        """`focus_gaps` (kb-v2 C10, with REASONING_V2): section 5 asks for this
+        document's own gaps, not a generic checklist."""
         if not self.enabled:
             raise AIServiceUnavailable(
                 message="AI summarisation is not configured.",
@@ -327,7 +329,10 @@ class AIClient:
             "2) Parties (named individuals/entities)\n"
             "3) Key dates (in document order)\n"
             "4) Key clauses / obligations\n"
-            "5) Risk flags or missing standard clauses\n\n"
+            + ("5) Points to review: gaps in THIS document only (events with no date, amounts or dates that don't "
+               "match, annexures referred to but not numbered or attached, blanks left to fill). No generic "
+               "checklist; never say something is missing unless the document really doesn't contain it.\n\n"
+               if focus_gaps else "5) Risk flags or missing standard clauses\n\n") +
             f"Document type hint: {hint}\n\n--- DOCUMENT ---\n{text[:SUMMARY_MAX_CHARS]}"
         )
         history = [{"role": "user", "content": prompt}]

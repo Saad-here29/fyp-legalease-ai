@@ -341,7 +341,8 @@ def analyze_document(
     with ThreadPoolExecutor(max_workers=1, thread_name_prefix="ner") as pool:
         ner_future = pool.submit(ner.extract_entities, text)
         ai = get_ai_client()
-        summary_text = ai.summarise(text, hint=f"Document type: {document_type.value}")
+        summary_text = ai.summarise(text, hint=f"Document type: {document_type.value}",
+                                    focus_gaps=settings.REASONING_V2)
         try:
             ner_result = ner_future.result()
         except Exception as e:  # noqa: BLE001 — NER must never sink the summary
@@ -353,11 +354,19 @@ def analyze_document(
     reasoning_extra: dict = {}
     if settings.REASONING_V2:
         from app.ai import reasoning
+        from app.ai.client import CHAT_MAX_TOKENS, SUMMARY_MAX_CHARS
+        # The summary call just used about this much of the minute's token budget (kb-v2 C10).
+        summary_tokens = reasoning.tokens(text[:SUMMARY_MAX_CHARS]) + 300 + CHAT_MAX_TOKENS
         brief, why = reasoning.analyse(text, [e.text for e in ner_result.entities],
-                                       hint=document_type.value)
+                                       hint=document_type.value, prior_tokens=summary_tokens)
         reasoning_extra = {"reasoning": brief, "reasoning_error": why}
 
     key_clauses, risks = extract_clauses_and_risks(summary_text)
+    if settings.REASONING_V2:
+        # kb-v2 C10: "no X" / "X is missing" review points that the document contradicts are dropped.
+        risks, removed = reasoning.drop_contradicted_absences(risks, text)
+        reasoning_extra["review_points_removed"] = len(removed)
+        reasoning_extra["review_points_removed_text"] = removed
     parties = [e.text for e in sorted(ner_result.by_type(*_PARTY_TYPES),
                                       key=lambda e: -e.count)]
     dates = [e.text for e in ner_result.by_type("date")]
