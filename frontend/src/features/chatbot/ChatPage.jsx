@@ -27,6 +27,21 @@ const SUGGESTIONS = [
 
 // The backend's citation check (backend/app/ai/citation_check.py) marks any
 // section reference it can't find in the retrieved text with this flag.
+// Every source number the answer cites, short answer included: "[3]", and
+// grouped forms "[1, 2]" and "[1-3]" (older answers; new ones are normalised
+// to "[1][2]" by the backend).
+function citedNumbers(content) {
+  const out = new Set();
+  for (const m of content.matchAll(/\[(\d{1,2}(?:\s*[,–—-]\s*\d{1,2})*)\](?!\()/g)) {
+    for (const part of m[1].split(",")) {
+      const [a, b] = part.split(/[–—-]/).map((x) => Number(x.trim()));
+      if (b && b > a && b - a <= 10) for (let n = a; n <= b; n += 1) out.add(n);
+      else out.add(a);
+    }
+  }
+  return out;
+}
+
 const UNVERIFIED_FLAG = /\((?:unverified|غیر مصدقہ)\)/;
 
 // Substantive answers open with one "Short answer:" sentence (system prompt
@@ -397,7 +412,7 @@ function AiLabel() {
 function Answer({ message }) {
   // Only passages the answer actually cites are listed, keeping their
   // original numbers so "[3]" in the text always means source 3.
-  const cited = new Set([...message.content.matchAll(/\[(\d{1,2})\](?!\()/g)].map((m) => Number(m[1])));
+  const cited = citedNumbers(message.content);
   const sources = message.citations.filter((c) => cited.has(c.n));
   // Some statutes are indexed under two titles, one OCR-damaged ("Muslim
   // Family Laws Ordinance, 1961" / "THE MUSLIM FAMILY LAWS ORDINAN CE,
@@ -518,13 +533,27 @@ function Answer({ message }) {
   );
 }
 
+// Neutral progress wording while the answer is prepared. The backend sends no
+// stage events, so the steps follow the typical timing (search ~1 s, reading,
+// then writing for the rest).
+const THINKING_STEPS = [
+  [0, "Searching the legal library…"],
+  [1500, "Reading the sources…"],
+  [3500, "Writing the answer…"],
+];
+
 function Thinking() {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const timers = THINKING_STEPS.slice(1).map(([ms], i) => setTimeout(() => setStep(i + 1), ms));
+    return () => timers.forEach(clearTimeout);
+  }, []);
   return (
     <div>
       <AiLabel />
-      <p className="mt-4 border-t-2 border-ds-ink pt-6 flex items-center gap-3 ds-body text-ds-text-2">
+      <p className="mt-4 border-t-2 border-ds-ink pt-6 flex items-center gap-3 ds-body text-ds-text-2" aria-live="polite">
         <Loader2 className="h-5 w-5 animate-spin" />
-        Searching the statute library and drafting an answer…
+        {THINKING_STEPS[step][1]}
       </p>
     </div>
   );

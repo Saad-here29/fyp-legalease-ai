@@ -180,7 +180,7 @@ export default function ResearchPage() {
       {q && isFetching && !data && (
         <p className="flex items-center gap-3 ds-body text-ds-text-2">
           <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-          Searching the statute library…
+          Searching the legal library…
         </p>
       )}
 
