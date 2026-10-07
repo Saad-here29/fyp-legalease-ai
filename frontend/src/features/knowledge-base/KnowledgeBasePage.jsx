@@ -6,7 +6,10 @@ import AppShell from "@/components/layout/AppShell";
 import { Figures } from "@/features/dashboard/components/DashParts";
 import { ROUTES } from "@/constants";
 import { kbApi } from "./api";
-import { TierTag, KbStatusTag } from "./kbParts";
+import { TierTag, KbStatusTag, ScrapedTag } from "./kbParts";
+import { shortDate } from "./kbFormat";
+import SourcesUpdates from "./SourcesUpdates";
+import { useUpdates } from "./useUpdates";
 import JudgmentsTab from "./JudgmentsTab";
 import { useJudgmentsInfo } from "./useJudgments";
 
@@ -22,6 +25,7 @@ export default function KnowledgeBasePage() {
   const filters = Object.fromEntries(FILTERS.map((k) => [k, params.get(k) || ""]));
   const [q, setQ] = useState(filters.q);
   const judgments = useJudgmentsInfo();
+  const updates = useUpdates();
   const tab = judgments && params.get("tab") === "judgments" ? "judgments" : "laws";
 
   const { data: stats } = useQuery({ queryKey: ["kb-stats"], queryFn: kbApi.stats, staleTime: 5 * 60 * 1000 });
@@ -173,6 +177,8 @@ export default function KnowledgeBasePage() {
         {data && data.documents.length > 0 && <LawTable laws={data.documents} />}
       </section>
       )}
+
+      {updates && <SourcesUpdates updates={updates} />}
     </AppShell>
   );
 }
@@ -218,6 +224,17 @@ function LawTable({ laws }) {
                 {l.audience && l.audience !== "general" && (
                   <span className="block ds-meta mt-1">For: {l.audience}</span>
                 )}
+                {l.scraped && (
+                  <span className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <ScrapedTag scraped fetchedAt={l.fetched_at} />
+                    <span className="ds-meta">fetched {shortDate(l.fetched_at)}</span>
+                    {l.source_url && (
+                      <a href={l.source_url} target="_blank" rel="noopener noreferrer" className="ds-link text-[14px]">
+                        Source
+                      </a>
+                    )}
+                  </span>
+                )}
               </td>
               <td className="py-4 pr-4 ds-body text-ds-text-2">{l.category || "—"}</td>
               <td className="py-4 pr-4 ds-body text-ds-text-2">{l.jurisdiction}</td>
@@ -243,6 +260,7 @@ function LawTable({ laws }) {
             <div className="flex flex-wrap gap-2 mt-2">
               <TierTag tier={l.source_tier} />
               <KbStatusTag status={l.status} />
+              <ScrapedTag scraped={l.scraped} fetchedAt={l.fetched_at} />
             </div>
           </li>
         ))}

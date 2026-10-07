@@ -6,6 +6,8 @@ import AppShell from "@/components/layout/AppShell";
 import { ROUTES } from "@/constants";
 import { kbApi } from "./api";
 import { StagedTag, TopicTags } from "./JudgmentsTab";
+import { ScrapedTag } from "./kbParts";
+import { shortDate } from "./kbFormat";
 
 // One judgment (kb-v2 C2): its metadata, provenance and status, and its own
 // numbered paragraphs. ?para=N (linked from Research and AI Chat) scrolls to
@@ -69,6 +71,21 @@ export default function KnowledgeBaseJudgmentPage() {
                 </span>
               }
             />
+            {j.scraped && (
+              <Meta
+                label="Source"
+                value={
+                  <span className="flex flex-wrap items-center gap-2">
+                    <ScrapedTag scraped fetchedAt={j.fetched_at} />
+                    <a href={j.source_url} target="_blank" rel="noopener noreferrer" className="ds-link break-all">
+                      {j.source_url}
+                    </a>
+                    <span className="ds-meta">fetched {shortDate(j.fetched_at)}</span>
+                  </span>
+                }
+                wide
+              />
+            )}
             <Meta label="Provenance" value={j.provenance_note} wide />
           </dl>
 

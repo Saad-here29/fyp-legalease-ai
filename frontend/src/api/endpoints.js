@@ -51,6 +51,8 @@ export const ENDPOINTS = {
     record: (recordId) => `/kb/records/${recordId.split("/").map(encodeURIComponent).join("/")}`,
     // Judgments (kb-v2 C2; 404 while JUDGMENTS_V2 is off)
     judgments: "/kb/judgments",
+    // Scraping update log (kb-v2 C3; 404 while SCRAPED_V2 is off)
+    updates: "/kb/updates",
     judgment: (docId) => `/kb/judgments/${docId.split("/").map(encodeURIComponent).join("/")}`,
   },
   contracts: {

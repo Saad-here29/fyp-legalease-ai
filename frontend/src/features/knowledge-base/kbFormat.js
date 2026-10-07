@@ -33,3 +33,10 @@ export function kbRecordPath(recordId) {
   if (parts.length < 3) return null;
   return `${ROUTES.KNOWLEDGE_BASE_LAW.replace(":id", encodeURIComponent(parts[1]))}?record=${encodeURIComponent(recordId)}`;
 }
+
+// "7 Oct 2026" from an ISO date (scraped fetch dates, kb-v2 C3).
+export function shortDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}

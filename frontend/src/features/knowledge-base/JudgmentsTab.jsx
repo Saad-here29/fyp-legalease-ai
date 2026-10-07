@@ -4,6 +4,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Loader2, AlertCircle, Search } from "lucide-react";
 import { kbApi } from "./api";
 import { judgmentPath } from "./kbFormat";
+import { ScrapedTag } from "./kbParts";
 
 // Knowledge Base "Judgments" tab (kb-v2 C2): the team-supplied judgments,
 // one row per case (copies in two datasets shown once), read from the
@@ -78,8 +79,9 @@ export default function JudgmentsTab({ info }) {
         </p>
       </div>
       <p className="ds-body text-ds-text-2 mt-4 max-w-[760px]">
-        Dataset supplied by the team; original source and licence to be confirmed. Judgments are staged, not yet
-        reviewed. Near-empty files, duplicates and publishers&apos; law-report copies are left out.
+        Dataset supplied by the team; original source and licence to be confirmed. Judgments marked Scraped come
+        from the court&apos;s own website, with a link to it. All are staged, not yet reviewed. Near-empty files,
+        duplicates and publishers&apos; law-report copies are left out.
       </p>
 
       <form
@@ -205,6 +207,11 @@ function JudgmentTable({ rows }) {
                   {j.display_name}
                 </Link>
                 {!j.indexed && <span className="block ds-meta mt-1">Not in search yet</span>}
+                {j.scraped && (
+                  <span className="block mt-1.5">
+                    <ScrapedTag scraped fetchedAt={j.fetched_at} />
+                  </span>
+                )}
               </td>
               <td className="py-4 pr-4 ds-body text-ds-text-2">{j.court || "—"}</td>
               <td className="py-4 pr-4 ds-body text-ds-text-2 text-right tabular-nums">{j.year || "—"}</td>

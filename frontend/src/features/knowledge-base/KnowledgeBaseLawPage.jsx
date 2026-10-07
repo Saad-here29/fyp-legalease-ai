@@ -5,8 +5,8 @@ import { Loader2, AlertCircle, ArrowLeft, Copy, Check } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { ROUTES } from "@/constants";
 import { kbApi, saveBlob, openBlob } from "./api";
-import { TierTag, KbStatusTag } from "./kbParts";
-import { sectionLabel } from "./kbFormat";
+import { TierTag, KbStatusTag, ScrapedTag } from "./kbParts";
+import { sectionLabel, shortDate } from "./kbFormat";
 
 // One law in the knowledge base: its metadata and provenance, the Pakistan
 // Code notice, its section records, and the selected record as stored
@@ -96,7 +96,20 @@ export default function KnowledgeBaseLawPage() {
             <Meta label="Jurisdiction" value={l.jurisdiction} />
             <Meta label="Year" value={l.year} />
             <Meta label="Act number" value={l.act_number || "Not recorded"} />
-            <Meta label="Source" value={l.source_label} />
+            <Meta
+              label="Source"
+              value={
+                <span className="flex flex-wrap items-center gap-2">
+                  {l.source_label}
+                  <ScrapedTag scraped={l.scraped} fetchedAt={l.fetched_at} />
+                </span>
+              }
+            />
+            {l.scraped && <Meta label="Fetched" value={shortDate(l.fetched_at)} />}
+            {l.scraped && <Meta label="Document type" value={l.document_type || "Not recorded"} />}
+            {l.scraped && l.amendments?.length > 0 && (
+              <Meta label="Amendments noted in the text" value={l.amendments.join("; ")} wide />
+            )}
             <Meta label="Source tier" value={<TierTag tier={l.source_tier} />} />
             <Meta label="Status" value={l.status === "current" ? "Current" : <KbStatusTag status={l.status} />} />
             <Meta label="Applies to" value={l.audience === "general" ? "General" : l.audience} />

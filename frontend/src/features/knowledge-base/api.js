@@ -14,6 +14,7 @@ export const kbApi = {
   original: (id) => blob(ENDPOINTS.kb.original(id)),
   judgments: (params) => client.get(ENDPOINTS.kb.judgments, { params }).then((r) => r.data),
   judgment: (docId) => client.get(ENDPOINTS.kb.judgment(docId)).then((r) => r.data),
+  updates: () => client.get(ENDPOINTS.kb.updates).then((r) => r.data),
 };
 
 // Save a Blob under a file name (the API needs the auth cookie, so a plain
