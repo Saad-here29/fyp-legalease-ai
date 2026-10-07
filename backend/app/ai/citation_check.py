@@ -453,7 +453,11 @@ def _named_acts(text: str) -> list[tuple[int, int, str]]:
 
 
 def _matches_source(name: str, source: str) -> bool:
-    return _owner_matches(_statute_words(name), _squash(source))
+    """The Act named is that source. Both ways round, so a name with extra
+    words ("the application of the Muslim Family Laws Ordinance") still
+    matches the source "Muslim Family Laws Ordinance, 1961"."""
+    words, src_words = _statute_words(name), _statute_words(source)
+    return _owner_matches(words, _squash(source)) or _owner_matches(src_words, "".join(words))
 
 
 def _act_problems(text: str, passages: list[dict], passages_norm: str) -> list[tuple[str, int]]:

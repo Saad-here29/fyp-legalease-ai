@@ -314,6 +314,18 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
     return passages
 
 
+def source_label(p: dict) -> str:
+    """' - s.302 Punishment of qatl-i-amd' for a kb-v2 section passage (its
+    number is in the record, not in its text), '' for a v1 chunk. An exact
+    match for the section the user named says so."""
+    sec, head = p.get("section"), p.get("heading")
+    if not sec:
+        return ""
+    label = f"s.{sec}" if str(sec)[:1].isdigit() else str(sec)
+    out = f" - {label}" + (f" {head}" if head else "")
+    return out + (" (the section named in the question)" if p.get("exact_match") else "")
+
+
 def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
                    strict: bool | None = None):
     """Ask the model to answer from `passages` (history ends with the
@@ -322,7 +334,7 @@ def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
     contains) is removed. Returns the CitationCheck result. Shared with
     the evaluation script so both send the same prompt."""
     context_block = "\n\n".join(
-        f"[{i + 1}] Source: {embeddings.record_source(p)}\n"
+        f"[{i + 1}] Source: {embeddings.record_source(p)}{source_label(p)}\n"
         f"{embeddings.record_text(p)}"
         for i, p in enumerate(passages)
     )
@@ -330,7 +342,8 @@ def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
     raw_text = ai.chat(history, system=system)
     checked = check_citations(
         raw_text,
-        [{"source": embeddings.record_source(p), "text": embeddings.record_text(p)}
+        [{"source": embeddings.record_source(p), "text": embeddings.record_text(p),
+          **({"section": p["section"]} if p.get("section") else {})}
          for p in passages],
         lang=lang,
     )

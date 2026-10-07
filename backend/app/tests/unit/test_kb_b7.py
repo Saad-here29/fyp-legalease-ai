@@ -197,3 +197,33 @@ def test_grouped_markers_are_split_so_every_source_is_listed():
     assert normalize_markers("See [1, 2] and [3-5] and [2][4].") == "See [1][2] and [3][4][5] and [2][4]."
     r = check_citations("Short answer: registration is compulsory [1, 2].", [CHRISTIAN, MFLO_S5])
     assert "[1][2]" in r.text and r.removed_markers == []
+
+
+def test_act_name_with_extra_words_still_matches_its_source():
+    mflo_s8 = {"source": "Muslim Family Laws Ordinance, 1961", "section": "8",
+               "text": "the provisions of section 7 shall, mutatis mutandis and so far as applicable, apply."}
+    r = check_citations("The right can also be exercised under the Application of the Muslim Family Laws "
+                        "Ordinance, 1961 [1].", [mflo_s8])
+    assert r.unverified == []
+
+
+def test_prompt_source_line_carries_section_and_heading():
+    from app.services.legal_chat_service import source_label
+    assert source_label({"section": "302", "heading": "Punishment of qatl-i-amd", "exact_match": True}) == \
+        " - s.302 Punishment of qatl-i-amd (the section named in the question)"
+    assert source_label({"section": "Schedule item 2", "heading": "Dower"}) == " - Schedule item 2 Dower"
+    assert source_label({"source": "THE PAKISTAN PENAL CODE", "text": "..."}) == ""     # v1 chunk: unchanged
+
+
+def test_compose_answer_passes_sections_to_the_check():
+    from app.services.legal_chat_service import compose_answer
+
+    class AI:
+        def chat(self, history, system):
+            assert "[1] Source: Pakistan Penal Code, 1860 - s.302 Punishment of qatl-i-amd" in system
+            return "Murder is punished under Section 302 of the Pakistan Penal Code [1]."
+    p = {"source": "Pakistan Penal Code, 1860", "section": "302", "heading": "Punishment of qatl-i-amd",
+         "text": "Whoever commits qatl-e-amd shall, subject to the provisions of this Chapter be punished.",
+         "exact_match": True}
+    checked = compose_answer(AI(), [p], [{"role": "user", "content": "q"}], "en")
+    assert checked.unverified == [] and "(unverified)" not in checked.text
