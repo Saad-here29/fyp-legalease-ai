@@ -1,6 +1,6 @@
 """kb-v2 C4: the Document Analysis reasoning layer, with a mocked model (no
 Groq calls). The document is the Crl.P. 187-P/2026 demo order in
-docs/demo/; the mocked reply mixes real quotes with planted bad items."""
+docs/evaluation/demo/; the mocked reply mixes real quotes with planted bad items."""
 
 import json
 from pathlib import Path
@@ -21,7 +21,7 @@ from app.models.enums import DocumentType, FileType, UserRole
 from app.models.user import User
 
 ROOT = Path(__file__).resolve().parents[4]
-PDF = ROOT / "docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf"
+PDF = ROOT / "docs/evaluation/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf"
 MOCK = (Path(__file__).resolve().parents[1] / "fixtures/reasoning/crl_p_187_mock.json").read_text(encoding="utf-8")
 TEXT = "\n".join(p.get_text() for p in pymupdf.open(PDF))
 NER = ["Nadar Khan", "Saadullah", "Zardali Khan", "Zafar Khan", "Siraj", "10.07.2026", "21.09.2026", "11.04.2022",

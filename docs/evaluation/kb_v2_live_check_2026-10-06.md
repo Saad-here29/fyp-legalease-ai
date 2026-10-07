@@ -78,7 +78,7 @@ from. This is expected, but a viewer comparing the two might notice.
 
 ### b) Document Analysis
 
-**Document:** `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
+**Document:** `docs/evaluation/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
 
 | Step | Result |
 |---|---|
@@ -210,7 +210,7 @@ Excluding records with almost no text from the index would fix it.
   cricket-bat refusal. Still avoid talaq procedure, khula and inheritance.
   Avoid "cruelty" phrasing: it's refused because of the rewrite, in both
   modes.
-- **Start the backend exactly as in `docs/DEMO_RUNBOOK.md`,** and check
+- **Start the backend exactly as in `docs/runbooks/demo-runbook.md`,** and check
   `/health` shows `"kb_v2":true`.
 - **Upload the demo PDF in the mode you present from.**
 

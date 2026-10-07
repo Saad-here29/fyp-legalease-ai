@@ -18,7 +18,7 @@ import { ROLES, ROUTES } from "@/constants";
 import Wordmark from "@/components/common/Wordmark";
 
 // Shared shell for every internal (authenticated) page — design system v1
-// (docs/STYLE_GUIDE.md; sidebar per docs/design_reference page 7). The shell
+// (docs/architecture/STYLE_GUIDE.md; sidebar per docs/architecture/design_reference page 7). The shell
 // is only the ink sidebar; each page's title, meta line and its one primary
 // action sit at the top of the content column, as in the Cases mockup.
 //

@@ -1,7 +1,7 @@
 # Retrieval gold set: DRAFT for review
 
 Status: **draft. Not used until you have checked it.** Companion to
-[`retrieval_redesign.md`](retrieval_redesign.md), section 7.
+[`retrieval_redesign.md`](../architecture/retrieval_redesign.md), section 7.
 
 The expected sections are the developer's assessment, not a lawyer's.
 Please correct any statute or section, and add or drop questions.

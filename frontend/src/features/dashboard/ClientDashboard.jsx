@@ -9,7 +9,7 @@ import StatusTag from "@/features/case-management/StatusTag";
 import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry, isUpcoming } from "@/features/case-management/caseMeta";
 import { RuledSection, ViewAll, Today } from "./components/DashParts";
 
-// Client dashboard — design system v1, per docs/design_reference page 5.
+// Client dashboard — design system v1, per docs/architecture/design_reference page 5.
 // Adapted to what exists: no messages or requested-document checklist (not
 // built); the next hearing date is shown when the lawyer has set one. "Where your case stands" follows the case's
 // real status; the stage notes below are fixed text, not AI output.

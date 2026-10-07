@@ -1,7 +1,7 @@
 # Knowledge base v2: Pakistan Code coverage (2026-10-06)
 
 This compares the Pakistan Code's category listings with the statutes in
-our corpus (`docs/corpus_statute_list.md`: 900 titles). The source data is
+our corpus (`docs/architecture/corpus_statute_list.md`: 900 titles). The source data is
 `backend/storage/kb/category_map.json`, built by
 `scripts/kb/build_category_map.py`.
 

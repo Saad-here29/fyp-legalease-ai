@@ -161,7 +161,7 @@ def _v2_active():
 
 
 def run_mode() -> dict:
-    """Which search mode this server runs in (see docs/DEMO_RUNBOOK.md)."""
+    """Which search mode this server runs in (see docs/runbooks/demo-runbook.md)."""
     return {
         "kb_v2": settings.KB_V2,
         "v1_index_chunks": _faiss_ntotal(settings.FAISS_INDEX_PATH),

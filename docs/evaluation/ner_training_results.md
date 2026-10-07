@@ -5,8 +5,8 @@ numbers, courts, parties, dates, amounts and cited cases in judgment text.
 Trained on Google Colab (GPU) on 2026-09-26; results independently
 re-scored on the project machine the same day.
 
-- **Training notebook:** [`ai-services/ner_training/ner_training_colab.ipynb`](../ai-services/ner_training/ner_training_colab.ipynb)
-- **Training data:** `data/raw/ner_courtroom_data.zip` (LHC + SCP CoNLL files; gitignored, see [`data/README.md`](../data/README.md))
+- **Training notebook:** [`ai-services/ner_training/ner_training_colab.ipynb`](../../ai-services/ner_training/ner_training_colab.ipynb)
+- **Training data:** `data/raw/ner_courtroom_data.zip` (LHC + SCP CoNLL files; gitignored, see [`data/README.md`](../../data/README.md))
 - **Trained model:** `backend/storage/models/legal_ner/` (gitignored — 539 MB; see [Model files](#model-files))
 - **Status:** trained, validated, and **integrated into Document Analysis** (`POST /documents/{id}/analyze`) — see [Backend integration](#backend-integration).
 

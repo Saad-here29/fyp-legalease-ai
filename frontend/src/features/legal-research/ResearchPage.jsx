@@ -11,7 +11,7 @@ import { sectionLabel, judgmentPath } from "@/features/knowledge-base/kbFormat";
 import { useJudgmentsInfo } from "@/features/knowledge-base/useJudgments";
 
 // Legal research — design system v1, per the Research mockup
-// (docs/design_reference page 11): ink search band, then ruled results.
+// (docs/architecture/design_reference page 11): ink search band, then ruled results.
 // Adapted: the library is Pakistani statute text only, so there are no
 // source-type (Judgments) or court filters, and no "Summarise top results"
 // (not built). Category, jurisdiction, source tier and year filters (kb-v2)

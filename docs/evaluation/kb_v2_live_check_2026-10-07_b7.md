@@ -75,5 +75,5 @@ So keep the current setting (off).
 
 **Yes.** The fixes are in backend code, so the running server on port 8000
 needs a restart (Ctrl+C, then the same command as in
-`docs/DEMO_RUNBOOK.md`). The Thinking-message wording is frontend-only; the
+`docs/runbooks/demo-runbook.md`). The Thinking-message wording is frontend-only; the
 Vite dev server picks it up without a restart.

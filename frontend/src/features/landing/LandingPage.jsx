@@ -7,7 +7,7 @@ import { ArchOutlines } from "@/components/common/ArchPattern";
 import { ROUTES } from "@/constants";
 import { researchApi } from "@/features/legal-research/api";
 
-// Public landing page — design system v1, per docs/design_reference page 3.
+// Public landing page — design system v1, per docs/architecture/design_reference page 3.
 // Every claim must match the product as built: the library is federal
 // Pakistani statute text only (no judgments, no jurisdiction/court/year
 // filters); extracted document values carry no page numbers; there is no

@@ -212,7 +212,7 @@ knowing before the demo):
 
 1. Start the backend (with the NER weights in
    `backend/storage/models/legal_ner/`) and the frontend.
-2. Log in, open **Documents**, upload `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
+2. Log in, open **Documents**, upload `docs/evaluation/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
 3. Click **Analyse**. The entities will match
    `analysis_response_after_fixes.json` exactly (the post-fix state), since
    NER is deterministic. The summary will be worded differently on each run,

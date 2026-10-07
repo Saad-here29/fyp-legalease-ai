@@ -12,7 +12,7 @@ import { formatBytes } from "@/lib/format";
 import { casesApi } from "@/features/case-management/api";
 
 // Documents — design system v1, per the Document Analysis mockup
-// (docs/design_reference page 12): upload strip, document header with its
+// (docs/architecture/design_reference page 12): upload strip, document header with its
 // status and one primary action, then AI summary | extracted data.
 // Adapted to what exists: no "View original" (no download endpoint), no
 // breadcrumb or document list (one document per visit), no page references.

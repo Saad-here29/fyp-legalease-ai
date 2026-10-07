@@ -10,7 +10,7 @@ import { fmtDate } from "@/features/case-management/caseMeta";
 import { contractsApi } from "./api";
 import { CONTRACT_TEMPLATES } from "./templates";
 
-// Contracts — design system v1, per the Contracts mockup (docs/design_reference
+// Contracts — design system v1, per the Contracts mockup (docs/architecture/design_reference
 // page 13): template cards, then the drafted contracts. Only the three real
 // templates (NDA, Employment, Service Agreement), not the mockup's five.
 

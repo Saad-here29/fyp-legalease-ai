@@ -10,7 +10,7 @@ import StatusTag from "@/features/case-management/StatusTag";
 import { TYPE_LABEL, fmtDate, isUpcoming } from "@/features/case-management/caseMeta";
 import { Figures, RuledSection, ViewAll, SessionList, Today } from "./components/DashParts";
 
-// Lawyer dashboard — design system v1, per docs/design_reference page 4.
+// Lawyer dashboard — design system v1, per docs/architecture/design_reference page 4.
 // Adapted to what exists: no calendar, cause list, deadlines or global
 // search (none are built); figures and lists come from the real caseload,
 // and upcoming hearings from each case's next hearing date.

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/constants";
 
-// Shared pieces of the three dashboards — design system v1 (docs/design_reference
+// Shared pieces of the three dashboards — design system v1 (docs/architecture/design_reference
 // pages 4-6): a figure row opened by a 2px ink rule, ruled sections with an
 // optional "View all" link, and the recent-AI-conversations list.
 

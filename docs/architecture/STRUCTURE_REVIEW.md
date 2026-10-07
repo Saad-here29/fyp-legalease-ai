@@ -64,7 +64,7 @@ loose files at the top of `docs/` move into those folders:
 | From | To | Action |
 |---|---|---|
 | `knowledge_base_spec.md`, `scraping.md`, `database-schema.md`, `retrieval_redesign.md`, `corpus_statute_list.md`, `STYLE_GUIDE.md`, `design_reference/` | `architecture/` | MOVE |
-| `reports/` diagrams (13 PNGs, `Class.pdf`) | `architecture/diagrams/` | MOVE |
+| `reports/` diagrams (16 PNGs, `Class.pdf`) | `architecture/diagrams/` | MOVE |
 | `eval/c8_*` | `evaluation/c8/` | MOVE |
 | `eval/chat_quality/` | `evaluation/chat_quality/` | MOVE |
 | `query_hints_eval_2026-10-07.md`, `kb_v2_comparison_*` (2), `kb_v2_live_check_*` (2), `kb_coverage_2026-10-06.md`, `kb_phase_b1_2026-10-06.md`, `chat_baseline_2026-10-06.md`, `chat_review_family_law_2026-10-05.md`, `chat_quality_steps_2026-10.md`, `retrieval_gold_set_draft.md`, `ner_training_results.md`, `demo_examples.md`, `demo/` | `evaluation/` | MOVE |
@@ -78,3 +78,13 @@ reference. That includes comments in code, test paths, the output paths of repor
 and the description text in `c8_questions.json` (the questions themselves are unchanged). The
 replay JSONs in `chat_quality/` record the absolute main-folder paths of their runs. That's
 provenance, so it isn't rewritten.
+
+**Exceptions, left with the old paths on purpose:**
+- `docs/evaluation/c8/c8_questions.json`: its "about" text names `docs/kb_v2_live_check_*.md`, but
+  the file says it must not be edited after results, so it stays byte-identical.
+- `backend/storage/kb/category_map.json`: `"corpus_list": "docs/corpus_statute_list.md"` is
+  provenance inside data under `backend/storage`, which isn't touched. It now lives at
+  `docs/architecture/corpus_statute_list.md`.
+- `docs/archive/TIDY_PLAN.md` and this review describe the moves, so they keep the old names.
+- Archived notes that describe an old worktree or folder layout (`archive/scraping_demo.md`,
+  `archive/folder-structure.md`) keep those historical names.

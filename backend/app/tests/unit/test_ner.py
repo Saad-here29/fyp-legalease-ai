@@ -118,7 +118,7 @@ def test_decode_bio_stray_or_mismatched_inside_tag_starts_new_entity():
     assert [(e["entity_group"], e["start"], e["end"]) for e in ents] == [("org", 0, 1), ("per", 2, 5)]
 
 
-# ---- corrections found on a real 2026 order (docs/demo_examples.md) --------
+# ---- corrections found on a real 2026 order (docs/evaluation/demo_examples.md) --------
 
 def _ent(text, needle, label):
     s = text.index(needle)
@@ -243,7 +243,7 @@ _WEIGHTS = Path(__file__).resolve().parents[3] / "storage" / "models" / "legal_n
 @pytest.fixture(scope="module")
 def real_model():
     if not (_WEIGHTS / "model.safetensors").exists():
-        pytest.skip("NER weights not present (gitignored) — see docs/ner_training_results.md")
+        pytest.skip("NER weights not present (gitignored) — see docs/evaluation/ner_training_results.md")
     ner.reset()
     mp = pytest.MonkeyPatch()
     mp.setattr(settings, "NER_ENABLED", True)

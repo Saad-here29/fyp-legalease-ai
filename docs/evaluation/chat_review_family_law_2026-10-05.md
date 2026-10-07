@@ -483,7 +483,7 @@ everywhere it appeared. The check only confirms that cited section
 |---|---:|
 | `frontend/src/features/chatbot/ChatPage.jsx` | 1 |
 | `frontend/src/features/landing/LandingPage.jsx` | 3 |
-| `docs/STYLE_GUIDE.md` | 1 |
+| `docs/architecture/STYLE_GUIDE.md` | 1 |
 
 No test or other document contained the old label. Lint is clean, the build
 passes, and all 213 backend tests pass.

@@ -4,7 +4,7 @@ Why: the embedding model reads only the first 128 tokens of a chunk, and
 99% of the 800-character chunks are longer. The Family Courts Act Schedule
 ("Dower", "Restitution of conjugal rights", "Dowry", "Personal property
 and belongings of a wife") starts at token 130 of its chunk, so no query
-could reach it (docs/chat_review_family_law_2026-10-05.md, 3.3).
+could reach it (docs/evaluation/chat_review_family_law_2026-10-05.md, 3.3).
 
 What: the chunks of a small allowlist of family statutes are re-embedded
 in overlapping windows of at most WINDOW_TOKENS tokens, in memory, at

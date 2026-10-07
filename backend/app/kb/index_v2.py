@@ -1,6 +1,6 @@
 """Knowledge base v2 index: section-aware chunks of the kb records.
 
-Chunk rule (docs/knowledge_base_spec.md § a2): a window of at most
+Chunk rule (docs/architecture/knowledge_base_spec.md § a2): a window of at most
 MAX_TOKENS tokens (the embedding model's own tokenizer, special tokens not
 counted) from ONE section record, starting with the prefix
 "<Title> - s.<N> <Heading>:", which counts inside the limit.

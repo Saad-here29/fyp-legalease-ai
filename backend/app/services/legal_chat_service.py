@@ -71,7 +71,7 @@ SYSTEM_PROMPT = (
 # The 2026-10-05 legal review found answers that extended a widow's share
 # to a separated wife "by analogy", applied an Air Force Act offence to
 # advocates, and listed consequences no passage mentioned
-# (docs/chat_review_family_law_2026-10-05.md, section 4).
+# (docs/evaluation/chat_review_family_law_2026-10-05.md, section 4).
 STRICT_GROUNDING_RULES = (
     "GROUNDING RULES — these override anything above:\n"
     "1. Every statement of law, procedure, right, remedy, penalty or "
@@ -98,7 +98,7 @@ STRICT_GROUNDING_RULES = (
 # at 8,000 tokens per minute (prompt + the 2,000-token reply reserve, plus
 # ~600 for the query rewrite in the same minute). A first question is ~2,200
 # prompt tokens; by the 6th turn with long answers the history alone pushed
-# a request past the cap (docs/retrieval_redesign.md, section 2.3). Keep the
+# a request past the cap (docs/architecture/retrieval_redesign.md, section 2.3). Keep the
 # newest messages up to this budget.
 HISTORY_TOKEN_BUDGET = 2000
 

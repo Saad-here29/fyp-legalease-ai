@@ -65,7 +65,7 @@ data/processed/
 
 # Trained NER model (500 MB zip / 539 MB weights, over GitHub's 100 MB
 # limit). Reproducible from ai-services/ner_training/ner_training_colab.ipynb;
-# results are documented in docs/ner_training_results.md.
+# results are documented in docs/evaluation/ner_training_results.md.
 ai-services/ner_training/trained_model/
 
 # ===== Uploads / Storage =====
@@ -119,10 +119,10 @@ tmp/
 
 # ===== Design reference renders =====
 # page-01.jpg … page-13.jpg are rendered from the tracked
-# "docs/design_reference/LegalEase AI Design System.pdf". Regenerate with
+# "docs/architecture/design_reference/LegalEase AI Design System.pdf". Regenerate with
 # PyMuPDF (backend venv):
-#   python -c "import fitz; d=fitz.open('docs/design_reference/LegalEase AI Design System.pdf'); [p.get_pixmap(dpi=150).save(f'docs/design_reference/page-{i+1:02d}.jpg') for i,p in enumerate(d)]"
-docs/design_reference/*.jpg
+#   python -c "import fitz; d=fitz.open('docs/architecture/design_reference/LegalEase AI Design System.pdf'); [p.get_pixmap(dpi=150).save(f'docs/architecture/design_reference/page-{i+1:02d}.jpg') for i,p in enumerate(d)]"
+docs/architecture/design_reference/*.jpg
 
 # C12: a stray copy of backend/storage/kb/faiss_judgments_dev_meta.json found at the backend root
 # (no code reads or writes that path); set aside for review, kept out of git.

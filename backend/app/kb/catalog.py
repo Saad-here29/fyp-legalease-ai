@@ -220,7 +220,7 @@ def coverage(cmap: dict) -> dict:
         "note": (f"We hold {held} of the {listed} Acts the Pakistan Code lists in its categories. "
                  f"The site's category counts add up to {badge}; the other {badge - listed} are counted "
                  "there but not listed, so they could not be checked."),
-        "source": "docs/kb_coverage_2026-10-06.md",
+        "source": "docs/evaluation/kb_coverage_2026-10-06.md",
     }
 
 

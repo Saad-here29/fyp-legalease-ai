@@ -69,7 +69,7 @@ class Settings(BaseSettings):
 
     # ===== Legal NER (Document Analysis) =====
     # Fine-tuned DistilBERT from ai-services/ner_training/ (weights gitignored;
-    # see docs/ner_training_results.md). Missing folder -> NER is skipped and
+    # see docs/evaluation/ner_training_results.md). Missing folder -> NER is skipped and
     # /documents/{id}/analyze still returns the LLM summary.
     NER_MODEL_PATH: str = "./storage/models/legal_ner"
     NER_ENABLED: bool = True
@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     # ===== Chat quality steps (Oct 2026) =====
     # Each step is shipped only if the offline evaluation shows it helps;
     # otherwise it stays built but off. Results:
-    # docs/chat_quality_steps_2026-10.md
+    # docs/evaluation/chat_quality_steps_2026-10.md
     # Query rewrite at temperature 0, no statute names added.
     REWRITE_V2: bool = False
     # Answer prompt: every claim tied to a numbered passage, no analogy,

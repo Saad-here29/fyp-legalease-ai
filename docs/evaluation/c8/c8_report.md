@@ -1,6 +1,6 @@
 # kb-v2 C8: accuracy pass (2026-10-07)
 
-Questions: `docs/eval/c8_questions.json`, committed (2ddb964) **before** any C8 run and not edited since.
+Questions: `docs/evaluation/c8/c8_questions.json`, committed (2ddb964) **before** any C8 run and not edited since.
 Three sets, reported separately: the 26 gold questions, the 5 live-test questions (as asked in the
 live checks: murder s.302, khula/dissolution, khula procedure, talaq procedure, registration), and 40
 unseen questions (criminal, family, contract, property, constitution, civil procedure).

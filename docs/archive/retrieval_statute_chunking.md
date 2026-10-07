@@ -2,7 +2,7 @@
 
 Generated 2026-10-04 by the analysis-only heading survey. It made no index,
 ran no embedding model and used no Groq. Companion to
-[`retrieval_redesign.md`](../retrieval_redesign.md), section 1.4.
+[`retrieval_redesign.md`](../architecture/retrieval_redesign.md), section 1.4.
 
 894 PDF-derived statutes were surveyed: **770** split into sections,
 **75** split into sections but flagged for review (coverage below 90%), and

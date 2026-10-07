@@ -4,7 +4,7 @@ Reconstructed from ai/seed_corpus.py, api/v1/research.py and schemas/research.py
 `document_type` here is a plain string ("statute"/"judgment"), unrelated to the
 DocumentType enum used for uploaded case documents — same English word, two
 different concepts. No embedding column: this implementation stores vectors
-only in the external FAISS index file, never in Postgres (docs/database-schema.md
+only in the external FAISS index file, never in Postgres (docs/architecture/database-schema.md
 describes an `embedding_vector` column that was never actually implemented —
 see the reconstruction plan for this divergence).
 """

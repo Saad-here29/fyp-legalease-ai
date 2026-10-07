@@ -45,7 +45,7 @@ overhead without a scaling benefit.
 | `api/v1/` | Thin routers: `auth`, `cases`, `chat`, `research`, `documents`, `contracts` |
 | `services/` | Business logic: `auth_service`, `case_service`, `legal_chat_service`, `research_service`, `contract_service`, `ocr_service` (text extraction), plus the `base` service with audit logging |
 | `repositories/` | `user_repository` (used by the auth service; other services query through the ORM directly) |
-| `models/` | SQLAlchemy ORM, 14 tables (`docs/database-schema.md`) |
+| `models/` | SQLAlchemy ORM, 14 tables (`docs/architecture/database-schema.md`) |
 | `schemas/` | Pydantic request/response models |
 | `ai/` | `embeddings` (FAISS + sentence-transformers), `client` (LLM providers), `query_rewrite`, `section_lookup`, `citation_check`, `ner`, `summary_sections`, `contract_templates` |
 | `middlewares/` | `auth` (current user from the cookie or Bearer token, token-version check), `audit` |
@@ -114,6 +114,6 @@ overhead without a scaling benefit.
   shared by every AI feature.
 - **Retrieval:** quality is limited by fixed 800-character chunks (and the
   embedding model's 128-token window). The section-based redesign is in
-  `docs/retrieval_redesign.md`.
+  `docs/architecture/retrieval_redesign.md`.
 - **OCR:** scanned files need Tesseract on the server (PyMuPDF renders the
   pages; no Poppler). OCR runs inside the upload request, about 3 s a page.

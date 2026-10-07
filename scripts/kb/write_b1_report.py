@@ -1,4 +1,4 @@
-"""Write docs/kb_phase_b1_2026-10-06.md from the built records (offline).
+"""Write docs/evaluation/kb_phase_b1_2026-10-06.md from the built records (offline).
 
 Run after build_records.py and build_shariat_act.py. Reads the corpus and the
 five user PDFs read-only (for the spot checks and the PDF comparison).
@@ -149,7 +149,7 @@ def main() -> int:
 
     # ---- spec + tests
     lines.append("## Spec and tests\n\n"
-             "- **`docs/knowledge_base_spec.md`** now documents:\n"
+             "- **`docs/architecture/knowledge_base_spec.md`** now documents:\n"
              "  - the corpus provenance rule;\n"
              "  - unsectioned laws;\n"
              "  - nullable fields;\n"
@@ -166,7 +166,7 @@ def main() -> int:
              "here.\n"
              "- **Detection is measured against the TOC.** A section the TOC omits can't be counted as "
              "missing.\n")
-    out = ROOT / "docs" / "kb_phase_b1_2026-10-06.md"
+    out = ROOT / "docs" / "evaluation" / "kb_phase_b1_2026-10-06.md"
     out.write_text("".join(lines), encoding="utf-8")
     print("written", out)
     return 0

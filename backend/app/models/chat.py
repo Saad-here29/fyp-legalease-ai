@@ -4,7 +4,7 @@ Reconstructed from services/legal_chat_service.py, services/chat_service.py
 (dead code, but shares these tables) and schemas/chat.py.
 
 Deliberately does NOT use TimestampMixin: `ChatSessionRead.started_at` and
-`docs/database-schema.md` both name the session's creation-time column
+`docs/architecture/database-schema.md` both name the session's creation-time column
 `started_at` (with a paired `ended_at`, unused by any code path today), which
 diverges from the generic `created_at` convention used elsewhere. ChatMessage
 rows are immutable (never updated after creation), so it only gets
@@ -41,7 +41,7 @@ class ChatSession(Base):
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    # In docs/database-schema.md but no "end session" flow exists in code yet.
+    # In docs/architecture/database-schema.md but no "end session" flow exists in code yet.
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

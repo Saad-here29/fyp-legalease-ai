@@ -1,4 +1,4 @@
-"""Statute section records (docs/knowledge_base_spec.md § a) and their validation."""
+"""Statute section records (docs/architecture/knowledge_base_spec.md § a) and their validation."""
 
 from __future__ import annotations
 

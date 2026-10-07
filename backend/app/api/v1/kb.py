@@ -1,7 +1,7 @@
 """Knowledge Base router — /kb/* (read-only, any logged-in user).
 
 Browses the kb-v2 section records: the laws, their sections, each record in
-the spec's JSON format (docs/knowledge_base_spec.md), a JSON download and,
+the spec's JSON format (docs/architecture/knowledge_base_spec.md), a JSON download and,
 when one was saved, the original file. Nothing here writes or touches the
 database; the data comes from storage/kb/ (app/kb/catalog.py).
 """

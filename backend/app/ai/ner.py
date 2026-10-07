@@ -1,7 +1,7 @@
 """Legal Named Entity Recognition for Document Analysis.
 
 Model: distilbert-base-multilingual-cased fine-tuned on LHC + SCP court
-judgments (ai-services/ner_training/, results in docs/ner_training_results.md).
+judgments (ai-services/ner_training/, results in docs/evaluation/ner_training_results.md).
 Weights live at settings.NER_MODEL_PATH and are gitignored — when they are
 absent, `extract_entities()` reports the model as unavailable and callers
 carry on without NER.
@@ -231,7 +231,7 @@ def chunk_text(text: str, count_tokens, max_tokens: int = CHUNK_TOKENS) -> list[
 # ---- Post-processing -------------------------------------------------------
 
 # Corrections for two failure modes found on a real 2026 Supreme Court order
-# (docs/demo_examples.md). Both are narrow, deterministic rules applied to
+# (docs/evaluation/demo_examples.md). Both are narrow, deterministic rules applied to
 # the model's output — the model itself is unchanged.
 
 _PERSON_TYPES = {"per", "resp"}

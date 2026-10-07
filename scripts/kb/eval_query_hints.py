@@ -3,7 +3,7 @@
 The 26 gold questions (scripts/kb/compare_kb_v2.py) and 10 family-law
 questions, raw (no rewrite), KB_V2 on, top 5: is an accepted Act + section
 in the top 5, before (QUERY_HINTS off) and after (on)? Writes
-docs/query_hints_eval_2026-10-07.md and lists every question that got worse.
+docs/evaluation/query_hints_eval_2026-10-07.md and lists every question that got worse.
 
     cd backend
     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python ../scripts/kb/eval_query_hints.py
@@ -48,7 +48,7 @@ FAMILY10 = [
     ("F09", "How is the property of a deceased Muslim divided among the heirs?", [(SHARIAT, "2"), (MFLO, "4")]),
     ("F10", "Can a wife claim maintenance from her husband?", [(MFLO, "9"), (FCA, "Schedule")]),
 ]
-OUT = ROOT / "docs" / "query_hints_eval_2026-10-07.md"
+OUT = ROOT / "docs" / "evaluation" / "query_hints_eval_2026-10-07.md"
 
 
 def search(q: str, hints_on: bool) -> list[dict]:

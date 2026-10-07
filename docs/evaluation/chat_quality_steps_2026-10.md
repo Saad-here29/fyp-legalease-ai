@@ -1,7 +1,7 @@
 # Chat quality steps: offline evaluation (2026-10-05)
 
 This evaluates the four approved steps from
-`docs/chat_review_family_law_2026-10-05.md` § 5. Every step is **built and
+`docs/evaluation/chat_review_family_law_2026-10-05.md` § 5. Every step is **built and
 switched off**; nothing has shipped. The flags are in `backend/.env`:
 
 | Flag | Step |
@@ -20,7 +20,7 @@ switched off**; nothing has shipped. The flags are in `backend/.env`:
 - **Recording:** rewrites were recorded once per setup with the backend's own
   code (`scripts/kb/eval_chat_quality.py record`). That was the only Groq use.
 - **Replay:** everything else was replayed offline through the chat's own
-  `retrieve_passages()`. Raw data: `docs/eval/chat_quality/`.
+  `retrieve_passages()`. Raw data: `docs/evaluation/chat_quality/`.
 - **Question sets:** the 8 review questions (R1–R8), the 78 lawyer questions
   (L01–L78), and the 15 off-topic questions (O01–O15).
 - **Recordings:** no recording failed and no rewrite fell back silently, so

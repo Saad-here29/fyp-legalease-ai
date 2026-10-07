@@ -27,7 +27,7 @@ are tracked.
   judgment text for a separate NER training task, not part of the statute
   corpus pipeline below. Known limitations of this data, to address in any
   future retraining (details and evidence in
-  [`docs/ner_training_results.md`](../docs/ner_training_results.md#future-work--retraining-checklist)):
+  [`docs/evaluation/ner_training_results.md`](../docs/evaluation/ner_training_results.md#future-work--retraining-checklist)):
   - **Case-number capitalisation gap.** SCP writes a judgment's own case
     number in capitals ("CIVIL APPEAL NO.1074 OF 2009", labelled `caseno`
     333 times); mixed-case "Criminal Petition No. …" appears only 9 times
@@ -92,7 +92,7 @@ Known limitations of the statute corpus, found by measurement on
    re-chunk and a full FAISS rebuild (the last rebuild took hours on the dev
    machine), then a re-run of the retrieval evaluation. **Full design,
    with measurements, Colab embedding and evaluation plans:
-   [`docs/retrieval_redesign.md`](../docs/retrieval_redesign.md)** (Oct 2026;
+   [`docs/architecture/retrieval_redesign.md`](../docs/architecture/retrieval_redesign.md)** (Oct 2026;
    approved with conditions 2026-10-04, gold set awaiting review).
 2. **Table-of-contents chunks crowd the top 5.** 1,445 chunks (2.7%, in 745
    of the 900 documents) are contents lists — statute name plus every

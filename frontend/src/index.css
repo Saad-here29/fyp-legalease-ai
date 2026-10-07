@@ -21,7 +21,7 @@
 
 @layer components {
 
-  /* ===== Design system v1 (docs/design_reference, page 1; docs/STYLE_GUIDE.md) =====
+  /* ===== Design system v1 (docs/architecture/design_reference, page 1; docs/architecture/STYLE_GUIDE.md) =====
      All `ds-` prefixed while pages migrate one at a time. */
 
   /* Type — Newsreader for identity and titles, IBM Plex Sans for the rest.

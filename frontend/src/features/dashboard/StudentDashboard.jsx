@@ -9,7 +9,7 @@ import { chatApi } from "@/features/chatbot/api";
 import { researchApi } from "@/features/legal-research/api";
 import { RuledSection, ViewAll, SessionList } from "./components/DashParts";
 
-// Student dashboard — design system v1, per docs/design_reference page 6.
+// Student dashboard — design system v1, per docs/architecture/design_reference page 6.
 // Adapted to what exists: no reading progress, weekly practice, saved items
 // or moot folder (none are built; the Practice Simulator is future work).
 // Both actions hand off to real pages: the question opens pre-filled in AI

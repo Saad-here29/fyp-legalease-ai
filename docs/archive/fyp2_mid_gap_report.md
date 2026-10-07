@@ -5,7 +5,7 @@ was changed and no AI calls were made.
 
 **Sources:**
 - the FYP-1 **Proposal** (Jan 2026, 14 pp.), **Mid report** (Mar 2026,
-  42 pp.) and **Final report** (May 2026, 56 pp.) in `docs/reports/`;
+  42 pp.) and **Final report** (May 2026, 56 pp.) in `docs/architecture/diagrams/`;
 - the current code at `80f57f5`;
 - the October 2026 quality pass (`docs/evaluation/test-plan.md` § 9);
 - the September pre-demo audit (`docs/archive/PROJECT_CONTEXT.md`).
@@ -100,7 +100,7 @@ was changed and no AI calls were made.
 - **FR-AI-02** (top 5 passages): **Implemented, metric unverified.**
   - `RAG_TOP_K=5`.
   - Recall@5 on a 50-pair set hasn't been measured. The draft gold set
-    (`docs/retrieval_gold_set_draft.md`) is the planned measure.
+    (`docs/evaluation/retrieval_gold_set_draft.md`) is the planned measure.
   - Known misses: PPC s. 302, Contract Act s. 10, khula.
 - **FR-AI-03** (refuse below 0.7): **Changed: the threshold is 0.65.**
   - It was tuned on 2026-09-20 with the 78 real lawyer questions: 0.7
@@ -315,7 +315,7 @@ These are the claims to fix before the panel reads them.
 |---|---|---|---|---|
 | 1 | LLM is **OpenAI Chat Completions** | Final Table 4.1 | **Groq `openai/gpt-oss-120b`**, through the OpenAI-compatible client. OpenAI (gpt-4o-mini) and Gemini are optional fallbacks | Say Groq primary, OpenAI/Gemini fallback |
 | 2 | **Celery + Redis** for OCR jobs | Final Table 4.1 | No task queue. OCR runs inside the upload request. Celery and Redis were removed in October | Remove the row |
-| 3 | Library built from the **Pakistan Code + Peshawar and Sindh High Court judgments** | Final § 4.1 | **Statutes only**: about 900 documents, 53,739 passages, no judgments. Where the two raw datasets came from is **not recorded** | Say statutes only. Don't claim a source you can't show (`docs/corpus_statute_list.md`) |
+| 3 | Library built from the **Pakistan Code + Peshawar and Sindh High Court judgments** | Final § 4.1 | **Statutes only**: about 900 documents, 53,739 passages, no judgments. Where the two raw datasets came from is **not recorded** | Say statutes only. Don't claim a source you can't show (`docs/architecture/corpus_statute_list.md`) |
 | 4 | **800-token** chunks, **100-token** overlap | Final § 4.1, Fig 4.4 | 800 **characters**, 100 **characters** | Correct the unit |
 | 5 | Refuse below **0.7** | Final FR-AI-03, § 4.1, Fig 4.5 | **0.65**, tuned on the 78 real lawyer questions (2026-09-20) | State 0.65 and why |
 | 6 | Embeddings: "multilingual sentence-transformer"; FAISS IndexFlatIP, L2-normalised | Final § 4.1 | **Matches**: `paraphrase-multilingual-MiniLM-L12-v2`, 384-dim, IndexFlatIP. Unstated limit: the model reads only the first 128 tokens of each chunk | Optionally add the model name |
@@ -328,7 +328,7 @@ These are the claims to fix before the panel reads them.
 | 13 | **Encrypted storage** of sensitive files | Final § 1.4.8; Mid SEC-3 | Passwords are bcrypt-hashed. **Uploaded files are stored unencrypted on disk**. Database encryption at rest is Supabase's, not verified by us | Say passwords hashed, files access-controlled; or implement encryption |
 | 14 | Summaries by **BERT**, with a `confidenceScore` | Proposal § 2.3; Final UT-DOC-003 | Summaries come from the **LLM**. No confidence score | Correct |
 | 15 | *(not mentioned)* | Final report | A **fine-tuned DistilBERT legal NER model** (parties, dates, references; F1 0.811 val / 0.784 test on Supreme Court text) is in document analysis | **Add it**: it's your strongest answer to "lack of AI" |
-| 16 | Domain model: Deadline, SimulationScenario/Attempt, Notification, LegalStatute; `Document.docType` CONTRACT/FIR/…; `ocrText`; `firmName`, `opponent` | Final Fig 3.4; Mid ERD | None of these exist. The schema has 14 tables (`docs/database-schema.md`). `document_type` has only `other`; extracted text is one column | Mark as planned, or update the diagram |
+| 16 | Domain model: Deadline, SimulationScenario/Attempt, Notification, LegalStatute; `Document.docType` CONTRACT/FIR/…; `ocrText`; `firmName`, `opponent` | Final Fig 3.4; Mid ERD | None of these exist. The schema has 14 tables (`docs/architecture/database-schema.md`). `document_type` has only `other`; extracted text is one column | Mark as planned, or update the diagram |
 | 17 | Class diagram: ChatService/RAGEngine, SimulationService, NotificationService, EmailService, StorageService, EncryptionService, one repository per entity | Final Fig 3.6 | Services that exist: AuthService, CaseService, LegalChatService, ResearchService, ContractService, OCRService. Only UserRepository. No simulation, notification or storage services | Redraw, or mark future classes |
 | 18 | Architecture: **Layered + Microservices / API gateway** | Mid § 3.1; Proposal § 2.3 | One FastAPI app, layered (as the **Final** report correctly says) | Final is right; don't repeat the Mid claim |
 | 19 | UC-04: chat history limited to the last 50 exchanges; answers in ≤15 s | Final Table 2.4 | No 50 cap. The model sees ≤10 messages / 2,000 tokens. Answers take 9–27 s | Correct |

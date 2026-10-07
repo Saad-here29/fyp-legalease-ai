@@ -3,7 +3,7 @@
 The ORM models in `backend/app/models/` and the migrations in
 `backend/alembic/versions/` are the source of truth. This page was generated
 from those models (October 2026). The original design ERD is
-`docs/reports/ERD.png`. It predates some changes listed below.
+`docs/architecture/diagrams/ERD.png`. It predates some changes listed below.
 
 ## Engine and conventions
 

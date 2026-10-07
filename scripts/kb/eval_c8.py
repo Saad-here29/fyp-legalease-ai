@@ -1,7 +1,7 @@
 """kb-v2 C8: retrieval-only evaluation on three separate sets. Offline, no LLM.
 
 Sets: the 26 gold questions (scripts/kb/compare_kb_v2.py), the live-test
-questions and 40 unseen questions (docs/eval/c8_questions.json, committed before
+questions and 40 unseen questions (docs/evaluation/c8/c8_questions.json, committed before
 any C8 change). Demo configuration: KB_V2, QUERY_HINTS and SCRAPED_V2 on, raw
 questions (no rewrite), top 5 of embeddings.search. A hit = an accepted Act and
 section in the top 5 (any score). "chat" = the same check on the passages Chat
@@ -13,7 +13,7 @@ reaches the model; no model is called.
     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python ../scripts/kb/eval_c8.py --label baseline
     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python ../scripts/kb/eval_c8.py --label hybrid --compare baseline
 
-Writes docs/eval/c8_results_<label>.json; --compare prints per-set counts and
+Writes docs/evaluation/c8/c8_results_<label>.json; --compare prints per-set counts and
 every question that got better or worse against an earlier label.
 """
 
@@ -35,7 +35,7 @@ from app.core.config import settings  # noqa: E402
 from app.kb.index_v2 import load_records  # noqa: E402
 from app.services import legal_chat_service as chat  # noqa: E402
 
-EVAL = ROOT / "docs" / "eval"
+EVAL = ROOT / "docs" / "evaluation" / "c8"
 
 
 def sets() -> dict[str, list[tuple[str, str, list]]]:

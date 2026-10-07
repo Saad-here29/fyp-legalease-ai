@@ -57,5 +57,5 @@ backend\venv\Scripts\python scripts\kb\eval_research_retrieval.py --out my.json
   400 tokens, so a full run is about 31k.
 
 The planned replacement records the query rewrites once and replays them
-offline against old and new indexes; see `docs/retrieval_redesign.md`,
+offline against old and new indexes; see `docs/architecture/retrieval_redesign.md`,
 section 7.

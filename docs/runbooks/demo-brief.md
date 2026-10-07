@@ -20,12 +20,12 @@
 > Every number below was measured on this codebase. Where something is an
 > estimate or a known weakness, it says so.
 
-> **How to start the demo: `docs/DEMO_RUNBOOK.md`** (branch `kb-v2`). It has
+> **How to start the demo: `docs/runbooks/demo-runbook.md`** (branch `kb-v2`). It has
 > the exact commands for the primary setup: the `legalease-kb` worktree,
 > with `KB_V2=true` set at launch. It also has the one-minute fallback to
 > master from the main folder, and how to confirm which one is running
 > (`/health` shows `"kb_v2": true`). The live check of that setup, with
-> its recommendation, is `docs/kb_v2_live_check_2026-10-06.md`. The
+> its recommendation, is `docs/evaluation/kb_v2_live_check_2026-10-06.md`. The
 > **60-second Knowledge Base path** is in § 7, "Knowledge Base in 60
 > seconds" (kb-v2 only).
 >
@@ -39,7 +39,7 @@
 > These categories are hand-assigned and labelled as such. So the live
 > check's advice to avoid the filter no longer applies. Near-empty
 > "[Omitted]"/"Rep. by …" sections no longer appear as sources. Details are
-> in `docs/DEMO_RUNBOOK.md` § "Changes in kb-v2 B6".
+> in `docs/runbooks/demo-runbook.md` § "Changes in kb-v2 B6".
 
 ---
 
@@ -92,7 +92,7 @@ together:
 - **Frontend:**
   - React 19 and Vite 5;
   - Tailwind CSS with our own design system (Newsreader and IBM Plex Sans;
-    `docs/STYLE_GUIDE.md`);
+    `docs/architecture/STYLE_GUIDE.md`);
   - React Router 6, TanStack Query 5, Zustand 5, Axios;
   - react-hook-form with zod; sonner for toasts; react-markdown for AI
     output.
@@ -226,7 +226,7 @@ No.
 **Yes, one: the legal NER model**, `backend/storage/models/legal_ner`.
 - **What:** DistilBERT fine-tuned on Lahore High Court and Supreme Court of
   Pakistan judgment text (the training data's provenance is in
-  `docs/ner_training_results.md`).
+  `docs/evaluation/ner_training_results.md`).
 - **Results (entity-level):** F1 **0.811** on the combined validation set
   and **0.784** on the held-out Supreme Court test set.
 - **Where it's used:** document analysis only, to find parties, dates,
@@ -242,7 +242,7 @@ The **language model is not fine-tuned**. Answers come from retrieval
 - **About 900 Pakistani legal documents**, chunked into **53,739** passages of
   800 characters with 100-character overlap. Statutes, ordinances and
   orders only, with **no judgments**. The full list is in
-  `docs/corpus_statute_list.md`.
+  `docs/architecture/corpus_statute_list.md`.
 - **Two raw sources:**
   - a section-level table covering 7 statutes (PPC, CrPC, QSO, Transfer of
     Property Act, Limitation Act, MFLO, Police Order);
@@ -266,7 +266,7 @@ The **language model is not fine-tuned**. Answers come from retrieval
 - **Root cause:** fixed 800-character chunks ignore section boundaries, and
   the embedding model reads only the first 128 tokens of each.
 - **The fix is designed, not built:** section-based chunking, in
-  `docs/retrieval_redesign.md`.
+  `docs/architecture/retrieval_redesign.md`.
 
 ### How do you stop hallucination?
 1. The model is given only the retrieved passages and must cite them as
@@ -348,7 +348,7 @@ Details are in `docs/archive/PROJECT_CONTEXT.md`.
      **Upcoming hearings**.
    - **Mark as in progress.**
 3. **Documents:**
-   - Upload `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
+   - Upload `docs/evaluation/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`.
    - **Analyse document** (about 8 s): summary, clauses, risks, parties and
      dates.
    - **Save to case.**
@@ -390,7 +390,7 @@ records, with where it came from.
 
 ### Starting the system
 
-> **For the 2026-10-07 demo, use `docs/DEMO_RUNBOOK.md` instead.** The
+> **For the 2026-10-07 demo, use `docs/runbooks/demo-runbook.md` instead.** The
 > commands below are the master setup, which is now the fallback.
 
 Use two separate windows, so neither server is stopped when another tool
@@ -484,7 +484,7 @@ and the research weak-match note.
 
 **1. Start the servers, each in its own terminal, and leave both open.**
 
-For the 2026-10-07 demo, start them as in `docs/DEMO_RUNBOOK.md` (kb-v2,
+For the 2026-10-07 demo, start them as in `docs/runbooks/demo-runbook.md` (kb-v2,
 `KB_V2=true`). Then check http://localhost:8000/health shows `"kb_v2":true`.
 The commands below are the master fallback.
 
@@ -531,7 +531,7 @@ on 2026-10-06, and it wasn't investigated further.
    next hearing. Link the client by email (it becomes Assigned
    automatically), then **Mark as in progress**.
 3. **Case → Add document:** upload
-   `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`. Then **Documents →
+   `docs/evaluation/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`. Then **Documents →
    Analyse** (about 8 s).
 4. **AI Chat,** one question a minute:
    1. *"On what grounds can a Muslim wife obtain a decree for dissolution

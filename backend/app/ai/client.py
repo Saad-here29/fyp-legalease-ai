@@ -74,7 +74,7 @@ REWRITE_REASONING_EFFORT = "low"
 CHAT_TEMPERATURE = 0.3
 # The rewrite decides what is retrieved, and so whether a question is
 # answered or refused. At 0.3 the same question was answered one day and
-# refused the next (docs/chat_review_family_law_2026-10-05.md, 2.2).
+# refused the next (docs/evaluation/chat_review_family_law_2026-10-05.md, 2.2).
 REWRITE_TEMPERATURE_V2 = 0.0
 
 # v1: the prompt in use until Oct 2026. Its talaq example names a statute,

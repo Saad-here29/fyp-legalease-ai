@@ -48,7 +48,7 @@ then to the database. AI features go through `ai/` and `kb/`: retrieval
 (vector search plus BM25 keyword search), then the model call, then
 deterministic checks on the model's output. For details, see
 [docs/architecture/system-overview.md](docs/architecture/system-overview.md)
-and [docs/knowledge_base_spec.md](docs/knowledge_base_spec.md).
+and [docs/architecture/knowledge_base_spec.md](docs/architecture/knowledge_base_spec.md).
 
 ## Knowledge base
 
@@ -144,7 +144,7 @@ The script:
 
 The app is at http://localhost:5173. The API docs are at
 http://127.0.0.1:8000/docs, in development mode. What to show and say is in
-[docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) and
+[docs/runbooks/demo-runbook.md](docs/runbooks/demo-runbook.md) and
 [docs/runbooks/demo-brief.md](docs/runbooks/demo-brief.md).
 
 ## Tests

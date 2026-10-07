@@ -1,5 +1,5 @@
 // Design system v1 wordmark: arch mark + "LegalEase" in Newsreader + a small
-// "AI" tag (docs/design_reference, pages 2 and 7). `onInk` flips the colours
+// "AI" tag (docs/architecture/design_reference, pages 2 and 7). `onInk` flips the colours
 // for the ink sidebar / hero panels.
 
 export function ArchMark({ className = "h-7 w-7" }) {

@@ -5,9 +5,9 @@ Nothing built, no rewrites recorded, no Groq tokens used.** First written
 2026-10-03.
 
 Companion files:
-- [`docs/archive/retrieval_statute_chunking.md`](archive/retrieval_statute_chunking.md):
+- [`docs/archive/retrieval_statute_chunking.md`](../archive/retrieval_statute_chunking.md):
   every statute by chunking decision (condition 3);
-- [`retrieval_gold_set_draft.md`](retrieval_gold_set_draft.md): the draft
+- [`retrieval_gold_set_draft.md`](../evaluation/retrieval_gold_set_draft.md): the draft
   gold set, **waiting for your check** (condition 5).
 
 ## Conditions of approval: where each is met
@@ -42,7 +42,7 @@ Statute and section judgements are the developer's assessment, not a
 lawyer's.
 
 This expands option (e), "chunk by section", in
-[`data/README.md`](../data/README.md) ("Future work — statute corpus and
+[`data/README.md`](../../data/README.md) ("Future work — statute corpus and
 retrieval"). It also accounts for the experiments recorded there as
 rejected. Section 8 checks the design against each of them.
 
@@ -209,7 +209,7 @@ characters.
 
 The full lists, with heading counts, contents entries, coverage and missing
 numbers, are in
-[`docs/archive/retrieval_statute_chunking.md`](archive/retrieval_statute_chunking.md). The
+[`docs/archive/retrieval_statute_chunking.md`](../archive/retrieval_statute_chunking.md). The
 fallback statutes are almost all one- or two-clause Acts (validation Acts,
 short repeal Acts), where a fixed window is the whole statute anyway.
 

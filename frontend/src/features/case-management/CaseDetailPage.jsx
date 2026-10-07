@@ -15,7 +15,7 @@ import { STATUS, TYPE_LABEL, fmtDate, readableTimelineEntry, partiesLine, isUpco
 import CaseDetailsForm from "./CaseDetailsForm";
 
 // Case detail — design system v1, per the Case detail mockup
-// (docs/design_reference page 9). Adapted to what exists: no issues
+// (docs/architecture/design_reference page 9). Adapted to what exists: no issues
 // framed, research or notes tabs (not built); case details (number, court,
 // parties, next hearing) are shown to everyone and edited by the assigned
 // lawyer. The one primary action is the real status change, and "Add

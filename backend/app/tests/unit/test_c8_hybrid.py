@@ -124,7 +124,7 @@ def _eval_questions() -> list[str]:
     sys.path.insert(0, str(ROOT / "scripts" / "kb"))
     from compare_kb_v2 import FAMILY, GOLD, OFF_TOPIC
     from eval_query_hints import FAMILY10
-    data = json.loads((ROOT / "docs" / "eval" / "c8_questions.json").read_text(encoding="utf-8"))
+    data = json.loads((ROOT / "docs" / "evaluation" / "c8" / "c8_questions.json").read_text(encoding="utf-8"))
     return ([q for _i, q, _a in GOLD + FAMILY10] + [q for _i, q, _a in FAMILY] + [q for _i, q in OFF_TOPIC]
             + [x["q"] for x in data["live"] + data["unseen"]])
 

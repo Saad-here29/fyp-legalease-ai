@@ -6,13 +6,13 @@ import { ROUTES } from "@/constants";
 
 // Shared shell for every public auth page (Login, Signup, Welcome, Forgot
 // Password, OTP, Reset Password) — design system v1, per the Login mockup
-// (docs/design_reference page 2): ink identity panel on the left with the
+// (docs/architecture/design_reference page 2): ink identity panel on the left with the
 // outline arches, a Display headline, a short statement and check-marked
 // points; the form on Paper on the right.
 //
 // Copy here must stay true to the product: the AI answers from Pakistani
 // statute text only (no judgments). Don't name a source for the library
-// (its provenance isn't recorded — see docs/corpus_statute_list.md).
+// (its provenance isn't recorded — see docs/architecture/corpus_statute_list.md).
 // `heroAlign`: "end" (default) sits the headline low, as on the approved Login
 // mockup; "center" centres it vertically (Welcome, Signup).
 export default function AuthShell({ heroTitle, heroSubtitle, heroPoints = [], heroAlign = "end", children }) {

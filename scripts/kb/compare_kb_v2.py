@@ -3,8 +3,8 @@
 Raw questions, no LLM rewrite, top 5, the live 0.65 threshold. Reads the live
 v1 index read-only (FAISS_INDEX_PATH / FAISS_METADATA_PATH from the
 environment, pointing at the main checkout) and faiss_v2. Writes
-docs/chat_baseline_2026-10-06.md (flag off; only if missing) and
-docs/kb_v2_comparison_2026-10-06.md.
+docs/evaluation/chat_baseline_2026-10-06.md (flag off; only if missing) and
+docs/evaluation/kb_v2_comparison_2026-10-06.md.
 
     cd backend && HF_HUB_OFFLINE=1 FAISS_INDEX_PATH=... FAISS_METADATA_PATH=... python ../scripts/kb/compare_kb_v2.py
 """
@@ -28,7 +28,7 @@ from app.core.config import settings  # noqa: E402
 from app.kb import index_v2  # noqa: E402
 from app.kb.index_v2 import load_records  # noqa: E402
 
-DOCS = ROOT / "docs"
+DOCS = ROOT / "docs" / "evaluation"
 THRESHOLD = settings.RAG_SIMILARITY_THRESHOLD
 MFLO, FCA, DMMA = ("Muslim Family Laws Ordinance, 1961", "West Pakistan Family Courts Act, 1964",
                    "Dissolution of Muslim Marriages Act, 1939")

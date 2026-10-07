@@ -22,7 +22,7 @@ sources run). Limits: identified User-Agent, 2 s between requests per site
 (longer if robots.txt asks), retries with back-off, a page cap per run
 (--max-pages) and a PDF cap (--limit). Writes require --schema while this is
 a prototype branch: the shared database's public schema has no scraping
-tables until the merge is approved. See docs/scraping.md.
+tables until the merge is approved. See docs/architecture/scraping.md.
 """
 
 from __future__ import annotations

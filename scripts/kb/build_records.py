@@ -27,7 +27,7 @@ KB = ROOT / "backend" / "storage" / "kb"
 THRESHOLD = 0.90
 
 # Phase B3: who a community-specific law applies to, decided from its own
-# text (see docs/kb_v2_comparison_2026-10-06_b3.md). Every other law is
+# text (see docs/evaluation/kb_v2_comparison_2026-10-06_b3.md). Every other law is
 # "general". With KB_V2 on, these are searched only when the question names
 # the community or the Act (app/kb/index_v2.py, AUDIENCE_TERMS).
 AUDIENCE = {

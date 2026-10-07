@@ -3,7 +3,7 @@
 Fetches ONLY the Pakistan Code category index and the 23 category listing
 pages (no law pages, no PDFs), with the scraper's polite Fetcher: identified
 User-Agent, 2 s per request, robots.txt respected. Then matches every listed
-title to our corpus (docs/corpus_statute_list.md) by normalised title + year.
+title to our corpus (docs/architecture/corpus_statute_list.md) by normalised title + year.
 
     python scripts/kb/build_category_map.py            # fetch + match, write outputs
     python scripts/kb/build_category_map.py --offline  # re-match from the saved HTML
@@ -216,7 +216,7 @@ def main() -> int:
         c["listed_count"] = len(c["laws"])
         print(f"  {c['name']:24} badge {c['badge_count']!s:>4}  listed {c['listed_count']:4}")
 
-    corpus = load_corpus_titles(ROOT / "docs" / "corpus_statute_list.md")
+    corpus = load_corpus_titles(ROOT / "docs" / "architecture" / "corpus_statute_list.md")
     for c in cats:
         match(c["laws"], corpus)
         c["held"] = sum(1 for law in c["laws"] if law["match"] and law["match"]["how"] != "possible")
@@ -237,7 +237,7 @@ def main() -> int:
             u["reason"] = "duplicate spelling of another corpus title"
     out = {"source": "Pakistan Code (pakistancode.gov.pk), category listing pages only",
            "index_url": INDEX, "fetched_at": fetched_at if not args.offline else "see raw/ file times",
-           "corpus_list": "docs/corpus_statute_list.md", "corpus_titles": len(corpus),
+           "corpus_list": "docs/architecture/corpus_statute_list.md", "corpus_titles": len(corpus),
            "matching": "normalise_title (leading number/'the' dropped, letters+digits only) without the year; "
                        "then the year must agree when both sides have one; 'near' = difflib ratio >= 0.93",
            "categories": cats, "corpus_unmatched": unmatched}

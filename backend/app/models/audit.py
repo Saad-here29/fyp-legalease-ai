@@ -1,7 +1,7 @@
 """Audit trail table — every privileged action, per SEC-04.
 
 Reconstructed from middlewares/audit.py (write_audit) and every call site in
-services/*.py. Matches docs/database-schema.md field-for-field — the
+services/*.py. Matches docs/architecture/database-schema.md field-for-field — the
 highest-confidence model in this reconstruction. No `updated_at`: audit rows
 are write-once and never mutated.
 """

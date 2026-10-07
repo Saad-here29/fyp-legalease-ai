@@ -120,7 +120,7 @@ Run each case twice, with `KB_V2=false` and `KB_V2=true`; the screens must work 
 ### 5c. Judgments (kb-v2 C2, `JUDGMENTS_V2`)
 
 Run with `JUDGMENTS_V2=true` and `JUDGMENTS_INDEX_PATH` set to the dev index
-(see `docs/DEMO_RUNBOOK.md`), except MT-JUD-06.
+(see `docs/runbooks/demo-runbook.md`), except MT-JUD-06.
 
 | ID | Module | Requirement | Steps | Expected | Actual | Status |
 |---|---|---|---|---|---|---|

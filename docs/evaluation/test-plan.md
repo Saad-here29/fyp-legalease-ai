@@ -219,7 +219,7 @@ test files themselves).
   manually (§ 9).
 - **Live model quality:** answer correctness isn't checked automatically.
   The retrieval evaluation and gold set are planned in
-  `docs/retrieval_redesign.md`.
+  `docs/architecture/retrieval_redesign.md`.
 - **Not built, so not tested:** the Practice Simulator and Notifications.
 - **Load testing:** not done.
 

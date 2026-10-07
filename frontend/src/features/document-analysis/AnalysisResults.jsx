@@ -20,7 +20,7 @@ const ENTITY_LABELS = {
   Approved: "Approved for reporting",
 };
 
-// Design system v1, per the Document Analysis mockup (docs/design_reference
+// Design system v1, per the Document Analysis mockup (docs/architecture/design_reference
 // page 12). Two sources, deliberately kept visually separate:
 //   left  — written by the language model (summary, points to review)
 //   right — extracted by the NER model (parties, dates, references)

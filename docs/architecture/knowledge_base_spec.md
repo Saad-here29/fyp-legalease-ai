@@ -406,7 +406,7 @@ containing a trigger (whole word or phrase) and none of its "unless" words gets
 the hint's search terms appended before embedding. No hints for a question
 naming another country's law. Terms name Acts, sections and procedural words,
 never conclusions (a test bans words like void, entitled, must). Evaluated in
-`docs/query_hints_eval_2026-10-07.md`: 25/36 -> 30/36 in the top 5, none
+`docs/evaluation/query_hints_eval_2026-10-07.md`: 25/36 -> 30/36 in the top 5, none
 worse, no off-topic question lifted past 0.65.
 
 **Consequence rule** (with `KB_V2` on): the chat prompt says not to call
@@ -466,7 +466,7 @@ builder's to-embed count dropped by exactly 500.
   Colab GPU; copy the `.npz` files into `storage/kb/vector_cache/`, `vector_cache_scraped/` and
   `vector_cache_scraped_judgments/`; then run `build_index_v2_all.py --budget 0` and
   `build_index_scraped.py --budget 0`.
-- Results by set: `docs/eval/c8_report.md`.
+- Results by set: `docs/evaluation/c8/c8_report.md`.
 
 ## Final numbers and what is not done (2026-10-07)
 
@@ -481,7 +481,7 @@ builder's to-embed count dropped by exactly 500.
 | Scraped FSC judgments | 10 judgments, 5,593 chunks | `faiss_scraped_judgments_meta.json` |
 | Scraping sources (last run) | Pakistan Code, KP Code, Federal Shariat Court: 10 fetched each, 30 new, 0 quarantined, 0 errors | `storage/kb/scraped/update_log.jsonl` |
 | Query hints | 7 (talaq, khula, dower, maintenance, custody, inheritance, nikah registration) | `storage/kb/query_hints.json` |
-| Retrieval, 36 questions, top 5 | 25/36 without hints, 30/36 with; none worse | `docs/query_hints_eval_2026-10-07.md` |
+| Retrieval, 36 questions, top 5 | 25/36 without hints, 30/36 with; none worse | `docs/evaluation/query_hints_eval_2026-10-07.md` |
 | Backend tests | 603 passing | `pytest app/tests` |
 
 **Not done:**

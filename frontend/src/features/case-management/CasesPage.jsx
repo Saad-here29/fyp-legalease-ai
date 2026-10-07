@@ -10,7 +10,7 @@ import { casesApi } from "./api";
 import StatusTag from "./StatusTag";
 import { TYPE_LABEL, TYPE_GROUPS, fmtDate, partiesLine, isUpcoming } from "./caseMeta";
 
-// Cases list — design system v1, per the Cases mockup (docs/design_reference
+// Cases list — design system v1, per the Cases mockup (docs/architecture/design_reference
 // page 8): status tabs, search, a ruled table and paging. Adapted to the
 // data that exists: no next-hearing or client columns (cases carry no
 // hearing dates, and the list has no client names) — "Updated" instead.

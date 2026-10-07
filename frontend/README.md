@@ -1,7 +1,7 @@
 # Frontend
 
 React 19 + Vite single-page app for LegalEase AI. It uses design system v1,
-described in [`docs/STYLE_GUIDE.md`](../docs/STYLE_GUIDE.md).
+described in [`docs/architecture/STYLE_GUIDE.md`](../docs/architecture/STYLE_GUIDE.md).
 
 ## Install and run
 

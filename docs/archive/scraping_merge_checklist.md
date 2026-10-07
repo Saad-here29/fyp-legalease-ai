@@ -103,7 +103,7 @@ one-line change; review and commit it separately, after step 5.
 
 ## 8. Schedule (optional, after a week of manual runs)
 
-- [ ] **Register the weekly task** from `docs/scraping.md` § "Schedule",
+- [ ] **Register the weekly task** from `docs/architecture/scraping.md` § "Schedule",
   with `--schema public`.
 
 ## Rollback

@@ -13,7 +13,7 @@ import { chatApi } from "./api";
 import { researchApi } from "@/features/legal-research/api";
 import { useJudgmentsInfo } from "@/features/knowledge-base/useJudgments";
 
-// AI Chat — design system v1, per the AI Chat mockup (docs/design_reference
+// AI Chat — design system v1, per the AI Chat mockup (docs/architecture/design_reference
 // page 10): conversations column, then the thread with a ruled answer, a
 // verification line and its sources. Adapted to what exists: no scope /
 // linked-case tags, no "Save to case", no attachments and no "Open at

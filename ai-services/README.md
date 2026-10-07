@@ -26,18 +26,18 @@ Neither output is in git.
      `backend/storage/faiss/_checkpoint/`.
    - On a laptop CPU it takes hours (about 10 passages a second). Embedding
      on a Colab GPU takes minutes; the Colab plan is in
-     [`docs/retrieval_redesign.md`](../docs/retrieval_redesign.md).
+     [`docs/architecture/retrieval_redesign.md`](../docs/architecture/retrieval_redesign.md).
 3. **Restart the backend**, which loads the index on first use.
 
 The current index has 53,739 passages from about 900 statute documents. Its
 known limits, and the section-based redesign that addresses them, are in
-`data/README.md` and `docs/retrieval_redesign.md`.
+`data/README.md` and `docs/architecture/retrieval_redesign.md`.
 
 ## Retraining the NER model
 
 Open `ner_training/ner_training_colab.ipynb` in Google Colab with a GPU
 runtime. It fine-tunes DistilBERT on the Lahore High Court and Supreme Court
 judgment annotations. The data, settings and results are in
-[`docs/ner_training_results.md`](../docs/ner_training_results.md):
+[`docs/evaluation/ner_training_results.md`](../docs/evaluation/ner_training_results.md):
 entity-level F1 is 0.811 on validation and 0.784 on the held-out test set.
 Copy the saved model folder to `backend/storage/models/legal_ner/`.

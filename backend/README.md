@@ -81,4 +81,4 @@ ruff check app
 | `app/ai/` | Retrieval, LLM client, citation checker, NER |
 | `app/models/` / `app/schemas/` | ORM models / API models |
 | `app/core/`, `app/db/`, `app/middlewares/`, `app/utils/`, `app/repositories/` | Supporting code |
-| `alembic/versions/` | Migrations, listed in `docs/database-schema.md` |
+| `alembic/versions/` | Migrations, listed in `docs/architecture/database-schema.md` |

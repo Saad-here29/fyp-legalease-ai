@@ -90,7 +90,7 @@ items are:
   `E:\Users\fyp-legalease-ai-main\scraping_demo_backup_2026-10-06.txt`. It's
   the saved output of a real run and its repeat, with the staged list (4
   unchanged + 1 new, then 5 unchanged and 0 new). Or show
-  `docs/scraping.md` § "Live runs".
+  `docs/architecture/scraping.md` § "Live runs".
 - **Fallback 3, the database is unreachable:** add `--dry-run`. It fetches
   and compares without writing, so with no database it reports every
   document as new. Say that it couldn't compare.

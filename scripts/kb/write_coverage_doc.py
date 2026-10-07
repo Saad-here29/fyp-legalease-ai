@@ -1,4 +1,4 @@
-"""Write docs/kb_coverage_2026-10-06.md from backend/storage/kb/category_map.json (offline)."""
+"""Write docs/evaluation/kb_coverage_2026-10-06.md from backend/storage/kb/category_map.json (offline)."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ L = []
 L.append("""# Knowledge base v2: Pakistan Code coverage (2026-10-06)
 
 This compares the Pakistan Code's category listings with the statutes in
-our corpus (`docs/corpus_statute_list.md`: 900 titles). The source data is
+our corpus (`docs/architecture/corpus_statute_list.md`: 900 titles). The source data is
 `backend/storage/kb/category_map.json`, built by
 `scripts/kb/build_category_map.py`.
 
@@ -143,6 +143,6 @@ for reason in ("provincial or pre-1955 regional law", "rules / regulations / ord
     for u in sorted(items, key=lambda x: x["title"].lower()):
         L.append(f"- {u['title']} ({u['chunks']} chunks)\n")
 
-out = ROOT / "docs" / "kb_coverage_2026-10-06.md"
+out = ROOT / "docs" / "evaluation" / "kb_coverage_2026-10-06.md"
 out.write_text("".join(L), encoding="utf-8")
 print("written", out, len("".join(L)))

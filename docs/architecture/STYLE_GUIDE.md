@@ -3,7 +3,7 @@
 > Referenced by `docs/archive/PROJECT_CONTEXT.md`: "Follow the style rules in
 > STYLE_GUIDE.md exactly — do not improvise colors, fonts, or spacing."
 >
-> **Source of truth:** `docs/design_reference/LegalEase AI Design System.pdf`
+> **Source of truth:** `docs/architecture/design_reference/LegalEase AI Design System.pdf`
 > (13 pages; rendered as `page-01.jpg` … `page-13.jpg` in the same folder).
 > Page 1 defines the rules below; pages 2–13 are screen mockups.
 >
@@ -167,7 +167,7 @@ legal documents" (N live from `/research/stats`), "mostly Acts, Ordinances,
 Codes and Orders" where more detail helps. Never name a source for it (e.g.
 "the Pakistan Code") — the raw datasets' provenance isn't recorded — *(Exception, kb-v2 Knowledge Base page, user decision 2026-10-06: it labels records "LegalEase corpus (Pakistan Code-derived)" and shows the Pakistan Code notice; it never calls them official text.)* and
 don't call all of it "statutes": it includes ESTACODE, a civil-service manual
-(see `docs/corpus_statute_list.md`).
+(see `docs/architecture/corpus_statute_list.md`).
 | Landing (p. 3) | No Pricing, free trial or "Start your free trial" copy. |
 
 **Copy must stay statute-only.** The mockups say "tied to the statute or

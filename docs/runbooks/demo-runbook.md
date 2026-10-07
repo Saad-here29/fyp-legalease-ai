@@ -41,14 +41,14 @@ Checked on 2026-10-07 on 8100/5273: full mode reported all four flags on (judgme
 | Scraped FSC judgments | 10 judgments, 5,593 chunks | `faiss_scraped_judgments_meta.json` |
 | Scraping sources (last run) | Pakistan Code, KP Code, Federal Shariat Court: 10 fetched each, 30 new, 0 quarantined, 0 errors | `storage/kb/scraped/update_log.jsonl` |
 | Query hints | 7 (talaq, khula, dower, maintenance, custody, inheritance, nikah registration) | `storage/kb/query_hints.json` |
-| Retrieval, 36 questions, top 5 | 25/36 without hints, 30/36 with; none worse | `docs/query_hints_eval_2026-10-07.md` |
+| Retrieval, 36 questions, top 5 | 25/36 without hints, 30/36 with; none worse | `docs/evaluation/query_hints_eval_2026-10-07.md` |
 | Backend tests | 603 passing | `pytest app/tests` |
 
 ### What is not done
 
 **C8 update (2026-10-07):** hybrid retrieval (BM25 + vectors), hint exact sections, full-section
 context, supporting sections after the gate, repealed laws left out, case and refusal rules. Results
-by set and what still fails: `docs/eval/c8_report.md` (gold 21/26, live 5/5, unseen 31/40 in the top 5;
+by set and what still fails: `docs/evaluation/c8/c8_report.md` (gold 21/26, live 5/5, unseen 31/40 in the top 5;
 19 / 5 / 29 reach the model). Embedding still to do: `scripts/kb/export_for_colab.py` writes ONE file
 (116,844 chunks) for the all-laws, scraped-laws and scraped-judgments indexes; see the Colab steps in
 the spec, § b7.
@@ -227,7 +227,7 @@ All of these apply only with `KB_V2=true`; the master fallback is unchanged.
   "Reading the sources…", "Writing the answer…". This is frontend-only, and
   the Vite dev server picks it up without a restart.
 - **`STRICT_GROUNDING` stays off.** See
-  `docs/kb_v2_live_check_2026-10-07_b7.md`.
+  `docs/evaluation/kb_v2_live_check_2026-10-07_b7.md`.
 
 ## Judgments (kb-v2 C2, 2026-10-07): optional, off unless set
 
@@ -365,4 +365,4 @@ is shown.
 - **Knowledge Base in 60 seconds:** `docs/runbooks/demo-brief.md` § "Knowledge Base in 60
   seconds" (kb-v2 only).
 - **Live check of this setup, 2026-10-06:**
-  `docs/kb_v2_live_check_2026-10-06.md`.
+  `docs/evaluation/kb_v2_live_check_2026-10-06.md`.

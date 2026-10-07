@@ -12,7 +12,7 @@ def test_health_returns_ok(client):
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    # which search mode is running (docs/DEMO_RUNBOOK.md)
+    # which search mode is running (docs/runbooks/demo-runbook.md)
     assert set(body) == {"status", "kb_v2", "v1_index_chunks", "v2_index_chunks", "v2_index", "threshold",
                          "judgments_v2", "judgment_chunks", "judgments",
                          "scraped_v2", "scraped_chunks", "scraped_judgment_chunks", "reasoning_v2"}

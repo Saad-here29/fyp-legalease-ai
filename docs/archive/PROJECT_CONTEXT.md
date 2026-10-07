@@ -30,7 +30,7 @@ Session 2022-2026. Team: Saadullah, Ali Mehmood Khan, Uzair Siddique.
   Document Analysis (2026-09-26) — see "Legal NER status" below.
 - **UI redesign to design system v1 — complete (2026-09-28)**: every page
   now uses the Newsreader / IBM Plex Sans / Seal system from
-  `docs/design_reference/` — see "UI redesign v1" below. The earlier
+  `docs/architecture/design_reference/` — see "UI redesign v1" below. The earlier
   2026-09-26 accuracy sweep still applies — see "UI accuracy sweep".
 - **Pre-demo readiness audit done (2026-09-28)** — see "Pre-demo readiness
   audit" below for what works, known gaps and the demo script.
@@ -78,14 +78,14 @@ free ("on_demand") tier, model `openai/gpt-oss-120b`. Its limits, confirmed
 4. If the budget runs out mid-demo, the app degrades rather than crashes:
    cases, document upload and research search still work; AI answers
    return an error toast. Keep a recorded fallback (the documented real-document run in
-   `docs/demo_examples.md`) ready to show instead.
+   `docs/evaluation/demo_examples.md`) ready to show instead.
 
 ## Backend / database status (confirmed 2026-09-13)
 - `backend/app/models/` was found completely missing on audit (every router/
   service imported ORM classes — User, Case, Document, ChatSession, etc. —
   from modules that did not exist on disk, so the backend could not start
   at all). Fully reconstructed field-by-field from actual usage in routers,
-  services, and schemas, cross-checked against `docs/database-schema.md`.
+  services, and schemas, cross-checked against `docs/architecture/database-schema.md`.
   Verified against the real test suite, not just import — **31/31 backend
   tests passing** (`pytest`, run from `backend/venv`, Python 3.11.9).
 - Database: **Supabase Postgres**, connected via the **Transaction Pooler**
@@ -310,7 +310,7 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
   SCP judgment data (`ai-services/ner_training/ner_training_colab.ipynb`).
   Validation F1 0.811 (reproduced exactly by a local re-score); held-out
   SCP test F1 0.784. Full results, weak-category analysis and integration
-  details: `docs/ner_training_results.md`.
+  details: `docs/evaluation/ner_training_results.md`.
 - Integrated into `POST /documents/{id}/analyze` (commit `ce04f28`):
   `parties` / `dates` / `references` / `entities` from NER, `key_clauses` /
   `risks` parsed from the LLM summary and labelled as such. Live test on a
@@ -329,7 +329,7 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
   visually separate, labelled panels; `ner_available: false` shows a note.
 - **Tested on a real, unseen document** — an SC bail order, Crl.P.
   187-P/2026, uploaded through the web app. Full output and line-by-line
-  review in `docs/demo_examples.md` (for the report and panel demo). Three
+  review in `docs/evaluation/demo_examples.md` (for the report and panel demo). Three
   NER errors found; each traced to its cause before fixing (commit
   `6124d26`): a line-break abbreviation bleed (`KP Tahir Khan`) and a
   mislabelled own case number were fixed with narrow, tested rules; a
@@ -337,7 +337,7 @@ suite **57/57 passing** (31 before + 20 citation-check + 6 parser tests).
   Kept visible as "found → fixed", not deleted.
 - **Future work** for the next retrain (capitalisation gap in case numbers,
   duplicate label spellings, tiny classes, place-name coverage):
-  `docs/ner_training_results.md` "Future work — retraining checklist" and
+  `docs/evaluation/ner_training_results.md` "Future work — retraining checklist" and
   `data/README.md` (commit `3151d44`).
 
 ## Contract Drafting & Compliance status — built + fully verified (confirmed 2026-09-21)
@@ -401,8 +401,8 @@ actual system behaviour, not just reworded:
   production build clean.
 
 ## UI redesign v1 — complete (confirmed 2026-09-28)
-Every page moved to design system v1 (`docs/design_reference/LegalEase AI
-Design System.pdf`, rules in `docs/STYLE_GUIDE.md`): Newsreader for titles,
+Every page moved to design system v1 (`docs/architecture/design_reference/LegalEase AI
+Design System.pdf`, rules in `docs/architecture/STYLE_GUIDE.md`): Newsreader for titles,
 IBM Plex Sans for everything else, Seal `#9E2B1D` only for the one primary
 action per view / active item / failing checks. Each page was built from its
 mockup, checked in headless Edge at desktop and phone width with real test
@@ -489,7 +489,7 @@ during the audit except the ones approved (commit `8a02485`).
   about 10 minutes, and the server had been started as one. Started on its
   own (a terminal, or a detached process), it stays up. Run it in a visible
   terminal on demo day.
-- **Corpus contents:** `docs/corpus_statute_list.md` lists every indexed
+- **Corpus contents:** `docs/architecture/corpus_statute_list.md` lists every indexed
   title. Notable: 5 statutes indexed twice under OCR-variant titles;
   ESTACODE (a civil-service manual, not a statute) is the largest item at
   3,424 chunks (6.4%); 2 titles are page boilerplate ("Updated till
@@ -508,7 +508,7 @@ during the audit except the ones approved (commit `8a02485`).
    is configured).
 2. Lawyer dashboard → **Cases** → **New case** "Khan v. Khan — Custody" →
    open it → assign the client by email (→ Assigned) → **Mark as in progress**.
-3. **Documents** → upload `docs/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`
+3. **Documents** → upload `docs/evaluation/demo/crl_p_187_p_2026/crl.p._187_p_2026.pdf`
    → **Analyse document** (~8 s) → summary beside parties / dates /
    references → **Save to case**.
 4. **AI Chat**, about a minute apart: "What is the procedure for talaq under
@@ -563,7 +563,7 @@ during the audit except the ones approved (commit `8a02485`).
 **Still open:**
 - **Retrieval quality:** the khula gap, the PPC s. 302 and Contract Act
   s. 10 misses. The section-based redesign is approved but not built
-  (`docs/retrieval_redesign.md`), and the gold set is awaiting review.
+  (`docs/architecture/retrieval_redesign.md`), and the gold set is awaiting review.
 - **Database latency:** 3–8 s per API call, from the Singapore region.
 - **No frontend tests.**
 - **SMTP** is not configured (OCR is, since 2026-10-05).
@@ -583,7 +583,7 @@ backend/  frontend/  ai-services/  scripts/  data/ (not in git)  docs/ (incl. re
 ## Tech stack
 - Backend: FastAPI + SQLAlchemy + Alembic; PostgreSQL on Supabase
   (Singapore region: 0.2–0.4 s per query, about 4 s per new connection)
-- Frontend: React 19 + Vite, design system v1 (`docs/STYLE_GUIDE.md`)
+- Frontend: React 19 + Vite, design system v1 (`docs/architecture/STYLE_GUIDE.md`)
 - Legal NER: fine-tuned DistilBERT (`backend/storage/models/legal_ner`), CPU
 - Dependencies: `backend/requirements.txt` (runtime, pinned, CPU PyTorch
   index) and `requirements-dev.txt` (tests, lint, scripts)
@@ -655,7 +655,7 @@ SMTP_*
    (prompt-file relocation, repositories/services pattern decision) still
    open, deliberately deferred to their own session.
 3. ~~UI redesign~~ — done: every page converted to the design system (see
-   `docs/STYLE_GUIDE.md`), followed by the 2026-09-26 accuracy sweep (see
+   `docs/architecture/STYLE_GUIDE.md`), followed by the 2026-09-26 accuracy sweep (see
    "UI accuracy sweep" above), then redone on design system v1 and
    completed 2026-09-28 (see "UI redesign v1" above).
 4. ~~Build Contract Drafting & Compliance module~~ — done (2026-09-21),
@@ -743,7 +743,7 @@ SMTP_*
 | Chat history cap (last 10 messages, 2,000 tokens) | **On** | Unit tests; not exercised live (would need a long conversation) |
 | Case types (family + general) and case fields | **On** | Migration `e7b3c9d14a02` applied 2026-10-06 |
 | Research weak-match note | **On** | Off-topic search shows it live |
-| `REWRITE_V2` (rewrite at temperature 0, no statute names) | Off | Made 17 of the 78 lawyer questions go unanswered (`docs/chat_quality_steps_2026-10.md`) |
+| `REWRITE_V2` (rewrite at temperature 0, no statute names) | Off | Made 17 of the 78 lawyer questions go unanswered (`docs/evaluation/chat_quality_steps_2026-10.md`) |
 | `STRICT_GROUNDING` (stricter answer prompt) | Off | Not measured yet; waiting for approval of a ~15k-token run |
 | `LOW_CONFIDENCE_NOTE` (0.65–0.70) | Off | Measured and ready; waiting for approval to switch on |
 | `FAMILY_INDEX` (family-law side index + switch) | Off | Mixed results; and the chatbot is general Pakistani law (supervisor's decision) |

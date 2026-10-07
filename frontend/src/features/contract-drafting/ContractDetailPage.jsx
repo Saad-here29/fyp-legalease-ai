@@ -11,7 +11,7 @@ import { contractsApi } from "./api";
 import { CONTRACT_TEMPLATES } from "./templates";
 
 // One drafted contract — design system v1, per the Contracts mockup
-// (docs/design_reference page 13): the contract as a document on Sheet, the
+// (docs/architecture/design_reference page 13): the contract as a document on Sheet, the
 // compliance check beside it, then version history. Adapted: no "Export
 // .docx" and no "Fix failing item" (neither exists); the compliance check is
 // the backend's deterministic keyword check — pass or fail per required

@@ -2,10 +2,10 @@
 
 Three question sets:
   review    the 8 family-law questions from the 2026-10-05 legal review
-            (docs/chat_review_family_law_2026-10-05.md), with the statutes a
+            (docs/evaluation/chat_review_family_law_2026-10-05.md), with the statutes a
             correct answer should rest on;
   lawyers   the 78 lawyer questions (data/processed/qa_eval/, read-only);
-  offtopic  O01-O15 from docs/retrieval_gold_set_draft.md (must be refused).
+  offtopic  O01-O15 from docs/evaluation/retrieval_gold_set_draft.md (must be refused).
 
 Two commands, run from the project root with the backend venv:
 
@@ -15,13 +15,13 @@ Two commands, run from the project root with the backend venv:
           about 450 tokens. Resumes where it stopped; never falls back to
           another provider; stops on the first failed call.
 
-            python scripts/kb/eval_chat_quality.py record --arm v2 --out docs/eval/chat_quality/rewrites_v2.json
+            python scripts/kb/eval_chat_quality.py record --arm v2 --out docs/evaluation/chat_quality/rewrites_v2.json
 
   replay  Runs retrieval offline on saved rewrites, through the chat's own
           retrieve_passages(), and writes what each question would get.
           No Groq calls.
 
-            python scripts/kb/eval_chat_quality.py replay --rewrites docs/eval/chat_quality/rewrites_v2.json --out ...
+            python scripts/kb/eval_chat_quality.py replay --rewrites docs/evaluation/chat_quality/rewrites_v2.json --out ...
 
   compare Prints per-question gains and losses between two replays.
 """
@@ -40,7 +40,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BACKEND = ROOT / "backend"
 QA_CSV = ROOT / "data" / "processed" / "qa_eval" / "Legal_QA_dataset_From_lawyers_clean.csv"
-GOLD_MD = ROOT / "docs" / "retrieval_gold_set_draft.md"
+GOLD_MD = ROOT / "docs" / "evaluation" / "retrieval_gold_set_draft.md"
 
 # Expected support for the review questions: statutes (normalised source-name
 # fragments) and, where one exists, the index position of the exact chunk.

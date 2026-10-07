@@ -1,7 +1,7 @@
 """Judgments in the knowledge base (kb-v2 Phase C1). Offline; no model calls.
 
 From a judgment file (.txt or .pdf) to a judgment record
-(docs/knowledge_base_spec.md § b), then to paragraph-aware index chunks:
+(docs/architecture/knowledge_base_spec.md § b), then to paragraph-aware index chunks:
 
   read_text        text of a .txt / .pdf file (PDF via its text layer; a page
                    without one is reported as needing OCR, not OCR'd here)
