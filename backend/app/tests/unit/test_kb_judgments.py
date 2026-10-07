@@ -159,7 +159,7 @@ def test_chunk_rule_with_the_real_tokenizer(tmp_path):
 def test_pilot_takes_family_law_first(tmp_path):
     fam = _rec(tmp_path, "fam.txt")
     other = _rec(tmp_path, "crim.txt", body=SC.replace("dower", "theft").replace("maintenance", "sentence")
-                 .replace("Family Court", "trial court").replace("nikahnama", "FIR") * 3)
+                 .replace("Family Court", "trial court").replace("nikahnama", "FIR").replace("1234", "999") * 3)
     stub = _rec(tmp_path, "stub.txt", body=STUB)
     picked = jd.select_pilot([other, stub, fam], n=2)
     assert picked[0]["doc_id"] == fam["doc_id"] and stub not in picked and len(picked) == 2
@@ -231,3 +231,58 @@ def test_inventory_script_end_to_end(tmp_path, monkeypatch):
     assert data["extraction_rate"]["court"] == 0.75 and data["law_report_files"][0].endswith("report.txt")
     lines = (tmp_path / "out" / "records" / "test-sc.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(lines) == 4 and all(jd.validate(json.loads(x)) == [] for x in lines)
+
+
+# ---- rules adjusted to the real Supreme Court datasets (C1 continued) --------
+
+REAL_STYLE = """IN THE S UPREME COURT OF PAKISTAN
+(Appellate Jurisdiction)
+PRESENT:
+MR. JUSTICE GULZAR AHMED
+MR. JUSTICE IJAZ UL AHSAN
+
+CIVIL APPEAL NO.10 OF 20 21
+[Against the judgment dated 11.06.2019 passed by the Lahore High Court]
+
+Date of hearing: 12.9 .20 21
+"""
+
+
+def test_real_heading_style():
+    m = jd.metadata(REAL_STYLE + "1. The appellant was in custody of the police and his bail was refused. " * 40)
+    assert m["court"] == "Supreme Court of Pakistan"          # OCR-spaced, and the lower court comes later
+    assert m["judges"] == ["Justice Gulzar Ahmed", "Justice Ijaz Ul Ahsan"]
+    assert m["case_number"] == "CIVIL APPEAL NO.10 OF 2021" and m["year"] == 2021
+    assert "custody" not in m["topics"]                      # criminal custody is not the family topic
+    fam = jd.metadata(REAL_STYLE + "The custody of the minor child was given to the mother. " * 3)
+    assert "custody" in fam["topics"]
+
+
+def test_court_comes_from_the_heading_only():
+    assert jd.court_of("Order passed by the Lahore High Court in a writ petition.") == "Lahore High Court"
+    assert jd.court_of("x " * 500 + "SUPREME COURT OF PAKISTAN") is None                 # not in the heading
+
+
+def test_publisher_headnote_style_is_a_law_report_copy():
+    ylr = ("2009 YLR 991 [Lahore High Court] Before Ali Akbar Qureshi, J NAZAN BIBI---Petitioner Versus "
+           "ADDITIONAL DISTRICT JUDGE---Respondents (a) Guardians and Wards Act (VIII of 1890)--- ----S.25---Custody. "
+           + "Text of the judgment. " * 100)
+    assert jd.quality(ylr, {"pages": None})["exclude"] == "law-report copy (publisher headnotes)"
+    # a judgment that only cites precedents further down is not a publisher copy
+    judgment = REAL_STYLE + "JUDGMENT. " * 20 + "Reliance is placed on PLD 1988 SC 123. (a) Some Act---S.5---. " +         "More text. " * 200
+    assert jd.quality(judgment, {"pages": None})["exclude"] is None
+
+
+def test_dedupe_key_and_cross_dataset_pilot():
+    a = {"case_number": "C. P. No. 2255 of 2010", "year": 2013}
+    b = {"case_number": "Civil Petition No.2255 of 2010", "year": 2013}
+    c = {"case_number": "Civil Petition Nos.3031/2021", "year": 2021}
+    assert jd.dedupe_key(a) == jd.dedupe_key(b) != jd.dedupe_key(c)
+    assert jd.dedupe_key({"case_number": None, "year": 2013}) is None
+
+    def rec(doc_id, source, judges):
+        return {"doc_id": doc_id, "source": source, "case_name": "A v. B", "court": "Supreme Court of Pakistan",
+                "judges": judges, "case_number": "Civil Appeal No. 5 of 2020", "year": 2020, "topics": ["dower"],
+                "quality": {"exclude": None, "chars": 5000}}
+    picked = jd.select_pilot([rec("txt-copy", "txt", []), rec("parquet-copy", "parquet", ["Justice X"])], n=5)
+    assert [r["doc_id"] for r in picked] == ["parquet-copy"]       # one copy, the one with more metadata
