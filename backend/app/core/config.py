@@ -164,6 +164,11 @@ class Settings(BaseSettings):
     # Hybrid retrieval (kb-v2 C8, app/kb/lexical.py): BM25 over section headings and
     # text fused with the vector ranking (reciprocal rank fusion). KB_V2 only.
     HYBRID_SEARCH: bool = True
+    HINT_EXACT_SECTIONS: bool = True    # kb-v2 C8: a matching hint's exact sections join the ranking
+    # kb-v2 C8: once the scope gate has passed (a passage at the threshold), the
+    # hybrid ranking's other SECTIONS down to this score go to the model too, in
+    # rank order, within RAG_TOP_K. The gate itself is unchanged.
+    CHAT_SUPPORT_MIN: float = 0.55
     HYBRID_MIN_COSINE: float = 0.40     # a section found only by words must still be this close in meaning
     # Section expansion (kb-v2 C8): Chat sends a retrieved section's full text
     # from the records (not a 120-token chunk), capped, top sections only.

@@ -334,6 +334,11 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
             r for r in retrieved
             if r.get("relevance", 0) >= embeddings.similarity_threshold()
         ]
+        if passages and settings.KB_V2 and settings.HYBRID_SEARCH:
+            # kb-v2 C8: the gate passed on statute scores; sections the hybrid ranking
+            # puts in the top RAG_TOP_K (found by their wording) join down to CHAT_SUPPORT_MIN.
+            passages = [r for r in retrieved if r.get("relevance", 0) >= embeddings.similarity_threshold()
+                        or (r.get("kb") in ("v2", "scraped") and r.get("relevance", 0) >= settings.CHAT_SUPPORT_MIN)]
         if not passages and settings.KB_V2:
             passages = _scope_fallbacks(message, search_query, retrieved)
 

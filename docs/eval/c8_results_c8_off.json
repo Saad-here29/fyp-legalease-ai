@@ -1,0 +1,789 @@
+{
+ "gold": [
+  {
+   "id": "G01",
+   "q": "On what grounds can a Muslim woman obtain a decree for the dissolution of her marriage?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Dissolution of Muslim Marriages Act, 1939 2 (0.868)",
+    "Dissolution of Muslim Marriages Act, 1939 3 (0.805)",
+    "Dissolution of Muslim Marriages Act, 1939 5 (0.803)"
+   ]
+  },
+  {
+   "id": "G02",
+   "q": "What is the punishment for qatl-i-amd under the Pakistan Penal Code?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 302 (0.890)",
+    "Pakistan Penal Code, 1860 303 (0.864)",
+    "Pakistan Penal Code, 1860 308 (0.863)"
+   ]
+  },
+  {
+   "id": "G03",
+   "q": "What are the essential elements of a valid contract under the Contract Act, 1872?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Contract Act, 1872 1 (0.762)",
+    "Contract Act, 1872 23 (0.748)",
+    "Contract Act, 1872 68 (0.718)"
+   ]
+  },
+  {
+   "id": "G04",
+   "q": "If a husband pronounces talaq while his wife is pregnant, when does the talaq take effect, and can she claim maintenance during that period?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 7 (0.668)",
+    "Legal Practitioners & Bar Councils Act, 1973  (0.498)",
+    "Legal Practitioners & Bar Councils Act, 1973  (0.498)"
+   ]
+  },
+  {
+   "id": "G05",
+   "q": "Can a husband marry a second wife without the permission of the Arbitration Council?",
+   "rank": 1,
+   "chat": null,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 6 (0.618)",
+    "Child Marriage Restraint Act, 1929 12 (0.605)",
+    "THE TRUSTS ACT, 1882  (0.585)"
+   ]
+  },
+  {
+   "id": "G06",
+   "q": "What is the procedure for talaq under the Muslim Family Laws Ordinance?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 7 (0.838)",
+    "Muslim Family Laws Ordinance, 1961 3 (0.737)",
+    "West Pakistan Family Courts Act, 1964 24 (0.708)"
+   ]
+  },
+  {
+   "id": "G07",
+   "q": "What can a wife do if her husband does not pay her maintenance?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 9 (0.614)",
+    "West Pakistan Family Courts Act, 1964 17A (0.518)",
+    "THE TRUSTS ACT, 1882  (0.490)"
+   ]
+  },
+  {
+   "id": "G08",
+   "q": "Can a grandchild inherit from the grandfather if the grandchild's father died before the grandfather?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 4 (0.696)",
+    "Succession Act, 1925 53 (0.679)",
+    "Succession Act, 1925 54 (0.660)"
+   ]
+  },
+  {
+   "id": "G09",
+   "q": "How can a mother get custody of her minor child under the Guardians and Wards Act?",
+   "rank": 3,
+   "chat": 3,
+   "top3": [
+    "Guardians and Wards Act, 1890 21 (0.754)",
+    "Guardians and Wards Act, 1890 24 (0.744)",
+    "Guardians and Wards Act, 1890 25 (0.738)"
+   ]
+  },
+  {
+   "id": "G10",
+   "q": "Which court hears suits for dissolution of marriage, dower and maintenance?",
+   "rank": 4,
+   "chat": null,
+   "top3": [
+    "West Pakistan Family Courts Act, 1964 7 (0.722)",
+    "West Pakistan Family Courts Act, 1964 9 (0.662)",
+    "West Pakistan Family Courts Act, 1964 10 (0.655)"
+   ]
+  },
+  {
+   "id": "G11",
+   "q": "What happens at the pre-trial stage of a case in a Family Court?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "West Pakistan Family Courts Act, 1964 10 (0.700)",
+    "West Pakistan Family Courts Act, 1964 9 (0.671)",
+    "THE INTELLECTUAL PROPERTY ORGANIZATION OF PAKISTAN ACT, 2012  (0.617)"
+   ]
+  },
+  {
+   "id": "G12",
+   "q": "Can a wife get her marriage dissolved if her husband has not maintained her for two years?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Dissolution of Muslim Marriages Act, 1939 2 (0.736)",
+    "THE HINDU MARRIAGE ACT, 2017  (0.701)",
+    "West Pakistan Family Courts Act, 1964 7 (0.683)"
+   ]
+  },
+  {
+   "id": "G13",
+   "q": "How does the Pakistan Penal Code define qatl-i-amd?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Pakistan Penal Code, 1860 299 (0.812)",
+    "Pakistan Penal Code, 1860 302 (0.782)",
+    "Pakistan Penal Code, 1860 324 (0.769)"
+   ]
+  },
+  {
+   "id": "G14",
+   "q": "What is the punishment for cheating and dishonestly inducing delivery of property?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 420 (0.761)",
+    "Pakistan Penal Code, 1860 421 (0.719)",
+    "Pakistan Penal Code, 1860 414 (0.711)"
+   ]
+  },
+  {
+   "id": "G15",
+   "q": "What is the punishment for defamation under the Pakistan Penal Code?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 500 (0.845)",
+    "Pakistan Penal Code, 1860 499 (0.824)",
+    "Pakistan Penal Code, 1860 284 (0.782)"
+   ]
+  },
+  {
+   "id": "G16",
+   "q": "What is the punishment for theft?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 379 (0.835)",
+    "Pakistan Penal Code, 1860 382 (0.792)",
+    "ANTI -MONEY LAUNDERING ACT, 2010  (0.771)"
+   ]
+  },
+  {
+   "id": "G17",
+   "q": "When can bail be granted in a non-bailable offence?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Code of Criminal Procedure, 1898 497 (0.796)",
+    "Code of Criminal Procedure, 1898 496 (0.776)",
+    "Code of Criminal Procedure, 1898 498A (0.729)"
+   ]
+  },
+  {
+   "id": "G18",
+   "q": "How is a First Information Report recorded for a cognizable offence?",
+   "rank": 2,
+   "chat": 2,
+   "top3": [
+    "THE POLICE ACT 1861  (0.682)",
+    "Code of Criminal Procedure, 1898 154 (0.656)",
+    "Code of Criminal Procedure, 1898 241A (0.645)"
+   ]
+  },
+  {
+   "id": "G19",
+   "q": "What is the punishment for rape under the Pakistan Penal Code?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 376 (0.918)",
+    "Pakistan Penal Code, 1860 374 (0.845)",
+    "Pakistan Penal Code, 1860 375 (0.814)"
+   ]
+  },
+  {
+   "id": "G20",
+   "q": "How many witnesses are required to attest a document creating a financial obligation?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE DRUG REGULATORY AUTHORITY OF PAKISTAN ACT, 2012  (0.675)",
+    "THE INCOME TAX ORDINANCE, 2001  (0.672)",
+    "THE PAKISTAN AIR FORCE ACT, 1953  (0.671)"
+   ]
+  },
+  {
+   "id": "G21",
+   "q": "Is the right to a fair trial a fundamental right in Pakistan?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Constitution of the Islamic Republic of Pakistan, 1973 10A (0.848)",
+    "THE INVESTIGATION FOR FAIR TRIAL ACT, 2013  (0.742)",
+    "THE MUTUAL LEGAL ASSISTANCE (CRIMINAL MATTERS) ACT, 2020  (0.698)"
+   ]
+  },
+  {
+   "id": "G22",
+   "q": "What is the writ jurisdiction of a High Court?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE BANKING COMPANIES ORDINANCE, 1962  (0.783)",
+    "THE MAINTENANCE ORDERS ENFORCEMENT ACT, 1921  (0.776)",
+    "Code of Civil Procedure, 1908 116 (0.757)"
+   ]
+  },
+  {
+   "id": "G23",
+   "q": "What compensation can be claimed for breach of contract?",
+   "rank": 2,
+   "chat": 2,
+   "top3": [
+    "Contract Act, 1872 74 (0.796)",
+    "Contract Act, 1872 73 (0.791)",
+    "Specific Relief Act, 1877 19 (0.778)"
+   ]
+  },
+  {
+   "id": "G24",
+   "q": "How is a sale of immovable property made under the Transfer of Property Act?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Transfer of Property Act, 1882 54 (0.872)",
+    "Transfer of Property Act, 1882 55 (0.840)",
+    "Transfer of Property Act, 1882 100 (0.819)"
+   ]
+  },
+  {
+   "id": "G25",
+   "q": "Can a person file a suit for a declaration of their title to property?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE CAPITAL TERRITORY TRUST ACT, 2020  (0.674)",
+    "THE CAPITAL TERRITORY TRUST ACT, 2020  (0.653)",
+    "THE COMPANIES ACT, 2017  (0.636)"
+   ]
+  },
+  {
+   "id": "G26",
+   "q": "Can a minor enter into a valid contract?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE LIMITED LIABILITY PARTNERSHIP ACT, 2017  (0.588)",
+    "UNDER PROOF READING Page 1 of 24 THE PARTNERSHIP ACT, 1932  (0.586)",
+    "THE PAKISTAN AIR FORCE ACT, 1953  (0.582)"
+   ]
+  }
+ ],
+ "live": [
+  {
+   "id": "L1",
+   "q": "What is murder under Section 302 of the Pakistan Penal Code?",
+   "rank": null,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 108 (0.799)",
+    "Pakistan Penal Code, 1860 4 (0.797)",
+    "Code of Criminal Procedure, 1898 Schedule 5 (0.792)"
+   ]
+  },
+  {
+   "id": "L2",
+   "q": "Can a Muslim wife get her marriage dissolved on the ground of cruelty?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Dissolution of Muslim Marriages Act, 1939 2 (0.835)",
+    "Dissolution of Muslim Marriages Act, 1939 5 (0.807)",
+    "Muslim Family Laws Ordinance, 1961 8 (0.804)"
+   ]
+  },
+  {
+   "id": "L3",
+   "q": "khula procedure",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "West Pakistan Family Courts Act, 1964 9 (0.752)",
+    "West Pakistan Family Courts Act, 1964 Schedule item 1 (0.676)",
+    "West Pakistan Family Courts Act, 1964 12A (0.640)"
+   ]
+  },
+  {
+   "id": "L4",
+   "q": "What is the procedure for talaq under the Muslim Family Laws Ordinance?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 7 (0.838)",
+    "Muslim Family Laws Ordinance, 1961 3 (0.737)",
+    "West Pakistan Family Courts Act, 1964 24 (0.708)"
+   ]
+  },
+  {
+   "id": "L5",
+   "q": "Is marriage registration mandatory in Pakistan and under which provision",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Muslim Family Laws Ordinance, 1961 5 (0.787)",
+    "West Pakistan Family Courts Act, 1964 23 (0.723)",
+    "Muslim Family Laws Ordinance, 1961 6 (0.692)"
+   ]
+  }
+ ],
+ "unseen": [
+  {
+   "id": "U01",
+   "q": "What is the punishment for robbery?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 392 (0.802)",
+    "Pakistan Penal Code, 1860 393 (0.761)",
+    "Pakistan Penal Code, 1860 390 (0.731)"
+   ]
+  },
+  {
+   "id": "U02",
+   "q": "What is the punishment for kidnapping?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 363 (0.802)",
+    "Pakistan Penal Code, 1860 367 (0.777)",
+    "Pakistan Penal Code, 1860 365 (0.774)"
+   ]
+  },
+  {
+   "id": "U03",
+   "q": "What is the punishment for criminal breach of trust?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 406 (0.837)",
+    "Pakistan Penal Code, 1860 409 (0.787)",
+    "Pakistan Penal Code, 1860 407 (0.784)"
+   ]
+  },
+  {
+   "id": "U04",
+   "q": "What is the punishment for house-trespass?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 448 (0.764)",
+    "Pakistan Penal Code, 1860 453 (0.727)",
+    "Pakistan Penal Code, 1860 456 (0.708)"
+   ]
+  },
+  {
+   "id": "U05",
+   "q": "What is the punishment for criminal intimidation?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 506 (0.827)",
+    "Pakistan Penal Code, 1860 507 (0.801)",
+    "Pakistan Penal Code, 1860 503 (0.772)"
+   ]
+  },
+  {
+   "id": "U06",
+   "q": "What is the punishment for forgery?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Pakistan Penal Code, 1860 465 (0.839)",
+    "Pakistan Penal Code, 1860 469 (0.771)",
+    "Pakistan Penal Code, 1860 468 (0.755)"
+   ]
+  },
+  {
+   "id": "U07",
+   "q": "Within how many hours must an arrested person be produced before a magistrate?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Code of Criminal Procedure, 1898 61 (0.804)",
+    "THE PREVENTION OF ELECTRONIC CRI MES ACT, 2016  (0.802)",
+    "THE PASSPORTS ACT, 1974  (0.781)"
+   ]
+  },
+  {
+   "id": "U08",
+   "q": "When can the police arrest someone without a warrant?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Code of Criminal Procedure, 1898 54 (0.736)",
+    "Code of Criminal Procedure, 1898 61 (0.733)",
+    "Code of Criminal Procedure, 1898 85 (0.711)"
+   ]
+  },
+  {
+   "id": "U09",
+   "q": "Can a court grant bail before arrest?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Code of Criminal Procedure, 1898 496 (0.721)",
+    "Code of Criminal Procedure, 1898 497 (0.683)",
+    "The Federal Excise Act, 2005  (0.672)"
+   ]
+  },
+  {
+   "id": "U10",
+   "q": "Who has to prove a fact in a court case?",
+   "rank": 4,
+   "chat": 4,
+   "top3": [
+    "Qanun-e-Shahadat Order, 1984 131 (0.794)",
+    "Qanun-e-Shahadat Order, 1984 47 (0.785)",
+    "Qanun-e-Shahadat Order, 1984 113 (0.774)"
+   ]
+  },
+  {
+   "id": "U11",
+   "q": "Can a confession made to a police officer be used as evidence?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Qanun-e-Shahadat Order, 1984 38 (0.803)",
+    "THE ANTI -TERRORISM ACT, 1997  (0.716)",
+    "Qanun-e-Shahadat Order, 1984 40 (0.689)"
+   ]
+  },
+  {
+   "id": "U12",
+   "q": "What age makes a girl a child for the purposes of child marriage?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Child Marriage Restraint Act, 1929 2 (0.671)",
+    "Child Marriage Restraint Act, 1929 4 (0.634)",
+    "Succession Act, 1925 114 (0.573)"
+   ]
+  },
+  {
+   "id": "U13",
+   "q": "What is the punishment for arranging a child marriage?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Child Marriage Restraint Act, 1929 5 (0.832)",
+    "Child Marriage Restraint Act, 1929 6 (0.814)",
+    "Child Marriage Restraint Act, 1929 4 (0.790)"
+   ]
+  },
+  {
+   "id": "U14",
+   "q": "Is there a limit on the value of dowry and bridal gifts?",
+   "rank": 2,
+   "chat": 2,
+   "top3": [
+    "Dowry and Bridal Gifts (Restriction) Act, 1976 6 (0.726)",
+    "Dowry and Bridal Gifts (Restriction) Act, 1976 3 (0.723)",
+    "Dowry and Bridal Gifts (Restriction) Act, 1976 4 (0.691)"
+   ]
+  },
+  {
+   "id": "U15",
+   "q": "Who cannot be appointed as guardian of a minor by the court?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Guardians and Wards Act, 1890 19 (0.865)",
+    "Guardians and Wards Act, 1890 21 (0.804)",
+    "Guardians and Wards Act, 1890 17 (0.798)"
+   ]
+  },
+  {
+   "id": "U16",
+   "q": "Can a Family Court order interim maintenance while the case is pending?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "West Pakistan Family Courts Act, 1964 17A (0.781)",
+    "West Pakistan Family Courts Act, 1964 21A (0.764)",
+    "West Pakistan Family Courts Act, 1964 9 (0.669)"
+   ]
+  },
+  {
+   "id": "U17",
+   "q": "Where does an appeal against a Family Court decision go?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "West Pakistan Family Courts Act, 1964 14 (0.704)",
+    "West Pakistan Family Courts Act, 1964 21A (0.669)",
+    "West Pakistan Family Courts Act, 1964 22 (0.637)"
+   ]
+  },
+  {
+   "id": "U18",
+   "q": "How does the Contract Act define a contract?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Contract Act, 1872 31 (0.784)",
+    "Contract Act, 1872 10 (0.774)",
+    "Contract Act, 1872 1 (0.763)"
+   ]
+  },
+  {
+   "id": "U19",
+   "q": "What is free consent?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Contract Act, 1872 14 (0.802)",
+    "Contract Act, 1872 13 (0.668)",
+    "Pakistan Penal Code, 1860 90 (0.661)"
+   ]
+  },
+  {
+   "id": "U20",
+   "q": "When is consent given under coercion?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE STATE IMMUNITY ORDINANCE, 1981  (0.746)",
+    "THE RAILWAY REGULATORY AUTHORITY ORDINANCE, 2002  (0.744)",
+    "Contract Act, 1872 13 (0.724)"
+   ]
+  },
+  {
+   "id": "U21",
+   "q": "Is an agreement without consideration enforceable?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Contract Act, 1872 25 (0.705)",
+    "THE DEKKHAN AGRICULTURISTS RELIEF ACT, 1879  (0.683)",
+    "INDUSTRIAL RELATIONS ACT, 2008  (0.668)"
+   ]
+  },
+  {
+   "id": "U22",
+   "q": "Can a contract stop someone from carrying on a trade or business?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Contract Act, 1872 27 (0.676)",
+    "UNDER PROOF READING Page 1 of 24 THE PARTNERSHIP ACT, 1932  (0.641)",
+    "Contract Act, 1872 70 (0.591)"
+   ]
+  },
+  {
+   "id": "U23",
+   "q": "What is a contract of indemnity?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Contract Act, 1872 124 (0.854)",
+    "Contract Act, 1872 125 (0.741)",
+    "Contract Act, 1872 222 (0.711)"
+   ]
+  },
+  {
+   "id": "U24",
+   "q": "What is a gift of immovable property?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE AL -KARAM INTERNATIONAL INSTITUTE ACT, 2021  (0.719)",
+    "THE FEDERAL UNIVERSITIES ORDINANCE, 2002  (0.664)",
+    "THE INCOME TAX ORDINANCE, 2001  (0.663)"
+   ]
+  },
+  {
+   "id": "U25",
+   "q": "What is a mortgage?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE FINANCIAL INSTITUTIONS (RECOVERY OF FINANCES) ORDINANCE, 2001  (0.576)",
+    "Transfer of Property Act, 1882 57 (0.521)",
+    "THE EXCISE DUTY ON MINERALS (LABOUR WELFARE) ACT, 1967  (0.516)"
+   ]
+  },
+  {
+   "id": "U26",
+   "q": "What is a lease of immovable property?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Transfer of Property Act, 1882 107 (0.760)",
+    "Qanun-e-Shahadat Order, 1984 115 (0.712)",
+    "Registration Act, 1908 2 (0.708)"
+   ]
+  },
+  {
+   "id": "U27",
+   "q": "Which documents must be registered?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Registration Act, 1908 29 (0.719)",
+    "Registration Act, 1908 18 (0.712)",
+    "Registration Act, 1908 49 (0.708)"
+   ]
+  },
+  {
+   "id": "U28",
+   "q": "What happens to a suit filed after the limitation period has expired?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE FINANCIAL INSTITUTIONS (RECOVERY OF FINANCES) ORDINANCE, 2001  (0.684)",
+    "Code of Civil Procedure, 1908 80 (0.671)",
+    "Limitation Act, 1908 Schedule 1 (0.657)"
+   ]
+  },
+  {
+   "id": "U29",
+   "q": "Can a person who was dispossessed of land without due process sue to get it back?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE ISLAMABAD REAL ESTATE (REGULATION AND DEVELOPMENT) ACT, 2021  (0.665)",
+    "THE CANTONMENTS ACT, 1924  (0.658)",
+    "THE BANKING COMPANIES ORDINANCE, 1962  (0.652)"
+   ]
+  },
+  {
+   "id": "U30",
+   "q": "Does the Constitution protect freedom of speech?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Constitution of the Islamic Republic of Pakistan, 1973 19 (0.669)",
+    "THE NATIONAL CIVIC EDUCATION COMMISSION ACT, 2018  (0.578)",
+    "THE INTERNATIONAL ISLAMIC UNIVERSITY ORDINANCE, 1985  (0.566)"
+   ]
+  },
+  {
+   "id": "U31",
+   "q": "Is education a fundamental right for children?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE RIGHT TO FREE AND COMPULSORY EDUCATION ACT, 2012  (0.726)",
+    "THE DYSLEXIA SPECIAL MEASURES ACT, 2022  (0.586)",
+    "THE RIGHT TO FREE AND COMPULSORY EDUCATION ACT, 2012  (0.579)"
+   ]
+  },
+  {
+   "id": "U32",
+   "q": "Can a citizen move freely and live anywhere in Pakistan?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Constitution of the Islamic Republic of Pakistan, 1973 15 (0.667)",
+    "THE PASSPORTS ACT, 1974  (0.645)",
+    "THE PAKISTAN CITIZENSHIP ACT, 1951  (0.635)"
+   ]
+  },
+  {
+   "id": "U33",
+   "q": "Can a person be prosecuted twice for the same offence?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Code of Criminal Procedure, 1898 237 (0.706)",
+    "Code of Criminal Procedure, 1898 234 (0.690)",
+    "Code of Criminal Procedure, 1898 233 (0.686)"
+   ]
+  },
+  {
+   "id": "U34",
+   "q": "What rights does a person have when arrested?",
+   "rank": 1,
+   "chat": 1,
+   "top3": [
+    "Constitution of the Islamic Republic of Pakistan, 1973 10 (0.731)",
+    "Code of Criminal Procedure, 1898 59 (0.709)",
+    "THE TERRORI ST AFFECTED AREAS (SPECIAL COURT S) ACT , 1992  (0.696)"
+   ]
+  },
+  {
+   "id": "U35",
+   "q": "Is torture to extract evidence allowed?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE TORTURE AND CUSTODIAL DEATH (PREVENTION AND PUNISHMENT) ACT, 2022  (0.680)",
+    "Qanun-e-Shahadat Order, 1984 82 (0.582)",
+    "THE TORTURE AND CUSTODIAL DEATH (PREVENTION AND PUNISHMENT) ACT, 2022  (0.570)"
+   ]
+  },
+  {
+   "id": "U36",
+   "q": "What is res judicata?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE FUTURES MARKET ACT, 2016  (0.472)",
+    "THE PREVENTION OF ANTINA TIONAL A CTIVITIES ACT , 1974  (0.448)",
+    "NATIONAL EDUCATION FOUNDATION ORDINANCE 2002  (0.446)"
+   ]
+  },
+  {
+   "id": "U37",
+   "q": "In which court should a suit about land be filed?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "Code of Civil Procedure, 1908 5 (0.706)",
+    "THE WASTE LANDS (CLAIMS) ACT, 1863  (0.696)",
+    "THE SUITS VALUATION ACT, 1887  (0.696)"
+   ]
+  },
+  {
+   "id": "U38",
+   "q": "Can a court stop a suit when the same matter is already pending in another court?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE COMPANIES ACT, 2017  (0.675)",
+    "THE PAKISTAN AIR FORCE ACT, 1953  (0.656)",
+    "THE MAINTENANCE ORDERS ENFORCEMENT ACT, 1921  (0.656)"
+   ]
+  },
+  {
+   "id": "U39",
+   "q": "Can a court review its own judgment?",
+   "rank": null,
+   "chat": null,
+   "top3": [
+    "THE ENEMY AGENTS ORDINANCE, 1943  (0.707)",
+    "SMALL CLAIMS AND MINOR OFFENCES COURTS ORDINANCE, 2002  (0.667)",
+    "THE WASTE LANDS (CLAIMS) ACT, 1863  (0.656)"
+   ]
+  },
+  {
+   "id": "U40",
+   "q": "Can a party appeal against an original decree?",
+   "rank": 5,
+   "chat": 5,
+   "top3": [
+    "Code of Civil Procedure, 1908 97 (0.725)",
+    "Code of Civil Procedure, 1908 Schedule 1 (0.711)",
+    "Code of Civil Procedure, 1908 105 (0.708)"
+   ]
+  }
+ ]
+}

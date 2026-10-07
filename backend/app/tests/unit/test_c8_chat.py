@@ -265,3 +265,26 @@ def test_research_passes_include_repealed(monkeypatch):
     research_service.ResearchService(None).search("boilers", include_repealed=True)
     research_service.ResearchService(None).search("boilers")
     assert seen[0]["include_repealed"] is True and seen[1]["include_repealed"] is False
+
+
+# --------------------------------------------------------------------------- supporting passages
+
+def test_supporting_sections_join_once_the_gate_has_passed(monkeypatch):
+    def h(doc, score, kb="v2"):
+        return {"doc_id": doc, "kb": kb, "source": doc, "text": doc, "relevance": score}
+    monkeypatch.setattr(chat, "family_scope_applies", lambda *a: False)
+    monkeypatch.setattr(chat.embeddings, "similarity_threshold", lambda: 0.65)
+    monkeypatch.setattr(chat.section_lookup, "section_passages", lambda q, p: [])
+    monkeypatch.setattr(chat.exact_lookup, "exact_passages", lambda q: [])
+    monkeypatch.setattr(settings, "KB_V2", True)
+    monkeypatch.setattr(settings, "SECTION_EXPANSION", False)
+    ranked = [h("a", 0.70), h("b", 0.58), {"source": "OLD", "text": "v1", "relevance": 0.60}, h("c", 0.50)]
+    monkeypatch.setattr(chat.embeddings, "search", lambda q, top_k: list(ranked))
+    monkeypatch.setattr(settings, "HYBRID_SEARCH", True)
+    assert [p["source"] for p in chat.retrieve_passages("q", "q")] == ["a", "b"]     # section b joins; v1 and c don't
+    monkeypatch.setattr(settings, "HYBRID_SEARCH", False)
+    assert [p["source"] for p in chat.retrieve_passages("q", "q")] == ["a"]
+    monkeypatch.setattr(settings, "HYBRID_SEARCH", True)
+    monkeypatch.setattr(chat.embeddings, "search", lambda q, top_k: [h("b", 0.58)])
+    monkeypatch.setattr(chat, "_scope_fallbacks", lambda *a: [])
+    assert chat.retrieve_passages("q", "q") == []                                   # the gate is unchanged

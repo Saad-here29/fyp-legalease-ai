@@ -133,7 +133,7 @@ def search(query: str, top_k: int, filters: dict | None = None) -> list[dict]:
     hint_ids: list[str] = []
     if settings.KB_V2 and settings.QUERY_HINTS:   # kb-v2 C5/C8: retrieval-only search terms and sections
         from app.kb import query_hints
-        hint_ids = query_hints.exact_doc_ids(query)
+        hint_ids = query_hints.exact_doc_ids(query) if settings.HINT_EXACT_SECTIONS else []
         query = query_hints.expand(query)
     if settings.SCRAPED_V2:              # kb-v2 C3: also the scraped laws (app/kb/scraped.py)
         from app.kb import scraped

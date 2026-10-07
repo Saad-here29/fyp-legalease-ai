@@ -4,7 +4,10 @@ Sets: the 26 gold questions (scripts/kb/compare_kb_v2.py), the live-test
 questions and 40 unseen questions (docs/eval/c8_questions.json, committed before
 any C8 change). Demo configuration: KB_V2, QUERY_HINTS and SCRAPED_V2 on, raw
 questions (no rewrite), top 5 of embeddings.search. A hit = an accepted Act and
-section in the top 5 (any score).
+section in the top 5 (any score). "chat" = the same check on the passages Chat
+would send the model (app/services/legal_chat_service.retrieve_passages: 0.65
+gate, exact section lookup, section expansion), i.e. whether the right section
+reaches the model; no model is called.
 
     cd backend
     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python ../scripts/kb/eval_c8.py --label baseline
@@ -30,6 +33,7 @@ from compare_kb_v2 import GOLD, SectionGuess  # noqa: E402
 from app.ai import embeddings  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.kb.index_v2 import load_records  # noqa: E402
+from app.services import legal_chat_service as chat  # noqa: E402
 
 EVAL = ROOT / "docs" / "eval"
 
@@ -57,8 +61,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--label", required=True)
     ap.add_argument("--compare", default=None)
+    ap.add_argument("--off", default="", help="C8 retrieval features to switch off: hybrid,hint_sections")
     args = ap.parse_args()
     settings.KB_V2, settings.QUERY_HINTS, settings.SCRAPED_V2 = True, True, True
+    off = {x.strip() for x in args.off.split(",") if x.strip()}
+    settings.HYBRID_SEARCH = "hybrid" not in off
+    settings.HINT_EXACT_SECTIONS = "hint_sections" not in off
     embeddings.build_or_load()
     guess = SectionGuess(load_records(Path(settings.KB_DIR) / "records"))
     out = {}
@@ -67,10 +75,13 @@ def main() -> int:
         for qid, q, acc in qs:
             hits = embeddings.search(q, top_k=5)
             r = rank(hits, acc, guess)
+            sent = chat.retrieve_passages(q, q)
+            c = rank(sent, acc, guess)
             top = [f"{guess(h)[0] or h.get('source')} {guess(h)[1] or ''} ({h['relevance']:.3f})" for h in hits[:3]]
-            rows.append({"id": qid, "q": q, "rank": r, "top3": top})
+            rows.append({"id": qid, "q": q, "rank": r, "chat": c, "top3": top})
         out[name] = rows
-        print(f"{name}: {sum(1 for r in rows if r['rank'])}/{len(rows)}")
+        print(f"{name}: top5 {sum(1 for r in rows if r['rank'])}/{len(rows)} | "
+              f"reaches the model {sum(1 for r in rows if r.get('chat'))}/{len(rows)}")
     (EVAL / f"c8_results_{args.label}.json").write_text(json.dumps(out, ensure_ascii=False, indent=1),
                                                        encoding="utf-8")
     if args.compare:
@@ -81,6 +92,11 @@ def main() -> int:
             worse = [r["id"] for r in out[name] if (r["rank"] or 99) > (before.get(r["id"]) or 99)]
             print(f"  {name}: {sum(1 for v in before.values() if v)} -> {sum(1 for r in out[name] if r['rank'])}"
                   f" | better {better} | worse {worse}")
+            cb = {r["id"]: r.get("chat") for r in old[name]}
+            if any(v is not None for v in cb.values()) or "chat" in old[name][0]:
+                cw = [r["id"] for r in out[name] if cb.get(r["id"]) and not r.get("chat")]
+                print(f"    reaches the model: {sum(1 for v in cb.values() if v)} -> "
+                      f"{sum(1 for r in out[name] if r.get('chat'))} | lost {cw}")
     return 0
 
 
