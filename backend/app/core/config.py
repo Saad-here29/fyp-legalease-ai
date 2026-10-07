@@ -177,8 +177,10 @@ class Settings(BaseSettings):
     SECTION_MAX_COUNT: int = 4
     QUERY_HINTS_PATH: str = "./storage/kb/query_hints.json"
     REASONING_V2: bool = False
-    REASONING_INPUT_TOKENS: int = 4200     # document text sent (excerpted above this); + ~500 instructions
-    REASONING_MAX_TOKENS: int = 1500       # reply cap: ~6k tokens per analysis in all
+    REASONING_INPUT_TOKENS: int = 5000     # document text per call (kb-v2 C10: the document is split into parts)
+    REASONING_MAX_TOKENS: int = 1500       # reply cap per call
+    REASONING_MAX_CALLS: int = 5           # parts per document: ~12,000+ words fully covered
+    REASONING_TPM: int = 7500              # tokens a minute the calls stay under (Groq: 8,000, prompt + reply cap)
     REASONING_MAX_WAIT: float = 45.0       # seconds of 429 back-off before giving up
     REASONING_RELATED_MIN: float = 0.55    # related past judgments (JUDGMENTS_V2) at or above this score
     KB_SCRAPED_INDEX_PATH: str = "./storage/kb/faiss_scraped.faiss"

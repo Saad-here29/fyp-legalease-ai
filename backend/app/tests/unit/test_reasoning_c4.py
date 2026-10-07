@@ -134,7 +134,7 @@ def test_statutes_are_looked_up_in_the_knowledge_base(kb):
     assert got[("PPC", "302")]["kb_law_id"] == "pakistan-penal-code-1860"
     assert got[("PPC", "411")]["status"] == "not_found"
     assert got[("Peshawar Police Rules", "12")]["status"] == "not_checked"
-    assert out["counts"]["statutes"] == {"verified": 3, "not_found": 1, "not_checked": 1}
+    assert out["counts"]["statutes"] == {"verified": 3, "law_held": 0, "not_found": 1, "not_checked": 1}
 
 
 # --------------------------------------------------------------------------- (d) related cases
@@ -145,15 +145,16 @@ def test_related_cases_only_with_judgments_on(kb, monkeypatch):
 
     def fake_search(q, top_k, min_score):
         seen.append((top_k, min_score))
-        return [{"doc_id": "judgment/x/1", "display_name": "A v. B", "court": "Supreme Court of Pakistan",
-                 "year": 2023, "paragraph": 4, "score": 0.61, "text": "", "case_number": None}]
+        return [{"doc_id": "judgment/x/1", "display_name": "A v. B", "case_name": "A v. B",
+                 "court": "Supreme Court of Pakistan", "year": 2023, "paragraph": 4, "score": 0.61,
+                 "text": "Bail was refused because the evidence connected the accused.", "case_number": "C.P. 1"}]
     monkeypatch.setattr(judgment_search, "search", fake_search)
     out, _ = reasoning.analyse(TEXT, NER, ai=FakeAI(MOCK))
     assert all("related_cases" not in i for i in out["issues"]) and not seen
     monkeypatch.setattr(settings, "JUDGMENTS_V2", True)
     out, _ = reasoning.analyse(TEXT, NER, ai=FakeAI(MOCK))
     assert out["issues"][0]["related_cases"][0]["doc_id"] == "judgment/x/1"
-    assert seen[0] == (2, 0.55) and "not cited in this document" in out["related_cases_note"]
+    assert seen[0] == (6, 0.58) and "not cited in this document" in out["related_cases_note"]
 
 
 # --------------------------------------------------------------------------- failures
@@ -198,22 +199,17 @@ def test_prompt_fits_the_budget(kb):
     assert "exact quotation" in ai.calls[0]["system"] and "JSON" in ai.calls[0]["system"]
 
 
-def test_long_document_keeps_head_tail_and_entity_paragraphs(kb):
+def test_long_document_is_analysed_in_parts(kb):
     filler = "\n\n".join(f"Paragraph {i}. The record was perused and nothing of note arises here at all." * 3
-                         for i in range(400))
-    special = "The witness Zafar Khan stated that the firing took place at 9 pm."
-    doc = "HEAD OF THE ORDER Criminal Petition No.187-P of 2026\n\n" + filler[: len(filler) // 2] + "\n\n" + \
-        special + "\n\n" + filler[len(filler) // 2:] + "\n\nTAIL: the petition is allowed."
-    text, cov = reasoning.excerpt(doc, ["Zafar Khan"], budget=1500)
-    assert cov["partial"] is True and "Only part of this long document was analysed" in cov["note"]
-    assert reasoning.tokens(text) <= 1500
-    assert text.startswith("HEAD OF THE ORDER") and text.rstrip().endswith("the petition is allowed.")
-    assert special in text and "[…]" in text
-    ai = FakeAI(json.dumps({"issues": []}))
-    out, _ = reasoning.analyse(doc, ["Zafar Khan"], ai=ai)
-    assert out["coverage"]["partial"] is True or reasoning.tokens(doc) <= settings.REASONING_INPUT_TOKENS
-    short, cov = reasoning.excerpt(TEXT, NER)
-    assert short == TEXT and cov["partial"] is False
+                         for i in range(700))
+    doc = "HEAD OF THE ORDER Criminal Petition No.187-P of 2026\n\n" + filler + "\n\nTAIL: the petition is allowed."
+    ai = FakeAI(*[json.dumps({"issues": []})] * settings.REASONING_MAX_CALLS)
+    out, _ = reasoning.analyse(doc, ["Zafar Khan"], ai=ai, sleep=lambda s: None)
+    assert len(ai.calls) == settings.REASONING_MAX_CALLS and out["coverage"]["partial"] is True
+    assert "HEAD OF THE ORDER" in ai.calls[0]["prompt"] and "the petition is allowed" in ai.calls[-1]["prompt"]
+    assert f"about {out['coverage']['percent']}% of it" in out["coverage"]["note"]
+    parts, cov = reasoning.plan(TEXT)
+    assert len(parts) == 1 and cov["partial"] is False and cov["note"] is None
 
 
 # --------------------------------------------------------------------------- the endpoint
@@ -234,8 +230,9 @@ def endpoint(db_session, engine, lawyer, kb, monkeypatch):
     monkeypatch.setattr(documents_api, "SessionLocal", sessionmaker(bind=engine))
 
     class Summariser:
-        def summarise(self, text, hint=""):
-            return "1) Summary\nBail granted.\n5) Risk flags\n- None"
+        def summarise(self, text, hint="", focus_gaps=False):
+            return ("1) Summary\nBail granted.\n5) Points to review\n- No bail petition is mentioned.\n"
+                    "- No date is given for the recovery memo.")
     monkeypatch.setattr(documents_api, "get_ai_client", lambda: Summariser())
     monkeypatch.setattr(ner, "extract_entities", lambda text: ner.NerResult(available=False))
     doc = Document(uploaded_by_id=lawyer.id, file_name="crl.pdf", storage_path="uploads/x.pdf", sha256_hash="0" * 64,
@@ -252,7 +249,8 @@ def test_flag_off_response_and_saved_analysis_unchanged(db_session, lawyer, endp
     monkeypatch.setattr(reasoning, "analyse", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no call")))
     res = documents_api.analyze_document(endpoint.id, lawyer, db_session)
     dumped = res.model_dump()
-    assert "reasoning" not in dumped and "reasoning_error" not in dumped
+    assert "reasoning" not in dumped and "reasoning_error" not in dumped and "review_points_removed" not in dumped
+    assert len(dumped["risks"]) == 2                                      # no absence check with the flag off
     saved = db_session.query(DocumentAnalysis).filter_by(document_id=endpoint.id).one()
     assert saved.identified_clauses == {"source": "llm_summary", "items": []}
 
@@ -264,6 +262,7 @@ def test_flag_on_returns_and_saves_the_reasoning(db_session, lawyer, endpoint, m
     res = documents_api.analyze_document(endpoint.id, lawyer, db_session).model_dump()
     assert res["reasoning_error"] is None and res["reasoning"]["counts"]["kept"] == 22
     assert res["summary"].startswith("1) Summary")                       # the rest of the analysis is untouched
+    assert res["risks"] == ["No date is given for the recovery memo."] and res["review_points_removed"] == 1
     db_session.expire_all()
     saved = db_session.query(DocumentAnalysis).filter_by(document_id=endpoint.id).one()
     assert saved.identified_clauses["reasoning"]["counts"]["dropped"] == 4
