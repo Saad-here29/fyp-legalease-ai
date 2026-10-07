@@ -175,6 +175,18 @@ CASES_RULES = (
 )
 
 
+# kb-v2 C5 (with KB_V2 on): a statute that only REQUIRES something (e.g.
+# registering a marriage) was answered as making its absence "void" or
+# "illegal". The citation check flags any such consequence the passages
+# don't state (check_citations(consequences=True)).
+CONSEQUENCE_RULE = (
+    "LEGAL CONSEQUENCES: Do not say that something is void, invalid, illegal, unlawful, unenforceable or "
+    "punishable, or give a penalty, unless a numbered passage says so in those terms. If a passage only "
+    "requires something (for example that a marriage be registered), say what it requires and who must do it, "
+    "and stop there: don't add what happens if it isn't done."
+)
+
+
 def cases_block(judgments: list[dict]) -> str:
     """The "Reported cases (context only)" block: name, court, year, paragraph number and text."""
     return "\n\n".join(f"Case {i + 1}: {j['prefix']}\n{j['paragraph_text']}" for i, j in enumerate(judgments))
@@ -189,6 +201,8 @@ def build_system_prompt(context_block: str, lang: str, *, strict: bool | None = 
     the prompt exactly as without judgments."""
     strict = settings.STRICT_GROUNDING if strict is None else strict
     rules = f"{SYSTEM_PROMPT}\n\n{STRICT_GROUNDING_RULES}" if strict else SYSTEM_PROMPT
+    if settings.KB_V2:
+        rules = f"{rules}\n\n{CONSEQUENCE_RULE}"
     case_part = (f"{CASES_RULES}\n\n--- Reported cases (context only) ---\n{cases}\n"
                  "--- End reported cases ---\n\n") if cases else ""
     return (
@@ -412,6 +426,7 @@ def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
          for p in passages],
         lang=lang,
         judgments=judgments or None,
+        consequences=settings.KB_V2,
     )
     logger.info(f"Citation check: {checked.summary()}")
     return checked

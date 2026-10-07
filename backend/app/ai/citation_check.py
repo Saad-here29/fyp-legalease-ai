@@ -587,8 +587,53 @@ def _act_problems(text: str, passages: list[dict], passages_norm: str) -> list[t
     return problems
 
 
+_CONSEQUENCE = re.compile(
+    r"\b(null and void|void(?:able)?|invalid|illegal|unlawful|unenforceable|nullity|punishable|imprisonment|"
+    r"penalty|criminal offence|offence)\b", re.I)
+
+
+def _consequence_problems(text: str, passages: list[dict]) -> list[tuple[str, int]]:
+    """[(note item, flag position)] for each legal consequence the answer
+    states ("void", "illegal", "punishable", "imprisonment"...) that no
+    retrieved passage states in those words; for a penalty, also any number
+    in its sentence that no passage contains."""
+    src = " ".join(_norm(p.get("text") or "") for p in passages).lower()
+    src_figures = _figures(src)
+    out: list[tuple[str, int]] = []
+    for m in _CONSEQUENCE.finditer(_norm(text)):
+        term = m.group(1).lower()
+        if not re.search(r"\b" + re.escape(term) + r"\b", src):
+            out.append((f"Legal consequence not stated in the retrieved text: \"{m.group(1)}\"", m.end()))
+            continue
+        if term in ("punishable", "imprisonment", "penalty"):
+            left, right = _sentence_span(text, m.start(), m.end())
+            extra = [f"{n} {u}{'' if n == 1 else 's'}" for n, u in sorted(_figures(text[left:right].lower()))
+                     if (n, u) not in src_figures]
+            if extra:
+                out.append((f"Penalty figure not in the retrieved text: {', '.join(extra)}", m.end()))
+    return out
+
+
+_NUMBER_WORDS = {w: i for i, w in enumerate(
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
+    "seventeen eighteen nineteen twenty".split())}
+_FIGURE = re.compile(r"\b(\d[\d,]*|" + "|".join(_NUMBER_WORDS) + r")\s*(thousand|lakh|hundred)?\s*"
+                     r"(years?|months?|days?|rupees)\b")
+
+
+def _figures(text: str) -> set[tuple[int, str]]:
+    """(amount, unit) pairs: "three months" -> (3, "month"), "one thousand rupees" -> (1000, "rupee")."""
+    out = set()
+    for num, scale, unit in _FIGURE.findall(text):
+        n = _NUMBER_WORDS.get(num)
+        n = int(num.replace(",", "")) if n is None else n
+        n *= {"thousand": 1000, "lakh": 100000, "hundred": 100}.get(scale, 1)
+        out.add((n, unit.rstrip("s")))
+    return out
+
+
 def check_citations(answer: str, passages: list[dict], lang: str = "en",
-                    judgments: list[dict] | None = None) -> CitationCheck:
+                    judgments: list[dict] | None = None, consequences: bool = False) -> CitationCheck:
     """`passages` are the retrieved records (need `source` and `text`), in
     the same order they were numbered [1..n] in the prompt.
 
@@ -597,7 +642,11 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
     answer names must be one of them (by party names, or case number and
     year), else its sentence is removed; a paragraph number given for one
     must be the paragraph retrieved, else it is flagged and listed in the
-    note. None: exactly the statute-only check."""
+    note. None: exactly the statute-only check.
+
+    `consequences` (kb-v2 C5, on with KB_V2): a legal consequence the answer
+    states ("void", "illegal", "punishable", a penalty figure) that no
+    retrieved passage states is flagged and listed in the note."""
     words = _MARKERS["ur" if lang == "ur" else "en"]
     passages_norm = re.sub(r"\s+", " ", _norm(" ".join(p.get("text") or "" for p in passages)))
     answer = normalize_markers(answer)
@@ -649,6 +698,12 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
     # 5) Paragraph numbers given for retrieved cases (kb-v2 C2)
     if cases:
         for item, pos in _case_paragraph_problems(text, cases):
+            if item not in seen_unverified:
+                seen_unverified[item] = None
+                inserts.append((pos, f" {words['flag']}"))
+    # 6) Legal consequences the retrieved text doesn't state (kb-v2 C5)
+    if consequences:
+        for item, pos in _consequence_problems(text, passages):
             if item not in seen_unverified:
                 seen_unverified[item] = None
                 inserts.append((pos, f" {words['flag']}"))
