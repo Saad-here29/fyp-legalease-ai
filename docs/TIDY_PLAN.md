@@ -96,3 +96,21 @@ itself. In this column, *docs* means Markdown files only, which can be updated.
 | `ERD.png` | Entity-relationship diagram | `database-schema.md` | KEEP |
 | 17 other diagrams (`Activity Diagram.png`, `Algorithm 1.png`, `Algorithm1.png`–`Algorithm5.png`, `Architecture Diagram.png`, `Box and Line Diagram.png`, `Class.pdf`, `DomainModel.png`, `SD *.png` (3), `State Transition Diagram for Case Life Cycle.png`, `Use Case.png`) | Report figures | none (`Algorithm 1` in `auth.py` means the report section) | KEEP (`Algorithm 1.png` and `Algorithm1.png` differ, so they aren't duplicates) |
 | `Claude.md` | A prompt for rebuilding the project as MERN/Node/Mongo, which doesn't match this stack | `PROJECT_CONTEXT.md` (archived) | REVIEW → `_to_review/docs/reports/Claude.md` |
+
+## Result (checked 2026-10-08, 02:15)
+
+- **Changes since the tag:** `git diff kb-v2-pre-tidy-2026-10-08` shows only renames and Markdown
+  edits. No code, test, script, config or storage file changed.
+- **Links:** every relative Markdown link resolves. The only unresolved names are paths to
+  git-ignored data (`data/raw`, `data/processed`, `backend/venv`, caches) and history inside
+  archived notes. There were more of these before the tidy-up.
+- **`scripts/start_demo.ps1`:** unchanged. The paths it uses (`backend/`, `frontend/`,
+  `backend/app/main.py`, the venv's Python) all exist.
+- **Tests:** 673 of 679 pass.
+  - `test_case_fields.py::test_stats_list_upcoming_hearings` fails between midnight and 5 am
+    Pakistan time: the test uses the local date and the service uses the UTC date.
+  - 5 knowledge base tests in `test_kb_b3.py` and `test_kb_index_v2.py` now return results from
+    the real `backend/storage/kb` indexes. Those indexes were rewritten at 01:41–01:43 by a process
+    outside this tidy-up. The same tests passed at 00:56 with the same code.
+- **Ruff:** `ruff check app` reports 21 findings (E402, B904, SIM102, N806), the same as at the tag,
+  because the code is unchanged.
