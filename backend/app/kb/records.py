@@ -13,7 +13,8 @@ STATUSES = {"current", "under_review", "repealed"}
 REQUIRED = ("doc_id", "title", "section", "heading", "text", "source_type", "jurisdiction", "category", "year",
             "act_number", "source", "source_tier", "source_url", "original_file", "scraped_at", "content_hash",
             "status", "audience")
-OPTIONAL = ("provenance_note", "sectioned", "source_version", "category_source")
+OPTIONAL = ("provenance_note", "sectioned", "source_version", "category_source",
+            "document_type", "amendments")      # the last two: scraped laws (kb-v2 C3)
 
 
 def slugify(title: str) -> str:
@@ -32,7 +33,7 @@ def section_id(section: str) -> str:
 def make_records(meta: dict, sections: list[Section] | None, raw_text: str | None = None) -> list[dict]:
     """One record per section; or, for an unsectioned law (sections None),
     one per ~1200-character window with section and heading null."""
-    base = f"{_source_slug(meta['source'])}/{slugify(meta['title'])}"
+    base = f"{_source_slug(meta['source'])}/{meta.get('slug') or slugify(meta['title'])}"
     out, seen = [], {}
     if sections is None:
         parts = [(None, None, w, f"w{i + 1}") for i, w in enumerate(windows(raw_text or ""))]
@@ -66,7 +67,7 @@ def make_records(meta: dict, sections: list[Section] | None, raw_text: str | Non
             "audience": meta.get("audience") or "general",
             "sectioned": sections is not None,
         }
-        for k in ("provenance_note", "source_version", "category_source"):
+        for k in ("provenance_note", "source_version", "category_source", "document_type", "amendments"):
             if meta.get(k):
                 rec[k] = meta[k]
         out.append(rec)
@@ -91,10 +92,13 @@ def validate(rec: dict) -> list[str]:
         if isinstance(rec[k], str) and not rec[k].strip():
             errs.append(f"{k} is empty")
     for k in ("section", "heading", "category", "act_number", "source_url", "original_file", "scraped_at",
-              "provenance_note", "source_version", "category_source"):
+              "provenance_note", "source_version", "category_source", "document_type"):
         if k in rec:
             typ(k, str, type(None))
     typ("year", int)
+    if "amendments" in rec and not (isinstance(rec["amendments"], list)
+                                    and all(isinstance(a, str) for a in rec["amendments"])):
+        errs.append("amendments must be a list of strings")
     if rec["source_type"] != "statute":
         errs.append("source_type must be 'statute'")
     if rec["jurisdiction"] not in JURISDICTIONS:

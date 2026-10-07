@@ -304,7 +304,10 @@ def validate(rec: dict) -> list[str]:
         return errs
     if rec["source_type"] != "case_law":
         errs.append("source_type must be case_law")
-    if rec["provenance_note"] != PROVENANCE:
+    # The team dataset carries PROVENANCE; a judgment scraped from a court's
+    # own website (kb-v2 C3) carries its source URL and a real provenance note.
+    scraped = rec.get("source_tier") == 1 and bool(rec.get("source_url"))
+    if (rec["provenance_note"] != PROVENANCE) if not scraped else not rec["provenance_note"]:
         errs.append("provenance_note")
     if not re.fullmatch(r"[0-9a-f]{64}", rec["file_sha256"] or ""):
         errs.append("file_sha256")

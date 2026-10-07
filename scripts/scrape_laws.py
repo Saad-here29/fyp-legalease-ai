@@ -6,6 +6,17 @@
     python scripts/scrape_laws.py --dry-run --limit 3 --out run1.json            # remember hashes
     python scripts/scrape_laws.py --dry-run --limit 3 --compare-with run1.json   # unchanged / changed, no DB
 
+kb-v2 C3, file staging (no database; run from backend/):
+    python ../scripts/scrape_laws.py --stage-files                        # default caps PC 120, KP 60, FSC 100
+    python ../scripts/scrape_laws.py --stage-files --caps "Pakistan Code=10,Khyber Pakhtunkhwa Code=10,Federal Shariat Court=10"
+    python ../scripts/scrape_laws.py --stage-files --budget 0             # no time limit
+    python ../scripts/scrape_laws.py --stage-files --reparse              # rebuild records from saved originals, no network
+Writes backend/storage/kb/scraped/ (originals + manifest, records, quarantine,
+state.json, update_log.jsonl). Pakistan Code fetches the Acts its category
+listings name that we don't hold first. Stops after --budget seconds (default
+900); run the same command again to continue (URLs fetched in the last
+--skip-within-hours are skipped). Exit code 3 when stopped early, 1 on failure.
+
 Sources and their selectors: scripts/scraping/sources.json (only "enabled"
 sources run). Limits: identified User-Agent, 2 s between requests per site
 (longer if robots.txt asks), retries with back-off, a page cap per run
@@ -40,7 +51,17 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=None, help="write the run summary JSON here")
     ap.add_argument("--compare-with", type=Path, default=None,
                     help="dry run only: an earlier --out JSON whose hashes count as the stored versions")
+    ap.add_argument("--stage-files", action="store_true",
+                    help="kb-v2 C3: stage into backend/storage/kb/scraped/ (files, no database)")
+    ap.add_argument("--caps", default="", help='per-source document caps, e.g. "Pakistan Code=120,Federal Shariat Court=100"')
+    ap.add_argument("--budget", type=float, default=900.0, help="--stage-files: seconds of fetching; 0 = no limit")
+    ap.add_argument("--reparse", action="store_true",
+                    help="--stage-files: rebuild records and quarantine from the saved originals (no network)")
+    ap.add_argument("--skip-within-hours", type=float, default=20.0,
+                    help="--stage-files: skip URLs fetched this recently (resume); 0 = refetch everything")
     args = ap.parse_args()
+    if args.stage_files:
+        return stage_files(args)
     if args.compare_with and not args.dry_run:
         print("--compare-with is for dry runs; a real run compares with the database.", file=sys.stderr)
         return 2
@@ -111,6 +132,64 @@ def main() -> int:
     if args.out:
         args.out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     return 0
+
+
+DEFAULT_CAPS = {"Pakistan Code": 120, "Khyber Pakhtunkhwa Code": 60, "Federal Shariat Court": 100}
+
+
+def parse_caps(text: str) -> dict[str, int]:
+    caps = dict(DEFAULT_CAPS)
+    for part in filter(None, (p.strip() for p in text.split(","))):
+        name, _, n = part.rpartition("=")
+        if not name or not n.strip().isdigit():
+            raise SystemExit(f"--caps: expected NAME=NUMBER, got {part!r}")
+        caps[name.strip()] = int(n)
+    return caps
+
+
+def stage_files(args) -> int:
+    """kb-v2 C3: the three verified sources, staged as files (no database)."""
+    from app.core.config import settings
+    from app.scraping import kb_run
+    from app.scraping.fetcher import Fetcher
+
+    caps = parse_caps(args.caps)
+    sources = json.loads(args.sources_file.read_text(encoding="utf-8"))
+    wanted = {s.strip() for s in args.sources.split(",")} if args.sources else set(DEFAULT_CAPS)
+    sources = [s for s in sources if s["name"] in wanted and s.get("status") == "verified" and s.get("enabled")]
+    sources.sort(key=lambda s: list(DEFAULT_CAPS).index(s["name"]) if s["name"] in DEFAULT_CAPS else 99)
+    if not sources:
+        print("No verified, enabled source selected.", file=sys.stderr)
+        return 1
+    if args.reparse:
+        counts = kb_run.reparse(sources)
+        for name, c in counts.items():
+            print(f"  {name:26} staged {c['new'] + c['changed']:3}  held {c['already_held']:3}  "
+                  f"quarantined {c['quarantined']:3}  missing original {c['errors']:3}")
+        return 0 if not any(c["errors"] for c in counts.values()) else 3
+    cmap_path = Path(settings.KB_DIR) / "category_map.json"
+    priority = {}
+    if cmap_path.exists():
+        priority["Pakistan Code"] = kb_run.pakistan_code_priority(json.loads(cmap_path.read_text(encoding="utf-8")))
+    total = sum(caps.get(s["name"], 0) for s in sources)
+    fetcher = Fetcher(max_pages=total * 3 + 60, max_pdfs=total)
+    names = ", ".join(f"{s['name']} (cap {caps.get(s['name'], 0)})" for s in sources)
+    print(f"Staging {names}; {len(priority.get('Pakistan Code', []))} Pakistan Code Acts not held come first; "
+          f"budget {'none' if not args.budget else f'{args.budget:.0f} s'}")
+    try:
+        summary = kb_run.run(sources, fetcher, caps=caps, priority=priority,
+                             budget=args.budget or None, skip_within_hours=args.skip_within_hours)
+    except Exception as e:  # noqa: BLE001 — a failed run must exit non-zero, with the reason
+        print(f"FAILED: {type(e).__name__}: {e}", file=sys.stderr)
+        return 1
+    for name, e in summary["per_source"].items():
+        print(f"  {name:26} fetched {e['fetched']:3}  new {e['new']:3}  changed {e['changed']:3}  "
+              f"unchanged {e['unchanged']:3}  held {e['already_held']:3}  quarantined {e['quarantined']:3}  "
+              f"errors {e['errors']:3}  resumed-skip {e['skipped_recent']:3}  {e['status']}")
+    print(f"{fetcher.requests_made} requests. Embed with: python ../scripts/kb/build_index_scraped.py")
+    if args.out:
+        args.out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+    return 0 if summary["complete"] else 3
 
 
 if __name__ == "__main__":

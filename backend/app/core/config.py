@@ -143,6 +143,15 @@ class Settings(BaseSettings):
     JUDGMENTS_TOP_K: int = 5              # judgments per Research search
     JUDGMENTS_CHAT_K: int = 3             # judgment paragraphs given to the chat model
     JUDGMENTS_SHOW_MIN: float = 0.55      # weaker matches are not shown in Chat (nor sent to the model)
+    # Scraped laws and judgments (kb-v2 C3), staged as files under
+    # KB_DIR/scraped/ by scripts/scrape_laws.py --stage-files. Off: nothing
+    # scraped is searched or listed, and Research's "Sources checked" line
+    # reads the database as before.
+    SCRAPED_V2: bool = False
+    KB_SCRAPED_INDEX_PATH: str = "./storage/kb/faiss_scraped.faiss"
+    KB_SCRAPED_METADATA_PATH: str = "./storage/kb/faiss_scraped_meta.json"
+    KB_SCRAPED_JUDGMENTS_INDEX_PATH: str = "./storage/kb/faiss_scraped_judgments.faiss"
+    KB_SCRAPED_JUDGMENTS_METADATA_PATH: str = "./storage/kb/faiss_scraped_judgments_meta.json"
 
 
 @lru_cache
