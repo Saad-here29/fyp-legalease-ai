@@ -18,6 +18,7 @@ half-written files mean no scraped results, nothing else changes.
 from __future__ import annotations
 
 import json
+import re
 import threading
 from collections import Counter
 from pathlib import Path
@@ -174,9 +175,44 @@ def merged_search(query: str, top_k: int, filters: dict | None = None, *, hint_i
     if not _INDEX.ready():
         return base[:top_k]
     base = [h for h in base if h.get("kb") == "v2" or h.get("source") not in _INDEX.excluded]
-    hits = base + search_statutes(query, top_k, filters)
-    hits.sort(key=lambda h: h["relevance"], reverse=True)
+    core_titles, core_ids = _core_laws()
+    # kb-v2 C17: (a) a scraped copy of a core law (same title and year) is left out;
+    # (b) core sections sort CORE_PRIORITY higher, so a near-tie goes to the checked core text.
+    extra = [h for h in search_statutes(query, top_k, filters) if title_key(h.get("source")) not in core_titles]
+    hits = base + extra
+    hits.sort(key=lambda h: h["relevance"] + (settings.CORE_PRIORITY if h.get("doc_id") in core_ids else 0.0),
+              reverse=True)
     return hits[:top_k]
+
+
+# Bracketed parts that don't change which law a title names: an abbreviation "(CrPC)", "(PEMRA)",
+# a site note "(Under Review)", "(Same as on the official website ...)", an act number "(XLV of 1860)".
+_TITLE_NOISE = re.compile(r"\(\s*(?:[A-Z][A-Za-z.]{0,6}[A-Z]\.?|(?i:under review|same as[^)]*|[^)]*official website[^)]*|"
+                          r"(?:act|ordinance|order)?\s*(?:no\.?\s*)?[ivxlcdm\d]+\s+of\s+\d{4}))\s*\)")
+
+
+def title_key(title: str | None) -> str:
+    """A law's title for comparison (kb-v2 C17): parse.normalise_title (letters and digits, so the
+    year counts) after dropping bracketed noise. "Code of Criminal Procedure (CrPC), 1898 (Under
+    Review)" and "Code of Criminal Procedure, 1898" give the same key."""
+    return normalise_title(_TITLE_NOISE.sub(" ", title or ""))
+
+
+_CORE: dict = {}
+
+
+def _core_laws() -> tuple[frozenset[str], frozenset[str]]:
+    """(title keys, section record ids) of the core laws, cached per catalogue version."""
+    from app.kb import catalog
+    try:
+        data = catalog.data()
+    except Exception:  # noqa: BLE001 — a missing catalogue must not break search
+        return frozenset(), frozenset()
+    if _CORE.get("data") is not data:
+        core = [law for law in (data.get("laws") or {}).values() if law.get("set") == "core"]
+        _CORE.update(data=data, titles=frozenset(title_key(law["title"]) for law in core),
+                     ids=frozenset(rid for law in core for rid in law.get("record_ids", [])))
+    return _CORE["titles"], _CORE["ids"]
 
 
 # --------------------------------------------------------------------------- build

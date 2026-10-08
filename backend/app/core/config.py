@@ -169,6 +169,9 @@ class Settings(BaseSettings):
     # hybrid ranking's other SECTIONS down to this score go to the model too, in
     # rank order, within RAG_TOP_K. The gate itself is unchanged.
     CHAT_SUPPORT_MIN: float = 0.55
+    # kb-v2 C17: when scraped laws are merged in, sections of the 35 core laws sort as if this
+    # much higher (their relevance score itself, and so the gate, is unchanged). 0 = off.
+    CORE_PRIORITY: float = 0.03
     HYBRID_MIN_COSINE: float = 0.40     # a section found only by words must still be this close in meaning
     # Section expansion (kb-v2 C8): Chat sends a retrieved section's full text
     # from the records (not a 120-token chunk), capped, top sections only.
