@@ -339,6 +339,25 @@ def name_is_weak(name: str | None) -> bool:
             or len(n) < 8 or bool(_NAME_HAS_REPORT.search(n)))
 
 
+def case_title(rec: dict) -> str | None:
+    """kb-v2 C13: the title Chat shows. The case name (the parties line), else
+    the case number, then "(court, year)" without repeating either. None when
+    there is neither a usable name nor a number: such a case is not shown
+    (never "Judgment (Supreme Court of Pakistan)")."""
+    court = (rec.get("court") or "").strip()
+    year = str(rec.get("year") or "").strip()
+    name = (rec.get("case_name") or "").strip()
+    if name_is_weak(name) or (court and name.lower() == court.lower()) or name.lower().startswith("judgment"):
+        name = (rec.get("case_number") or "").strip()
+    if court:
+        name = re.sub(r"\s*\(\s*" + re.escape(court) + r"[^)]*\)", "", name, flags=re.I).strip(" ,-")
+    if not name or (court and name.lower() == court.lower()) or name.lower().startswith("judgment"):
+        return None
+    bits = [b for b in (court if court and court.lower() not in name.lower() else "",
+                        year if year and year not in name else "") if b]
+    return name + (f" ({', '.join(bits)})" if bits else "")
+
+
 def display_name(rec: dict) -> str:
     """The case name, or "<case number> (<court>, <year>)" when the name is weak."""
     if not name_is_weak(rec.get("case_name")):

@@ -414,28 +414,128 @@ def expand_sections(passages: list[dict]) -> list[dict]:
     return out
 
 
-def retrieve_judgments(search_query: str, message: str = "") -> list[dict]:
+# --------------------------------------------------------------------------- case paragraphs (kb-v2 C13)
+
+# Court-process words found in nearly every judgment: not distinctive.
+_GENERIC_TERM = re.compile(
+    r"^(?:petition|plaint|suit|appeal|writ|accused|judge|magistrate|advocate|lawyer|statutes?|ordinance|"
+    r"constitution|jurisprudence|penal|decree|offen[cs]es?|punishment|sentence|.*courts?|.*orders?|"
+    r"pakistani law|law of pakistan|laws? in pakistan|section \d|article \d|u/s)$", re.I)
+# Header signals only: "petitioner" / "respondent" also run through ordinary reasoning paragraphs.
+_HEADER_WORDS = re.compile(r"\bIN THE (?:SUPREME|HIGH|FEDERAL|LAHORE|SINDH|PESHAWAR|ISLAMABAD|BALOCHISTAN)\b|"
+                           r"\bPRESENT\s*:|\bCORAM\b|\bVersus\b|Date of hearing|"
+                           r"\bFor the (?:petitioners?|respondents?|appellants?|complainant|State)\s*:", re.I)
+
+
+def _prose_words(text: str) -> list[str]:
+    from app.ai.citation_check import _REPORTER_RE
+    bare = re.sub(r"\([^)]*\)", " ", _REPORTER_RE.sub(" ", text or ""))
+    return re.findall(r"[A-Za-z][a-z]+", bare)
+
+
+def case_paragraph_ok(text: str) -> bool:
+    """Readable prose, not a header, footnote list, citation list or a short
+    list of parenthesised words: at least ~25 words of prose, whatever the
+    paragraph number."""
+    from app.ai.citation_check import _REPORTER_RE
+    from app.kb.judgment_search import readable
+    text = text or ""
+    if not readable(text):
+        return False
+    prose = _prose_words(text)
+    words = re.findall(r"[A-Za-z]+", text)
+    if len(prose) < 25:
+        return False
+    bracketed = [w for w in re.findall(r"\(\s*([A-Za-z]{3,})\s*\)", text) if not re.fullmatch(r"[ivxlc]+", w, re.I)]
+    if len(bracketed) >= 5 and len(bracketed) >= 0.2 * len(words):
+        return False                                    # mostly "(word)" items, not prose
+    if len(_HEADER_WORDS.findall(text[:400])) >= 2:
+        return False                                    # parties / bench / hearing block
+    cites = len(_REPORTER_RE.findall(text))
+    if cites >= 3 and cites * 12 > len(prose):
+        return False                                    # a list of citations
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    numbered = [ln for ln in lines if re.match(r"\s*\d{1,3}[\s.)]", ln)]
+    return not (len(numbered) >= 3 and len(numbered) >= 0.6 * len(lines)
+                and sum(len(ln.split()) for ln in numbered) / len(numbered) < 12)   # a footnote list
+
+
+def distinctive_terms(message: str, passages: list[dict]) -> dict:
+    """What a case paragraph must share with the question or the retrieved
+    sections: terms of art from the question, the retrieved statutes' names
+    and the section numbers named or retrieved."""
+    from app.ai.citation_check import _canon, _find_refs, _statute_words
+    terms = {m.group(0).lower() for m in scope.LEGAL_TERMS.finditer(message or "")}
+    terms = {re.sub(r"\s+", " ", t) for t in terms if not _GENERIC_TERM.match(re.sub(r"\s+", " ", t))}
+    acts = []
+    for p in passages:
+        words = _statute_words(re.sub(r",?\s*\d{4}\s*$", "", embeddings.record_source(p) or ""))
+        if len(words) >= 2 and words not in acts:
+            acts.append(words)
+    sections = {_canon(str(p["section"])) for p in passages if p.get("section") and str(p["section"])[:1].isdigit()}
+    for ref in _find_refs(message or ""):
+        sections.update(ref.numbers)
+    return {"terms": terms, "acts": acts, "sections": sections}
+
+
+def shares_term(text: str, terms: dict) -> bool:
+    from app.ai.citation_check import _ALIAS_RE, _find_refs, _owner_matches, _squash, _statute_words
+    low = (text or "").lower()
+    if any(re.search(r"\b" + re.escape(t) + r"\b", low) for t in terms["terms"]):
+        return True
+    squashed = _squash(text or "")
+    named = [_statute_words(m.group(0)) for m in re.finditer(_ALIAS_RE, text or "")]
+    for words in terms["acts"]:
+        if _owner_matches(words, squashed) or any(a and all(w in words for w in a) for a in named):
+            return True
+    return any(n in terms["sections"] for ref in _find_refs(text or "") for n in ref.numbers)
+
+
+def near_duplicate(a: str, b: str) -> bool:
+    """The same or nearly the same paragraph (one text under two cases)."""
+    wa, wb = re.findall(r"[a-z0-9]+", (a or "").lower()), re.findall(r"[a-z0-9]+", (b or "").lower())
+    if not wa or not wb:
+        return False
+    sa, sb = set(wa), set(wb)
+    return len(sa & sb) / len(sa | sb) >= 0.85
+
+
+def retrieve_judgments(search_query: str, message: str = "", passages: list[dict] | None = None) -> list[dict]:
     """kb-v2 C2/C8: up to JUDGMENTS_CHAT_K judgment paragraphs (best one per
     judgment) scoring at least JUDGMENTS_CHAT_MIN (and SHOW_MIN); weaker ones
     are neither shown nor sent to the model. For a family-law question only
     judgments with a family topic. Called only after the statute scope gate
     passed; never changes it. [] when JUDGMENTS_V2 is off or the index isn't
     ready."""
-    if not settings.JUDGMENTS_V2:
+    if not settings.JUDGMENTS_V2 or settings.JUDGMENTS_CHAT_K <= 0:     # K=0: no cases in Chat (C13)
         return []
     from app.kb import judgment_search
-    from app.kb.judgments import FAMILY_TOPICS
+    from app.kb import judgments as jd
     family = family_index.is_family_question(message, search_query)
     try:
         found = judgment_search.search(
-            search_query, top_k=settings.JUDGMENTS_CHAT_K * (4 if family else 1),
+            search_query, top_k=settings.JUDGMENTS_CHAT_K * (8 if family else 4),
             min_score=max(settings.JUDGMENTS_MIN_SCORE, settings.JUDGMENTS_SHOW_MIN, settings.JUDGMENTS_CHAT_MIN))
     except Exception as e:  # noqa: BLE001 — judgments are extra context; never fail the answer
         logger.warning(f"Judgment retrieval failed: {e}")
         return []
     if family:
-        found = [j for j in found if set(j.get("topics") or []) & set(FAMILY_TOPICS)]
-    found = found[: settings.JUDGMENTS_CHAT_K]
+        found = [j for j in found if set(j.get("topics") or []) & set(jd.FAMILY_TOPICS)]
+    # kb-v2 C13: a case is shown only with a real title, a paragraph of readable prose that
+    # shares a distinctive term with the question or the retrieved sections, and not twice.
+    terms = distinctive_terms(message, passages or [])
+    kept: list[dict] = []
+    for j in found:
+        title = jd.case_title(j)
+        para = j.get("paragraph_text") or j.get("text") or ""
+        if not title or not case_paragraph_ok(para) or not shares_term(para, terms):
+            continue
+        if any(near_duplicate(para, k.get("paragraph_text") or k.get("text") or "") for k in kept):
+            continue
+        kept.append({**j, "display_name": title, "prefix": f"{title} - para {j['paragraph']}:"})
+        if len(kept) == settings.JUDGMENTS_CHAT_K:
+            break
+    found = kept
     if found:
         logger.info("Judgments: " + "; ".join(f"{j['display_name'][:60]} para {j['paragraph']} ({j['score']:.3f})"
                                               for j in found))
@@ -629,7 +729,7 @@ class LegalChatService:
                                response_time_ms=_ms_since(t0))
 
         # kb-v2 C2: past cases, only once the statute scope gate has passed.
-        judgments = retrieve_judgments(search_query, message)
+        judgments = retrieve_judgments(search_query, message, passages)
 
         history.append({"role": "user", "content": message})
         # AIServiceUnavailable propagates -> router returns 503; the user

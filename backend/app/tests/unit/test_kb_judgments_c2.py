@@ -30,6 +30,15 @@ API = settings.API_V1_PREFIX
 SC = "Supreme Court of Pakistan"
 
 
+# Readable paragraphs of real length: Chat shows only prose that shares a term with the question (kb-v2 C13).
+KHULA_PARA = ("Khula is a right of the wife to seek dissolution. Where the wife satisfies the Family Court that "
+              "she cannot live with the husband within the limits prescribed by God, the court shall dissolve the "
+              "marriage and may direct her to return the benefits she received.")
+CUSTODY_PARA = ("The welfare of the minor decides custody. The court weighs the age and sex of the minor, the "
+                "character of the proposed guardian and the wishes of the parents, and an order under the Muslim "
+                "Family Laws Ordinance does not displace that paramount consideration in any way.")
+
+
 def _rec(doc, name, court, year, number, paras, topics, *, exclude=None, chars=9000, judges=("A. Judge",)):
     return {"doc_id": doc, "case_name": name, "court": court, "year": year, "judges": list(judges),
             "case_number": number, "citation": None, "topics": topics, "source_type": "case_law",
@@ -41,10 +50,10 @@ def _rec(doc, name, court, year, number, paras, topics, *, exclude=None, chars=9
 
 
 R1 = _rec("judgment/a/r1", "Ibrahim Khan v. Mst. Saima Khan", SC, 2024, "Civil Petition No. 4657 of 2022",
-          [(1, "Heading."), (2, "Khula is a right of the wife to seek dissolution."), (3, "Petition dismissed.")],
+          [(1, "Heading."), (2, KHULA_PARA), (3, "Petition dismissed.")],
           ["family", "khula"])
 R2 = _rec("judgment/a/r2", "…Petitioner v. Station House Officer", SC, 2023, "Civil Petition No. 3718 of 2023",
-          [(27, "The welfare of the minor decides custody.")], ["custody"])
+          [(27, CUSTODY_PARA)], ["custody"])
 R3 = _rec("judgment/a/r3", "Shaista Habib v. Muhammad Arif Habib", "Lahore High Court", 2023, "W.P. 16 of 2023",
           [(16, "Custody of the minor daughter."), (17, "Other matters.")], ["custody", "family"])
 R4 = _rec("judgment/a/r4", "Empty Case v. Nobody", SC, 2020, "C.P. 1 of 2020", [(1, "x")], [],
@@ -145,7 +154,7 @@ def test_search_keeps_the_best_paragraph_per_judgment(jx):
     h1, h2 = hits[0], hits[1]
     assert h1["display_name"] == "Ibrahim Khan v. Mst. Saima Khan" and h1["court"] == SC and h1["year"] == 2024
     assert h1["case_number"] == "Civil Petition No. 4657 of 2022"             # from the record, not the index
-    assert h1["text"] == "Khula is a right of the wife to seek dissolution."   # the indexed prefix is stripped
+    assert h1["text"] == KHULA_PARA                                          # the indexed prefix is stripped
     assert h1["paragraph_text"] == h1["text"]
     assert h2["display_name"] == f"Civil Petition No. 3718 of 2023 ({SC}, 2023)"
     assert h2["prefix"] == f"Civil Petition No. 3718 of 2023 ({SC}, 2023) - para 27:"
@@ -226,7 +235,7 @@ def test_judgment_detail(jx, authed):
     r = authed.get(f"{API}/kb/judgments/judgment/a/r1")
     body = r.json()
     assert body["paragraphs"] == [{"n": 1, "text": "Heading."},
-                                  {"n": 2, "text": "Khula is a right of the wife to seek dissolution."},
+                                  {"n": 2, "text": KHULA_PARA},
                                   {"n": 3, "text": "Petition dismissed."}]
     assert body["provenance_note"] == "dataset supplied by the team; original source and licence to be confirmed"
     assert body["status"] == "staged" and body["indexed"] is True
@@ -394,7 +403,7 @@ def test_chat_adds_reported_cases_and_a_case_law_group(chat_env):
                          f"2024), para 2, the Court described khula. Also Muhammad Ali v. Fatima Bibi held so.")
     assert "--- Reported cases (context only) ---" in ai.system
     assert f"Case 1: Ibrahim Khan v. Mst. Saima Khan ({SC}, 2024) - para 2:\nKhula is a right" in ai.system
-    assert f"Case 2: Civil Petition No. 3718 of 2023 ({SC}, 2023) - para 27:" in ai.system
+    assert f"Case 2: Civil Petition No. 3718 of 2023 ({SC}) - para 27:" in ai.system      # year not repeated (C13)
     assert "Shaista" not in ai.system                               # 0.52: under JUDGMENTS_SHOW_MIN
     assert "never use a case in place of a statute" in ai.system.lower()
     assert ai.system.index("--- End authorities ---") < ai.system.index("Reported cases (context only)") \

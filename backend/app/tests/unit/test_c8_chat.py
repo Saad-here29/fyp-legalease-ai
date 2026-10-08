@@ -103,8 +103,12 @@ def test_readable_paragraphs():
 
 
 def _hit(doc, topics, score=0.7):
-    return {"doc_id": doc, "display_name": doc, "court": "SC", "year": 2020, "case_number": None, "paragraph": 3,
-            "text": "t", "paragraph_text": "t", "prefix": f"{doc} - para 3:", "score": score, "topics": topics}
+    para = (f"The learned counsel argued the {' and '.join(topics) or 'tax'} question at length, and having heard "
+            "both sides and examined the record with care we find that the order under challenge was made within "
+            "jurisdiction and calls for no interference by this Court.")
+    return {"doc_id": doc, "display_name": doc, "case_name": f"{doc.title()} v. State", "court": "SC", "year": 2020,
+            "case_number": None, "paragraph": 3, "text": para, "paragraph_text": para, "prefix": f"{doc} - para 3:",
+            "score": score, "topics": topics}
 
 
 def test_chat_cases_floor_and_family_topics(monkeypatch):
@@ -117,9 +121,10 @@ def test_chat_cases_floor_and_family_topics(monkeypatch):
     monkeypatch.setattr(judgment_search, "search", fake)
     monkeypatch.setattr(settings, "JUDGMENTS_V2", True)
     fam = chat.retrieve_judgments("dower mehr payment", "When must the husband pay the dower?")
-    assert [j["doc_id"] for j in fam] == ["dower case"] and calls[0] == (settings.JUDGMENTS_CHAT_K * 4, 0.58)
+    assert [j["doc_id"] for j in fam] == ["dower case"] and calls[0] == (settings.JUDGMENTS_CHAT_K * 8, 0.58)
     other = chat.retrieve_judgments("bail in a non-bailable offence", "When is bail granted?")
-    assert [j["doc_id"] for j in other] == ["bail case", "dower case", "tax case"] and calls[1][1] == 0.58
+    # kb-v2 C13: only cases whose paragraph shares a distinctive term ("bail") with the question
+    assert [j["doc_id"] for j in other] == ["bail case"] and calls[1] == (settings.JUDGMENTS_CHAT_K * 4, 0.58)
 
 
 def test_case_rules_in_the_prompt():
