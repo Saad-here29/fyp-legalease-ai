@@ -35,8 +35,12 @@ function rehypeBreaks() {
 
 // "[3]" -> a link react-markdown can render; `a` below turns it into a
 // footnote marker. Skips real markdown links ("[text](url)").
+// kb-v2 C13: each marker stands on its own with a space before it ("[1] [4]",
+// never "14" or a number glued to a word), older stored answers included.
 function linkCitations(text, citeId) {
-  return text.replace(/\[(\d{1,2})\](?!\()/g, (_, n) => `[${n}](#${citeAnchor(citeId, n)})`);
+  return text
+    .replace(/(?<=[^\s([])(\[\d{1,2}\])(?!\()/g, " $1")
+    .replace(/\[(\d{1,2})\](?!\()/g, (_, n) => `[${n}](#${citeAnchor(citeId, n)})`);
 }
 
 // Non-citation links open in a new tab.
@@ -50,7 +54,7 @@ const ExternalLink = ({ href, children, ...props }) => (
 const DsLink = ({ node, href, children, ...props }) =>
   href?.startsWith("#cite-") ? (
     <a href={href} className="ds-cite" aria-label={`Source ${children}`}>
-      {children}
+      [{children}]
     </a>
   ) : (
     <ExternalLink href={href} {...props}>{children}</ExternalLink>

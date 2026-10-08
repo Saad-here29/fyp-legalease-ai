@@ -614,6 +614,45 @@ def compose_answer(ai, passages: list[dict], history: list[dict], lang: str, *,
     return checked
 
 
+_MARKER = re.compile(r"\[(\d{1,2})\](?!\()")
+
+
+def _same_source(a: dict, b: dict) -> bool:
+    if a.get("doc_id") and a.get("doc_id") == b.get("doc_id"):
+        return True
+    return (embeddings.record_source(a) == embeddings.record_source(b)
+            and embeddings.record_text(a).strip() == embeddings.record_text(b).strip())
+
+
+def renumber_sources(text: str, passages: list[dict]) -> tuple[str, list[dict]]:
+    """kb-v2 C13: the answer's [n] markers and the Sources list numbered 1..k
+    with no gaps. The same source given twice is merged; sources are numbered
+    in the order the answer first cites them, uncited ones after; every
+    marker (the closing note's too) is rewritten. Markers are written as
+    separate "[1] [4]", each with a space before it."""
+    canon = list(range(len(passages)))
+    for i in range(len(passages)):
+        for j in range(i):
+            if canon[j] == j and _same_source(passages[i], passages[j]):
+                canon[i] = j
+                break
+    order: list[int] = []
+    for m in _MARKER.finditer(text or ""):
+        n = int(m.group(1))
+        if 1 <= n <= len(passages) and canon[n - 1] not in order:
+            order.append(canon[n - 1])
+    order += [i for i in range(len(passages)) if canon[i] == i and i not in order]
+    new = {old: order.index(canon[old]) + 1 for old in range(len(passages))}
+
+    def renum(m: re.Match) -> str:
+        n = int(m.group(1))
+        return f"[{new[n - 1]}]" if 1 <= n <= len(passages) else m.group(0)
+    out = _MARKER.sub(renum, text or "")
+    out = re.sub(r"(\[\d{1,2}\])(?:\s*\1)+(?!\()", r"\1", out)            # "[1][1]" after a merge
+    out = re.sub(r"(?<=[^\s(\[])(\[\d{1,2}\])(?!\()", r" \1", out)         # "word[1]", "[1][4]"
+    return out, [passages[i] for i in order]
+
+
 def _detect_language(text: str) -> str:
     try:
         from langdetect import detect
@@ -735,6 +774,8 @@ class LegalChatService:
         # AIServiceUnavailable propagates -> router returns 503; the user
         # message stays saved without a reply.
         checked = compose_answer(self.ai, passages, history, lang, judgments=judgments)
+        # kb-v2 C13: sources numbered 1..k in the order cited, the answer's markers to match.
+        checked.text, passages = renumber_sources(checked.text, passages)
 
         citations_payload = [
             {

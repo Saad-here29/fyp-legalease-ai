@@ -177,3 +177,30 @@ def test_k_zero_turns_cases_off_in_chat_only(monkeypatch):
     svc._search_query = ("land", "land")
     assert [r.doc_id for r in svc.search_judgments("land")] == ["a"]     # Research still lists judgments
     assert settings.JUDGMENTS_CHAT_MIN == 0.58
+
+
+# --------------------------------------------------------------------------- 3: citation numbering and spacing
+
+def _p(source, text, doc=None):
+    return {"source": source, "text": text, **({"doc_id": doc} if doc else {})}
+
+
+def test_sources_are_renumbered_without_gaps_in_citation_order():
+    passages = [_p("A Act", "a"), _p("B Act", "b"), _p("C Act", "c"), _p("D Act", "d")]
+    text, ordered = chat.renumber_sources("Short answer: x [4]. More [1][4]. Note: [4] cites D Act, but ...", passages)
+    assert text == "Short answer: x [1]. More [2] [1]. Note: [1] cites D Act, but ..."
+    assert [p["source"] for p in ordered] == ["D Act", "A Act", "B Act", "C Act"]     # cited first, then the rest
+
+
+def test_the_same_source_twice_is_merged():
+    passages = [_p("A Act", "a", "a/s1"), _p("B Act", "b", "b/s2"), _p("A Act", "a", "a/s1")]
+    text, ordered = chat.renumber_sources("See [3] and [2][1].", passages)
+    assert text == "See [1] and [2] [1]." and [p["doc_id"] for p in ordered] == ["a/s1", "b/s2"]
+    text, _ = chat.renumber_sources("See [1][3].", passages)
+    assert text == "See [1]."                                                          # merged pair shown once
+
+
+def test_markers_get_a_space_before_them():
+    passages = [_p("A Act", "a"), _p("B Act", "b")]
+    text, _ = chat.renumber_sources("Registered[1].\n[2] starts a line; (see [1]) and [link](http://x).", passages)
+    assert text == "Registered [1].\n[2] starts a line; (see [1]) and [link](http://x)."
