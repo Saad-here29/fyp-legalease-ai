@@ -35,6 +35,7 @@ def merged(monkeypatch):
     monkeypatch.setattr(settings, "KB_V2", True)
     monkeypatch.setattr(settings, "SCRAPED_V2", True)
     monkeypatch.setattr(settings, "CORE_PRIORITY", 0.03)
+    monkeypatch.setattr(settings, "CORE_KEEP_TOP", 0)      # these tests are about the score merge (C19 tests the head)
     monkeypatch.setattr(scraped._INDEX, "ready", lambda: True)
     monkeypatch.setattr(scraped._INDEX, "excluded", frozenset())
     base = [_hit("core/crpc/s61", "Code of Criminal Procedure, 1898", 0.70, "v2"),
