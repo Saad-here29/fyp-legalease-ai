@@ -629,14 +629,15 @@ def _mask_titles(text: str) -> str:
 
 
 def _consequence_problems(text: str, passages: list[dict],
-                          reported: set[tuple[int, str]] | None = None) -> list[tuple[str, int]]:
+                          reported: set[tuple[int, str]] | None = None,
+                          case_texts: list[str] | None = None) -> list[tuple[str, int]]:
     """[(note item, position)] for each specific consequence the answer states
     (void, voidable, invalid, forfeiture, death, imprisonment for life) that no
     retrieved passage states, and each period or amount in a sentence stating
     a consequence that the retrieved text doesn't contain in any equivalent
     form ("twenty-five million rupees" = "Rs. 2,50,00,000"). `reported`:
     figures already listed by another check, skipped here."""
-    src = " ".join(_norm(p.get("text") or "") for p in passages).lower()
+    src = " ".join(_norm(t) for t in [p.get("text") or "" for p in passages] + list(case_texts or [])).lower()
     src_figures = _figures(src)
     masked = _norm(_mask_titles(text))
     out: list[tuple[str, int]] = []
@@ -669,7 +670,8 @@ def _stated_in_section(fig: tuple[int, str], refs: list[_Ref],
     return False
 
 
-def _attribution_problems(text: str, passages: list[dict]) -> tuple[list[tuple[str, int]], set[tuple[int, str]]]:
+def _attribution_problems(text: str, passages: list[dict],
+                          case_texts: list[str] | None = None) -> tuple[list[tuple[str, int]], set[tuple[int, str]]]:
     """kb-v2 C13: a period or amount the answer gives in a sentence naming
     "section N" must appear in a retrieved passage whose own section is N
     (the record's section, not a number mentioned inside its text). Returns
@@ -682,8 +684,13 @@ def _attribution_problems(text: str, passages: list[dict]) -> tuple[list[tuple[s
     if not by_section:
         return [], set()
     masked = _mask_titles(text)
+    case_figs = set().union(*(_figures(_norm(t).lower()) for t in case_texts or [""]))
+    all_refs = _find_refs(masked)
+    # kb-v2 C20: a figure counts as stated if ANY section cited in the same paragraph (sections cited
+    # together: "ss. 302 and 308") or a retrieved case paragraph states it, not only one section.
+    paragraphs = [(m.start(), m.end()) for m in re.finditer(r"(?s).+?(?=\n\s*\n|\Z)", masked)]
     sentences: dict[tuple[int, int], list[_Ref]] = {}
-    for ref in _find_refs(masked):
+    for ref in all_refs:
         sentences.setdefault(_sentence_span(masked, ref.start, ref.end), []).append(ref)
     out: list[tuple[str, int]] = []
     listed: set[tuple[int, str]] = set()
@@ -691,9 +698,13 @@ def _attribution_problems(text: str, passages: list[dict]) -> tuple[list[tuple[s
         figs = _figures(_norm(masked[left:right]).lower())
         if not figs:
             continue
+        para = next(((a, b) for a, b in paragraphs if a <= left < b), (left, right))
+        together = [r for r in all_refs if para[0] <= r.start < para[1]] or refs
         nums = list(dict.fromkeys(n for r in refs for n in r.numbers))
         for fig in sorted(figs):
-            if fig not in listed and not _stated_in_section(fig, refs, by_section):
+            if fig in case_figs:
+                continue
+            if fig not in listed and not _stated_in_section(fig, together, by_section):
                 listed.add(fig)
                 out.append((f"{_show_figure(fig)} is given for section {', '.join(nums)}, but that section's "
                             "retrieved text doesn't state it", right))
@@ -713,11 +724,17 @@ _SCALES = {"hundred": 100, "thousand": 1000, "lakh": 100000, "lac": 100000, "cro
            "million": 1000000, "billion": 1000000000}
 _WORDS_LONGEST = sorted([*_UNITS, *_TENS, *_SCALES], key=len, reverse=True)
 _NUMBER_WORD = "|".join(_WORDS_LONGEST)
-_AMOUNT = r"(?:\d[\d,]*(?:\.\d+)?|" + _NUMBER_WORD + r"|and)+"
-_UNIT = r"(years?|months?|weeks?|days?|rupees?)"
+_AMOUNT = r"(?:\d+(?:\.\d+)?|" + _NUMBER_WORD + r"|and)+"
+_CUR = "\u20a8"                     # "₨": stands for a whole-word Rs / Rs. / PKR / rupee(s) (kb-v2 C20)
+_UNIT = r"(years?|months?|weeks?|days?|" + _CUR + r")"
 _RANGE = re.compile(r"(" + _AMOUNT + r"?)(?:to|or)(" + _AMOUNT + r"?)" + _UNIT)
 _FIGURE = re.compile(r"(" + _AMOUNT + r"?)" + _UNIT)
-_RS = re.compile(r"(?:rs\.?|pkr|rupees?)(?!and)(" + _AMOUNT + r")")
+_RS = re.compile(_CUR + r"(?!and)(" + _AMOUNT + r")")
+# Currency only as a whole word: never the "rs" of "under s. 302" or "offenders".
+_CURRENCY_WORD = re.compile(r"(?<![a-z])(?:rs\.?|pkr|rupees?)(?![a-z])")
+# A thousands-grouped number, western "1,000,000" or Pakistani "2,50,00,000".
+_GROUPED = re.compile(r"(?<![\d,])\d{1,3}(?:(?:,\d{2})*,\d{3}|(?:,\d{3})+)(?![\d]|,\d)")
+_NUMBER_FOLLOWERS = r"(?:years?|months?|weeks?|days?|hundred|thousand|lakhs?|lacs?|crores?|million|billion|to|or|and)\b"
 
 
 def _words_to_number(s: str) -> int | None:
@@ -753,8 +770,7 @@ def _words_to_number(s: str) -> int | None:
 
 
 def _unit(u: str) -> str:
-    u = u.rstrip("s")
-    return u
+    return "rupee" if u == _CUR else u.rstrip("s")
 
 
 def _figures(text: str) -> set[tuple[int, str]]:
@@ -763,7 +779,13 @@ def _figures(text: str) -> set[tuple[int, str]]:
     "ten to twenty-five years" -> (10, "year") and (25, "year")."""
     low = re.sub(r"(\d)\s*[-–—]\s*(\d)", r"\1 to \2", (text or "").lower())        # "10-25 years"
     low = re.sub(r"\bbetween\s+(\S+(?:\s+\S+){0,4}?)\s+and\s+", r"\1 to ", low)  # "between 3 and 7 years"
-    low = re.sub(r"(\d),(?=\d{2}(?:\D|$))", r"\1", low)                           # "2,50,00,000"
+    low = _GROUPED.sub(lambda m: m.group(0).replace(",", ""), low)                # "2,50,00,000", "5,000"
+    low = _CURRENCY_WORD.sub(f" {_CUR} ", low)                                    # whole-word Rs / rupees only
+    # kb-v2 C20: separate numbers never join once spaces are removed ("sections 306, 307, 25 years"
+    # is not 30630725 years; "s. 302 twenty-five years" is not 302 + twenty-five).
+    low = re.sub(r"(\d)\s*[,;]\s*(?=\d)", r"\1;", low)
+    low = re.sub(r"(\d)\s+(?=\d)", r"\1;", low)
+    low = re.sub(r"(\d)\s+(?=[a-z])(?!" + _NUMBER_FOLLOWERS + ")", r"\1;", low)
     compact = re.sub(r"[\s\-]+", "", low)
     out = set()
     for a, b, unit in _RANGE.findall(compact):
@@ -857,8 +879,9 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
             seen_unverified[item] = None
     # 6) Legal consequences the retrieved text doesn't state (kb-v2 C5, C13)
     if consequences:
-        attributed, listed = _attribution_problems(_mask_headings(text), passages)      # (kb-v2 C13)
-        for item, _pos in attributed + _consequence_problems(_mask_headings(text), passages, listed):
+        case_texts = [j.get("paragraph_text") or j.get("text") or "" for j in judgments or []]
+        attributed, listed = _attribution_problems(_mask_headings(text), passages, case_texts)   # (kb-v2 C13, C20)
+        for item, _pos in attributed + _consequence_problems(_mask_headings(text), passages, listed, case_texts):
             seen_unverified[item] = None
     result.unverified = list(seen_unverified)
     if result.unverified:
