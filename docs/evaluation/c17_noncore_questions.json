@@ -1,0 +1,25 @@
+{
+ "about": "kb-v2 C17 evaluation questions whose answers are in NON-core laws (only in the sectioned corpus, records_all/, or the scraped records, scraped/records/statutes/). Written and committed BEFORE any C17 code change; not to be edited after results. 'expected' = accepted [law title as in the records, section] pairs (any one counts); every pair was checked to exist in the records before committing. Questions are phrased as a user would ask, without section numbers.",
+ "noncore": [
+  {"id": "N01", "q": "Someone has forcibly occupied my plot without any lawful authority. What offence is that and what is the punishment?", "expected": [["Illegal Dispossession Act, 2005", "3"]]},
+  {"id": "N02", "q": "What kind of acts count as terrorism under Pakistani law?", "expected": [["Anti-terrorism Act, 1997", "6"]]},
+  {"id": "N03", "q": "What is the legal definition of a promissory note?", "expected": [["Negotiable Instruments Act, 1881", "4"]]},
+  {"id": "N04", "q": "How is a company formed in Pakistan and how many members are needed?", "expected": [["Companies Act, 2017", "14"]]},
+  {"id": "N05", "q": "Can a company with a dominant position in the market be punished for abusing that position?", "expected": [["Competition Act, 2010", "3"]]},
+  {"id": "N06", "q": "In which occupations is it prohibited to employ children?", "expected": [["Employment of Children Act, 1991", "3"]]},
+  {"id": "N07", "q": "Is an environmental impact assessment required before starting a new project?", "expected": [["Pakistan Environmental Protection Act, 1997", "12"]]},
+  {"id": "N08", "q": "Is it an offence to keep a pistol at home without a licence?", "expected": [["Pakistan Arms Ordinance, 1965", "9"], ["Pakistan Arms Ordinance, 1965", "13"]]},
+  {"id": "N09", "q": "What conditions must be met for a valid Hindu marriage?", "expected": [["Hindu Marriage Act, 2017", "4"]]},
+  {"id": "N10", "q": "Can a Hindu couple end their marriage by mutual consent?", "expected": [["Hindu Marriage Act, 2017", "15"]]},
+  {"id": "N11", "q": "Within how many days of the end of the wage period must an employer pay the workers?", "expected": [["Payment of Wages Act, 1936", "5"]]},
+  {"id": "N12", "q": "What is the punishment for cyber stalking?", "expected": [["Prevention of Electronic Crimes Act, 2016", "24"]]},
+  {"id": "N13", "q": "Is it an offence to post false information online that harms a person's reputation?", "expected": [["Prevention of Electronic Crimes Act, 2016", "20"]]},
+  {"id": "N14", "q": "When goods are bought for a particular purpose, is there an implied condition that they will be fit for it?", "expected": [["Sale of Goods Act, 1930", "16"]]},
+  {"id": "N15", "q": "How long does a trade mark registration last before it has to be renewed?", "expected": [["Trade Marks Ordinance, 2001", "34"]]},
+  {"id": "N16", "q": "Is an employer liable to pay compensation to a worker injured in an accident at work?", "expected": [["Workmen's Compensation Act, 1923", "3"]]},
+  {"id": "N17", "q": "What is the punishment for possessing heroin or other narcotic drugs?", "expected": [["Control of Narcotic Substances Act, 1997", "9"], ["Control of Narcotic Substances Act, 1997", "6"]]},
+  {"id": "N18", "q": "Can a juvenile accused of an offence be released on bail?", "expected": [["Juvenile Justice System Act, 2018", "6"]]},
+  {"id": "N19", "q": "How long does copyright last in a published book?", "expected": [["Copyright Ordinance, 1962", "18"]]},
+  {"id": "N20", "q": "Who inquires into a complaint of sexual harassment made by a woman at her workplace?", "expected": [["Protection against Harassment of women at the Workplace Act, 2010", "3"], ["Protection against Harassment of women at the Workplace Act, 2010", "4"]]}
+ ]
+}
