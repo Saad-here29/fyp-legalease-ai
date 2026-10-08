@@ -140,6 +140,10 @@ def kb(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "KB_V2", True)
     monkeypatch.setattr(settings, "KB_V2_INDEX_PATH", str(tmp_path / "v2.faiss"))
     monkeypatch.setattr(settings, "KB_V2_METADATA_PATH", str(tmp_path / "v2.json"))
+    # Only this test's own small index: never the real all-laws or scraped indexes (kb-v2 C13).
+    monkeypatch.setattr(settings, "KB_V2_ALL_INDEX_PATH", str(tmp_path / "no_all.faiss"))
+    monkeypatch.setattr(settings, "KB_V2_ALL_METADATA_PATH", str(tmp_path / "no_all_meta.json"))
+    monkeypatch.setattr(settings, "SCRAPED_V2", False)
     index_v2.reset()
     yield tmp_path
     index_v2.reset()

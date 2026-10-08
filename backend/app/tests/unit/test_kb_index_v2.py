@@ -230,6 +230,10 @@ def v2(v1, tmp_path, monkeypatch):
                    excluded_v1_sources=["THE SAMPLE FAMILY ACT, 1964"])
     monkeypatch.setattr(settings, "KB_V2_INDEX_PATH", str(tmp_path / "v2.faiss"))
     monkeypatch.setattr(settings, "KB_V2_METADATA_PATH", str(tmp_path / "v2_meta.json"))
+    # Only this test's own small index: never the real all-laws or scraped indexes (kb-v2 C13).
+    monkeypatch.setattr(settings, "KB_V2_ALL_INDEX_PATH", str(tmp_path / "no_all.faiss"))
+    monkeypatch.setattr(settings, "KB_V2_ALL_METADATA_PATH", str(tmp_path / "no_all_meta.json"))
+    monkeypatch.setattr(settings, "SCRAPED_V2", False)
     monkeypatch.setattr(settings, "KB_V2", True)
     index_v2.reset()
     yield
@@ -266,6 +270,9 @@ def test_flag_on_without_the_v2_files_falls_back(v1, tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "KB_V2", True)
     monkeypatch.setattr(settings, "KB_V2_INDEX_PATH", str(tmp_path / "missing.faiss"))
     monkeypatch.setattr(settings, "KB_V2_METADATA_PATH", str(tmp_path / "missing.json"))
+    monkeypatch.setattr(settings, "KB_V2_ALL_INDEX_PATH", str(tmp_path / "missing_all.faiss"))   # not the real one (C13)
+    monkeypatch.setattr(settings, "KB_V2_ALL_METADATA_PATH", str(tmp_path / "missing_all.json"))
+    monkeypatch.setattr(settings, "SCRAPED_V2", False)
     index_v2.reset()
     hits = embeddings.search("contract", top_k=2)
     assert [h["source"] for h in hits] == [h["source"] for h in _search_before_kb_v2("contract", 2)]

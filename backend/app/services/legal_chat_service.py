@@ -393,8 +393,8 @@ def add_neighbours(passages: list[dict]) -> list[dict]:
         return passages
     from app.kb import catalog
     data = catalog.data()
-    rec = data["records"].get(top["doc_id"])
-    law = data["laws"].get(rec["_law"]) if rec else None
+    rec = (data.get("records") or {}).get(top["doc_id"])
+    law = (data.get("laws") or {}).get(rec.get("_law")) if rec else None
     if not law or top["doc_id"] not in law["record_ids"]:
         return passages
     ids = law["record_ids"]
