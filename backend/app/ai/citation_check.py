@@ -658,6 +658,48 @@ def _consequence_problems(text: str, passages: list[dict],
     return out
 
 
+def _stated_in_section(fig: tuple[int, str], refs: list[_Ref],
+                       by_section: list[tuple[str, str, set[tuple[int, str]]]]) -> bool:
+    """`fig` is in a retrieved section record one of `refs` names (same number, same Act if one is named)."""
+    for ref in refs:
+        words = _statute_words(ref.statute) if ref.statute else []
+        if any(sec in ref.numbers and (not words or _owner_matches(words, owner)) and fig in figs
+               for sec, owner, figs in by_section):
+            return True
+    return False
+
+
+def _attribution_problems(text: str, passages: list[dict]) -> tuple[list[tuple[str, int]], set[tuple[int, str]]]:
+    """kb-v2 C13: a period or amount the answer gives in a sentence naming
+    "section N" must appear in a retrieved passage whose own section is N
+    (the record's section, not a number mentioned inside its text). Returns
+    (note items, the figures listed). Only for section records (kb-v2)."""
+    by_section: list[tuple[str, str, set[tuple[int, str]]]] = []
+    for p in passages:
+        sec = str(p.get("section") or "")
+        if re.match(r"\d", sec):
+            by_section.append((_canon(sec), _squash(p.get("source") or ""), _figures(_norm(p.get("text") or ""))))
+    if not by_section:
+        return [], set()
+    masked = _mask_titles(text)
+    sentences: dict[tuple[int, int], list[_Ref]] = {}
+    for ref in _find_refs(masked):
+        sentences.setdefault(_sentence_span(masked, ref.start, ref.end), []).append(ref)
+    out: list[tuple[str, int]] = []
+    listed: set[tuple[int, str]] = set()
+    for (left, right), refs in sentences.items():
+        figs = _figures(_norm(masked[left:right]).lower())
+        if not figs:
+            continue
+        nums = list(dict.fromkeys(n for r in refs for n in r.numbers))
+        for fig in sorted(figs):
+            if fig not in listed and not _stated_in_section(fig, refs, by_section):
+                listed.add(fig)
+                out.append((f"{_show_figure(fig)} is given for section {', '.join(nums)}, but that section's "
+                            "retrieved text doesn't state it", right))
+    return out, listed
+
+
 # Number words, matched on text with the spaces removed so that OCR splits
 # ("one thous and rupees") and joined words read the same (kb-v2 C8). C13:
 # compound numbers ("one hundred and twenty"), ranges ("ten to twenty-five
@@ -815,7 +857,8 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
             seen_unverified[item] = None
     # 6) Legal consequences the retrieved text doesn't state (kb-v2 C5, C13)
     if consequences:
-        for item, _pos in _consequence_problems(_mask_headings(text), passages):
+        attributed, listed = _attribution_problems(_mask_headings(text), passages)      # (kb-v2 C13)
+        for item, _pos in attributed + _consequence_problems(_mask_headings(text), passages, listed):
             seen_unverified[item] = None
     result.unverified = list(seen_unverified)
     if result.unverified:

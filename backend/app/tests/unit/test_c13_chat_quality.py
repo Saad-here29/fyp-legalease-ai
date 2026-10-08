@@ -204,3 +204,39 @@ def test_markers_get_a_space_before_them():
     passages = [_p("A Act", "a"), _p("B Act", "b")]
     text, _ = chat.renumber_sources("Registered[1].\n[2] starts a line; (see [1]) and [link](http://x).", passages)
     assert text == "Registered [1].\n[2] starts a line; (see [1]) and [link](http://x)."
+
+
+# --------------------------------------------------------------------------- 4: the right section
+
+S6 = {"source": "Sample Tenancy Act, 2010", "section": "6", "heading": "Notice", "text": (
+    "6. Notice.- (1) The landlord shall give the tenant notice in writing. (2) The notice shall state the grounds.")}
+S7 = {"source": "Sample Tenancy Act, 2010", "section": "7", "heading": "Penalty", "text": (
+    "7. Penalty.- Whoever contravenes section 6(2) shall be punishable with imprisonment which may extend to "
+    "six months, or with fine which may extend to fifty thousand rupees.")}
+
+
+def test_prompt_rules_on_section_numbers(monkeypatch):
+    monkeypatch.setattr(settings, "KB_V2", True)
+    prompt = chat.build_system_prompt("[1] Source: Sample Tenancy Act, 2010 - s.7 Penalty\n...", "en")
+    assert "never under a section number that is only mentioned inside a passage's text" in prompt
+    assert '"see section N"' in prompt
+    monkeypatch.setattr(settings, "KB_V2", False)
+    assert "SECTION NUMBERS" not in chat.build_system_prompt("x", "en")          # flags off: prompt unchanged
+
+
+def test_a_penalty_under_the_right_section_passes():
+    r = check("Under section 7, failing to state the grounds is punishable with imprisonment up to six months or "
+              "a fine up to Rs. 50,000 [2].", [S6, S7])
+    assert r.unverified == []
+
+
+def test_a_penalty_under_a_section_only_mentioned_in_the_text_is_listed():
+    r = check("Under section 6(2), failing to state the grounds is punishable with imprisonment up to six months "
+              "[1].", [S6, S7])
+    assert r.unverified == ["6 months is given for section 6, but that section's retrieved text doesn't state it"]
+    assert "(unverified)" not in r.text.split("\n\nNote:")[0]
+
+
+def test_a_section_that_was_not_retrieved_cannot_carry_a_figure():
+    r = check("Section 9 allows thirty days to appeal [1].", [S6, S7])
+    assert "30 days is given for section 9, but that section's retrieved text doesn't state it" in r.unverified

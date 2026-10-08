@@ -189,6 +189,16 @@ CONSEQUENCE_RULE = (
     "and stop there: don't add what happens if it isn't done."
 )
 
+# kb-v2 C13 (with KB_V2 on): a penalty was stated under a section number that
+# only appeared inside another section's text ("section 6(2)") instead of the
+# section whose own heading the passage carries.
+ATTRIBUTION_RULE = (
+    "SECTION NUMBERS: State a rule or penalty under the section number in the source line of the passage that "
+    "states it (for example \"s.7\"), never under a section number that is only mentioned inside a passage's "
+    "text. Describe a section only as far as its numbered passage goes; a section that is mentioned but is not "
+    "one of the numbered passages may only be referred to as \"see section N\"."
+)
+
 
 def cases_block(judgments: list[dict]) -> str:
     """The "Reported cases (context only)" block: name, court, year, paragraph number and text."""
@@ -205,7 +215,7 @@ def build_system_prompt(context_block: str, lang: str, *, strict: bool | None = 
     strict = settings.STRICT_GROUNDING if strict is None else strict
     rules = f"{SYSTEM_PROMPT}\n\n{STRICT_GROUNDING_RULES}" if strict else SYSTEM_PROMPT
     if settings.KB_V2:
-        rules = f"{rules}\n\n{CONSEQUENCE_RULE}"
+        rules = f"{rules}\n\n{CONSEQUENCE_RULE}\n\n{ATTRIBUTION_RULE}"
     case_part = (f"{CASES_RULES}\n\n--- Reported cases (context only) ---\n{cases}\n"
                  "--- End reported cases ---\n\n") if cases else ""
     return (
