@@ -4,6 +4,27 @@ This describes what the code does today (branch `kb-v2`, 2026-10-08). For detail
 [system-overview.md](system-overview.md), [knowledge_base_spec.md](knowledge_base_spec.md) and
 [scraping.md](scraping.md).
 
+## Project folder (since 2026-10-08)
+
+One folder, one branch: `LegalEase`, on `master`, with its own git repository and its own Python
+environment.
+
+```
+LegalEase/
+├── backend/        FastAPI app (app/), migrations (alembic/), tests; venv/, storage/, uploads/, .env are local, not in git
+├── frontend/       React app (src/); node_modules/ local
+├── scripts/        start_demo.ps1, setup.ps1, kb/ (build and evaluate the knowledge base), scraping/ (weekly update)
+├── ai-services/    original corpus builder and the NER training notebook
+├── data/           raw and processed corpus, NER training data (local, not in git)
+├── docs/           architecture/, evaluation/, runbooks/, archive/
+└── _to_review/     files set aside for the team to decide on
+```
+
+`backend/storage/` holds the indexes and models: `kb/` (records, the FAISS indexes, judgments, scraped
+laws, vector caches), `faiss/` (the original index) and `models/legal_ner/`. The weekly update is
+registered as the Windows task "LegalEase weekly KB update", which runs `backend\venv\Scripts\python.exe`
+with `scripts\scraping\run_weekly.py`.
+
 ## Components
 
 | Component | Where | What it does |

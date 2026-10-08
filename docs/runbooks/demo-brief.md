@@ -21,7 +21,7 @@
 > estimate or a known weakness, it says so.
 
 > **How to start the demo: `docs/runbooks/demo-runbook.md`** (branch `kb-v2`). It has
-> the exact commands for the primary setup: the `legalease-kb` worktree,
+> the exact commands for the primary setup: the `LegalEase` folder (branch `master`),
 > with `KB_V2=true` set at launch. It also has the one-minute fallback to
 > master from the main folder, and how to confirm which one is running
 > (`/health` shows `"kb_v2": true`). The live check of that setup, with

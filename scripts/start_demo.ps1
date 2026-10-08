@@ -9,12 +9,12 @@
 #    and the Hugging Face offline variables. Each window stays open so you can read its log.
 # 3. Waits for http://127.0.0.1:8000/health, prints it, and says if any flag isn't as expected.
 #
-# The worktree has no venv of its own: it runs the main folder's backend venv (-Python to change).
+# It runs the project's own backend\venv (create it with scripts\setup.ps1; -Python to change).
 
 param(
     [switch]$Safe,
     [string]$Worktree = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [string]$Python = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe",
+    [string]$Python = (Join-Path $Worktree "backend\venv\Scripts\python.exe"),
     [int]$BackendPort = 8000,
     [int]$FrontendPort = 5173,
     [int]$WaitSeconds = 120

@@ -16,9 +16,9 @@ Open a **new PowerShell terminal**. Your app servers on 8000/5173 keep
 running; this doesn't touch them.
 
 ```powershell
-cd E:\Users\fyp-legalease-ai-main\legalease-kb
-$PY = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe"
-$C  = "..\fyp-legalease-ai-main\data\processed\statutes\legal_statutes_corpus.json"
+cd E:\Users\fyp-legalease-ai-main\LegalEase
+$PY = ".\backend\venv\Scripts\python.exe"
+$C  = "data\processed\statutes\legal_statutes_corpus.json"
 $env:PYTHONIOENCODING = "utf-8"
 ```
 

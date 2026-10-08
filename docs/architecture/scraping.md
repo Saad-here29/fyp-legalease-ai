@@ -188,9 +188,9 @@ creates one, tests up and down, and can keep it with `--keep`.
 paths):
 
 ```powershell
-$py  = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe"
+$py  = "E:\Users\fyp-legalease-ai-main\LegalEase\backend\venv\Scripts\python.exe"
 $arg = "scripts\scraping\scrape_laws.py --schema scraping --limit 40 --out logs\scrape_last.json"
-$act = New-ScheduledTaskAction -Execute $py -Argument $arg -WorkingDirectory "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main"
+$act = New-ScheduledTaskAction -Execute $py -Argument $arg -WorkingDirectory "E:\Users\fyp-legalease-ai-main\LegalEase"
 $trg = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3am
 Register-ScheduledTask -TaskName "LegalEase weekly law check" -Action $act -Trigger $trg -Description "Polite weekly check of Pakistani law sites; stages new/changed documents"
 ```

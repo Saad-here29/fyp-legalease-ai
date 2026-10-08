@@ -15,7 +15,7 @@
 param(
     [string]$TaskName = "LegalEase weekly KB update",
     [string]$Worktree = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
-    [string]$Python = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe",
+    [string]$Python = (Join-Path $Worktree "backend\venv\Scripts\python.exe"),
     [string]$At = "03:00",
     [switch]$Unregister
 )

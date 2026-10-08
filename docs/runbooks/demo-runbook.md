@@ -5,8 +5,8 @@ accounts**, on the same ports, so you can switch between them in a minute.
 
 | Mode | Code | Search | Knowledge Base page |
 |---|---|---|---|
-| **Primary: kb-v2** | `legalease-kb` worktree, branch `kb-v2` | `KB_V2=true`: section-level index first, then the old index | Yes |
-| **Fallback: master** | main folder, tag `mock-2026-10-07` / master `9c1992a` | the old index only | No |
+| **Primary: full** | `LegalEase` folder, branch `master`, `scripts\start_demo.ps1` | `KB_V2=true`: section-level index first, then the old index | Yes |
+| **Fallback: safe** | same folder, `scripts\start_demo.ps1 -Safe` | the old index only | Yes (statutes only) |
 
 Use **PowerShell**, one terminal per server, and start them yourself.
 Close any terminal that still runs the other mode first (ports 8000 and 5173).
@@ -14,14 +14,14 @@ Close any terminal that still runs the other mode first (ports 8000 and 5173).
 ## One-click start (kb-v2 C5): use this first
 
 ```powershell
-cd E:\Users\fyp-legalease-ai-main\legalease-kb
+cd E:\Users\fyp-legalease-ai-main\LegalEase
 powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1          # everything on
 powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1 -Safe    # fallback: all four flags off
 ```
 
 It stops whatever listens on ports 8000 and 5173, opens the backend and the frontend in two new windows
 (with `KB_V2`, `JUDGMENTS_V2`, `REASONING_V2`, `SCRAPED_V2` all on, or all off with `-Safe`, plus the
-Hugging Face offline variables and the main folder's venv), waits for `/health`, prints it, and says in
+Hugging Face offline variables and the project's own `backend\venv`), waits for `/health`, prints it, and says in
 yellow if any flag isn't as expected or an index is empty. Then open http://localhost:5173.
 
 Options: `-BackendPort 8100 -FrontendPort 5273` (a second copy, e.g. for testing), `-Python <python.exe>`.
@@ -74,40 +74,40 @@ the spec, § b7.
 - **Browser:** the C2–C5 screens (Judgments tab, Research switch, Case law sources, Sources and updates,
   Reasoning tab) passed lint and build but haven't been clicked through end to end.
 
-## Primary: kb-v2 from the worktree
+## Manual start (full mode)
 
 **Terminal A: backend** (http://localhost:8000)
 
 ```powershell
-cd E:\Users\fyp-legalease-ai-main\legalease-kb\backend
+cd E:\Users\fyp-legalease-ai-main\LegalEase\backend
 $env:KB_V2 = "true"
 $env:HF_HUB_OFFLINE = "1"
 $env:TRANSFORMERS_OFFLINE = "1"
 $env:PYTHONIOENCODING = "utf-8"
-E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 ```
 
 **Terminal B: frontend** (http://localhost:5173)
 
 ```powershell
-cd E:\Users\fyp-legalease-ai-main\legalease-kb\frontend
+cd E:\Users\fyp-legalease-ai-main\LegalEase\frontend
 npm run dev
 ```
 
 **What these commands rely on.** Each of these is set up already, and none
 of them changes the main folder:
 
-- **Python environment:** the main folder's `venv`. It's only run, not
-  changed; the worktree has no venv of its own.
-- **`.env`:** `backend\.env` is a copy of the main folder's (git-ignored).
+- **Python environment:** the project's own `backend\venv`, created from `backend\requirements-dev.txt`
+  (`scripts\setup.ps1`).
+- **`.env`:** `backend\.env` (git-ignored; start from `backend\.env.example`).
   `KB_V2` is not in it; it is set only by `$env:KB_V2` above.
 - **Search indexes and NER weights:**
-  - `backend\storage\faiss\` holds a byte-identical copy of the old index;
-  - `backend\storage\models\legal_ner\` holds a copy of the NER weights;
+  - `backend\storage\faiss\` holds the old index;
+  - `backend\storage\models\legal_ner\` holds the NER weights;
   - `backend\storage\kb\` holds the v2 records and index.
 
   All of them are git-ignored.
-- **`frontend\node_modules`:** a copy of the main folder's.
+- **`frontend\node_modules`:** from `npm install`.
 - **`PYTHONIOENCODING=utf-8`:** stops "Logging error … UnicodeEncodeError"
   tracebacks when a log line has a non-Latin character. They're harmless
   (the request still succeeds) but alarming on screen.
@@ -130,42 +130,16 @@ terminal. Stop the server, run `$env:KB_V2 = "true"`, and start it again.
 - Terminal A prints `NER model ready` and `Application startup complete`;
 - the Knowledge Base page shows 35 laws.
 
-## Fallback: master from the main folder (KB_V2 off)
+## Fallback: safe mode
 
-Stop both servers (Ctrl+C in each), then open **new** terminals, so no
-`KB_V2` variable carries over.
+Run `powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1 -Safe` from the `LegalEase` folder.
+It restarts both servers with all four flags off: the old index only, no judgments, no scraped laws and
+no Reasoning tab. `/health` then shows `"kb_v2": false`.
 
-**Terminal A: backend**
-
-```powershell
-cd E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend
-$env:HF_HUB_OFFLINE = "1"
-$env:TRANSFORMERS_OFFLINE = "1"
-$env:PYTHONIOENCODING = "utf-8"
-venv\Scripts\uvicorn.exe app.main:app --port 8000
-```
-
-**Terminal B: frontend**
-
-```powershell
-cd E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\frontend
-npm run dev
-```
-
-**Confirm the mode:**
-- **/health** returns only `{"status":"ok"}`. Master predates the mode
-  fields, so a missing `kb_v2` field means you are on master.
-- **The startup log** has no "Search mode" line.
-
-**Fallback checked 2026-10-07 (kb-v2 B6).** The master backend was started
-from the main folder with the command above, plus
-`PYTHONDONTWRITEBYTECODE=1` and empty AI keys so the check made no model
-calls:
-- `/health` answered `{"status":"ok"}`;
-- a Research search for "bail in a non-bailable offence" returned 5 results,
-  CrPC s.497 first (0.81);
-- the server was then stopped, and the main folder showed no changes. Only
-  its git-ignored log file for the day was written.
+Until 2026-10-08 the fallback was the separate master folder. Since C21 there is one project folder,
+`LegalEase`, on `master`. The old master folder is kept, unchanged, in
+`E:\Users\fyp-legalease-ai-main\_archive\fyp-legalease-ai-main`, and its commit is tagged
+`master-before-merge-2026-10-08`.
 
 ## Changes in kb-v2 B6 (2026-10-07)
 
@@ -238,12 +212,12 @@ backend starts with `JUDGMENTS_V2=true`. Without it, nothing changes.
 the full pilot is still being built:
 
 ```powershell
-cd E:\Users\fyp-legalease-ai-main\legalease-kb\backend
+cd E:\Users\fyp-legalease-ai-main\LegalEase\backend
 $env:KB_V2 = "true"
 $env:JUDGMENTS_V2 = "true"
 $env:JUDGMENTS_INDEX_PATH = "./storage/kb/faiss_judgments_dev.faiss"
 $env:HF_HUB_OFFLINE = "1"; $env:TRANSFORMERS_OFFLINE = "1"; $env:PYTHONIOENCODING = "utf-8"
-E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 ```
 
 When the full pilot has finished, drop the `JUDGMENTS_INDEX_PATH` line (the
@@ -291,9 +265,9 @@ search and list the scraped laws and judgments. `/health` then shows
 time budget and continue when run again):
 
 ```powershell
-cd E:\Users\fyp-legalease-ai-main\legalease-kb\backend
+cd E:\Users\fyp-legalease-ai-main\LegalEase\backend
 $env:HF_HUB_OFFLINE = "1"; $env:TRANSFORMERS_OFFLINE = "1"; $env:PYTHONIOENCODING = "utf-8"
-$py = "E:\Users\fyp-legalease-ai-main\fyp-legalease-ai-main\backend\venv\Scripts\python.exe"
+$py = "venv\Scripts\python.exe"
 & $py ..\scripts\scraping\scrape_laws.py --stage-files --budget 0          # caps PC 120, KP 60, FSC 100
 & $py ..\scripts\kb\build_index_scraped.py --budget 0
 ```

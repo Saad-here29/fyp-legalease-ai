@@ -127,3 +127,6 @@ docs/architecture/design_reference/*.jpg
 # C12: a stray copy of backend/storage/kb/faiss_judgments_dev_meta.json found at the backend root
 # (no code reads or writes that path); set aside for review, kept out of git.
 _to_review/backend/faiss_judgments_meta.json
+
+# Private notes (presentation prep): never committed
+_private/

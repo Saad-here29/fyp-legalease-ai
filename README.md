@@ -14,6 +14,14 @@ language model is reached through the Groq API.
 
 > Final Year Project, Department of Software Engineering, NUCES (FAST) Islamabad, Session 2022–2026
 
+**Quick start** (Windows PowerShell, from this folder; details in [Setup](#setup)):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1             # once: backend\venv, packages, .env files
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1        # start backend :8000 + frontend :5173, all features on
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1 -Safe  # fallback: same, all four feature flags off
+```
+
 ---
 
 ## Modules
