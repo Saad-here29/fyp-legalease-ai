@@ -172,6 +172,9 @@ class Settings(BaseSettings):
     # kb-v2 C17: when scraped laws are merged in, sections of the 35 core laws sort as if this
     # much higher (their relevance score itself, and so the gate, is unchanged). 0 = off.
     CORE_PRIORITY: float = 0.03
+    # kb-v2 C19: the core (hybrid) search's first N results keep places 1..N when scraped laws are
+    # merged in; the rest are merged by score. 0 = off (everything merged by score).
+    CORE_KEEP_TOP: int = 2
     HYBRID_MIN_COSINE: float = 0.40     # a section found only by words must still be this close in meaning
     # Section expansion (kb-v2 C8): Chat sends a retrieved section's full text
     # from the records (not a 120-token chunk), capped, top sections only.

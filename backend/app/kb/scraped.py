@@ -179,10 +179,13 @@ def merged_search(query: str, top_k: int, filters: dict | None = None, *, hint_i
     # kb-v2 C17: (a) a scraped copy of a core law (same title and year) is left out;
     # (b) core sections sort CORE_PRIORITY higher, so a near-tie goes to the checked core text.
     extra = [h for h in search_statutes(query, top_k, filters) if title_key(h.get("source")) not in core_titles]
-    hits = base + extra
+    # kb-v2 C19: the core search's first CORE_KEEP_TOP results stay first, in its own (hybrid) order;
+    # re-sorting them by raw score dropped a section the hybrid ranked first (PPC s.302 for murder).
+    keep = max(0, settings.CORE_KEEP_TOP)
+    hits = base[keep:] + extra
     hits.sort(key=lambda h: h["relevance"] + (settings.CORE_PRIORITY if h.get("doc_id") in core_ids else 0.0),
               reverse=True)
-    return hits[:top_k]
+    return (base[:keep] + hits)[:top_k]
 
 
 # Bracketed parts that don't change which law a title names: an abbreviation "(CrPC)", "(PEMRA)",
