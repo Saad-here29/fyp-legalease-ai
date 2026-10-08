@@ -175,6 +175,9 @@ class Settings(BaseSettings):
     SECTION_EXPANSION: bool = True
     SECTION_MAX_TOKENS: int = 700
     SECTION_MAX_COUNT: int = 4
+    # kb-v2 C13: when the top passage is a section that passed the gate, the sections just
+    # before and after it in the same Act join as supporting passages (same caps as above).
+    SECTION_NEIGHBOURS: bool = True
     QUERY_HINTS_PATH: str = "./storage/kb/query_hints.json"
     REASONING_V2: bool = False
     REASONING_INPUT_TOKENS: int = 5000     # document text per call (kb-v2 C10: the document is split into parts)

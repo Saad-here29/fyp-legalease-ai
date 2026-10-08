@@ -375,8 +375,45 @@ def retrieve_passages(message: str, search_query: str, *, family: str = "auto") 
             logger.info(f"Exact section lookup: {', '.join(e['doc_id'] for e in exact)}")
             passages = exact_lookup.merge(exact, passages, settings.RAG_TOP_K)
         if settings.SECTION_EXPANSION:
+            if settings.SECTION_NEIGHBOURS:
+                passages = add_neighbours(passages)
             passages = expand_sections(passages)
     return passages
+
+
+def add_neighbours(passages: list[dict]) -> list[dict]:
+    """kb-v2 C13: the sections just before and after the top passage in the
+    same Act, placed right after it, when the top passage is a section record
+    that passed the gate. A provision often continues in the next section
+    (reconciliation, then the decree). expand_sections then applies the usual
+    token cap and section limit."""
+    top = passages[0] if passages else None
+    if not top or top.get("kb") not in ("v2", "scraped") or not top.get("doc_id") \
+            or top.get("relevance", 0) < embeddings.similarity_threshold():
+        return passages
+    from app.kb import catalog
+    data = catalog.data()
+    rec = data["records"].get(top["doc_id"])
+    law = data["laws"].get(rec["_law"]) if rec else None
+    if not law or top["doc_id"] not in law["record_ids"]:
+        return passages
+    ids = law["record_ids"]
+    at = ids.index(top["doc_id"])
+    have = {p.get("doc_id") for p in passages}
+    extra = []
+    for i in (at - 1, at + 1):
+        if not 0 <= i < len(ids) or ids[i] in have:
+            continue
+        r = data["records"][ids[i]]
+        if r.get("status") == "repealed" and top.get("status") != "repealed":
+            continue
+        extra.append({"source": law["title"], "source_type": "statute", "text": r.get("text") or "",
+                      "section": r.get("section"), "heading": r.get("heading"), "source_url": r.get("source_url"),
+                      "doc_id": ids[i], "kb": "scraped" if law.get("scraped") else "v2", "status": r.get("status"),
+                      "relevance": top["relevance"], "neighbour": True})
+    if extra:
+        logger.info(f"Neighbouring sections of {top['doc_id']}: {', '.join(e['doc_id'] for e in extra)}")
+    return passages + extra
 
 
 def _section_text(p: dict) -> str | None:

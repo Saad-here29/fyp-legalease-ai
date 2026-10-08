@@ -240,3 +240,42 @@ def test_a_penalty_under_a_section_only_mentioned_in_the_text_is_listed():
 def test_a_section_that_was_not_retrieved_cannot_carry_a_figure():
     r = check("Section 9 allows thirty days to appeal [1].", [S6, S7])
     assert "30 days is given for section 9, but that section's retrieved text doesn't state it" in r.unverified
+
+
+# --------------------------------------------------------------------------- 5: neighbouring sections
+
+@pytest.fixture
+def act(monkeypatch):
+    from app.kb import catalog
+    ids = [f"core/sample-family-act/s{n}" for n in (7, 8, 9, 10)]
+    records = {d: {"doc_id": d, "section": d.rsplit("s", 1)[1], "heading": f"Heading {d[-1]}",
+                   "text": f"Text of {d}.", "status": "repealed" if d.endswith("s10") else "current",
+                   "_law": "sample-family-act"} for d in ids}
+    data = {"laws": {"sample-family-act": {"title": "Sample Family Act, 1999", "record_ids": ids, "scraped": False}},
+            "records": records}
+    monkeypatch.setattr(catalog, "data", lambda: data)
+    monkeypatch.setattr(settings, "KB_V2", True)
+    return ids
+
+
+def _sec(d, score, kb="v2"):
+    return {"source": "Sample Family Act, 1999", "doc_id": d, "kb": kb, "relevance": score, "text": "t",
+            "status": "current"}
+
+
+def test_neighbours_join_after_the_retrieved_passages(act):
+    other = _sec("core/other-act/s3", 0.66)
+    out = chat.add_neighbours([_sec(act[1], 0.72), other])
+    assert [p["doc_id"] for p in out] == [act[1], "core/other-act/s3", act[0], act[2]]
+    assert out[2]["neighbour"] and out[2]["section"] == "7" and out[2]["text"] == f"Text of {act[0]}."
+
+
+def test_no_neighbours_below_the_gate_or_for_old_index_chunks(act):
+    assert chat.add_neighbours([_sec(act[1], 0.60)]) == [_sec(act[1], 0.60)]
+    v1 = {"source": "Old corpus", "text": "x", "relevance": 0.9}
+    assert chat.add_neighbours([v1]) == [v1]
+
+
+def test_neighbours_already_retrieved_or_repealed_are_not_added(act):
+    out = chat.add_neighbours([_sec(act[2], 0.8), _sec(act[1], 0.7)])
+    assert [p["doc_id"] for p in out] == [act[2], act[1]]          # s8 already there; s10 repealed
