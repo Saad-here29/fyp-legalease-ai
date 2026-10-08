@@ -51,7 +51,7 @@ def test_grounded_section_is_left_alone():
 def test_missing_section_is_flagged_with_note():
     answer = "Talaq notice is governed by Section 7 of the Muslim Family Laws Ordinance [1]."
     r = check_citations(answer, [MFLO_CSV])
-    assert "Section 7 (unverified)" in r.text
+    assert "(unverified)" not in r.text and r.text.startswith(answer)      # body unchanged (kb-v2 C13)
     assert r.text.rstrip().endswith("Section 7 (Muslim Family Laws Ordinance).")
     assert "Note:" in r.text
 
@@ -59,7 +59,7 @@ def test_missing_section_is_flagged_with_note():
 def test_statute_aware_matching_rejects_wrong_act():
     # §9 exists in the MFLO passage, but the answer attributes it to the PPC.
     r = check_citations("See Section 9 PPC.", [MFLO_CSV])
-    assert r.unverified and "(unverified)" in r.text
+    assert r.unverified and "Section 9 (PPC.)" in r.text.split("Note:")[1]
 
 
 def test_ocr_split_title_and_toc_headings_count():
@@ -75,7 +75,7 @@ def test_alphanumeric_section_and_unicode_dashes():
 
 def test_range_is_expanded_and_partially_flagged():
     r = check_citations("MFLO Sections 8-11 cover this.", [MFLO_TOC])
-    assert "(unverified: 11)" in r.text
+    assert r.unverified == ["Sections 8-11 (MFLO): 11"] and r.text.startswith("MFLO Sections 8-11 cover this.\n")
 
 
 def test_cross_reference_counts_for_the_named_statute():
@@ -85,7 +85,7 @@ def test_cross_reference_counts_for_the_named_statute():
 
 def test_urdu_section_reference_with_urdu_digits():
     r = check_citations("دفعہ ۷ کے تحت نوٹس دینا لازم ہے۔", [MFLO_CSV], lang="ur")
-    assert "(غیر مصدقہ)" in r.text and "نوٹ:" in r.text
+    assert "(غیر مصدقہ)" not in r.text and "نوٹ:" in r.text
 
 
 def test_case_citation_sentence_removed():

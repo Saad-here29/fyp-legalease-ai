@@ -7,8 +7,9 @@ comes back, `check_citations()`:
   * removes the sentence (or table cell) around any case-law citation —
     law-report cites like "PLD 2005 SC 1234" or names like "X v. Y" —
     unless that exact citation appears in a passage;
-  * marks each Section / Article reference whose number is not found in
-    the passages "(unverified)" and lists them in a closing note;
+  * lists each Section / Article reference whose number is not found in
+    the passages in a closing note (kb-v2 C13: the answer body itself is
+    never marked);
   * drops [n] source markers that point past the passages supplied —
     after first rewriting the model's own "【n】" / "【n†L1-L3】" citation
     format to "[n]" (`normalize_markers`), so every marker is validated.
@@ -587,57 +588,110 @@ def _act_problems(text: str, passages: list[dict], passages_norm: str) -> list[t
     return problems
 
 
+# kb-v2 C13: only consequences that name something specific are checked.
+# Generic words (offence, illegal, penalty, punishable, punishment, liable)
+# are not: an answer may call theft an offence without the passage saying
+# "offence" in those words.
 _CONSEQUENCE = re.compile(
-    r"\b(null and void|void(?:able)?|invalid|illegal|unlawful|unenforceable|nullity|punishable|imprisonment|"
-    r"penalty|criminal offence|offence)\b", re.I)
+    r"\b(null and void|voidable|void|invalid|nullity|forfeit(?:ed|ure)?|imprisonment for life|life imprisonment|"
+    r"(?:punish(?:able|ed|ment)?|sentenced?|penalty|liable)\s+(?:with\s+|to\s+|of\s+)?death|"
+    r"death (?:penalty|sentence))\b", re.I)
+_CONSEQUENCE_IN_SOURCE = {
+    "void": r"\bvoid\b|\bnullity\b", "voidable": r"\bvoidable\b", "invalid": r"\binvalid",
+    "forfeit": r"\bforfeit", "life": r"imprisonment\s+for\s+life|life\s+imprisonment", "death": r"\bdeath\b",
+}
+# A sentence that states a penalty or other consequence: its periods and amounts are checked.
+_CONSEQUENCE_CONTEXT = re.compile(
+    r"\b(?:punish\w*|imprison\w*|fine[sd]?|penalt\w*|sentence[sd]?|liable|forfeit\w*|jail|detention|"
+    r"compensation|extend(?:s|ed|ing)?)\b", re.I)
 
 
-def _consequence_problems(text: str, passages: list[dict]) -> list[tuple[str, int]]:
-    """[(note item, flag position)] for each legal consequence the answer
-    states ("void", "illegal", "punishable", "imprisonment"...) that no
-    retrieved passage states in those words; for a penalty, also any number
-    in its sentence that no passage contains."""
+def _consequence_key(term: str) -> str:
+    t = term.lower()
+    if "death" in t:
+        return "death"
+    if "life" in t:
+        return "life"
+    if t.startswith("forfeit"):
+        return "forfeit"
+    if t in ("null and void", "nullity", "void"):
+        return "void"
+    return t
+
+
+def _mask_titles(text: str) -> str:
+    """The text with every statute title it names blanked, keeping offsets,
+    so words inside a title ("Illegal Dispossession Act") are never read as claims."""
+    out = list(text)
+    for start, end, _name in _named_acts(_norm(text)):
+        out[start:end] = " " * (end - start)
+    return "".join(out)
+
+
+def _consequence_problems(text: str, passages: list[dict],
+                          reported: set[tuple[int, str]] | None = None) -> list[tuple[str, int]]:
+    """[(note item, position)] for each specific consequence the answer states
+    (void, voidable, invalid, forfeiture, death, imprisonment for life) that no
+    retrieved passage states, and each period or amount in a sentence stating
+    a consequence that the retrieved text doesn't contain in any equivalent
+    form ("twenty-five million rupees" = "Rs. 2,50,00,000"). `reported`:
+    figures already listed by another check, skipped here."""
     src = " ".join(_norm(p.get("text") or "") for p in passages).lower()
     src_figures = _figures(src)
+    masked = _norm(_mask_titles(text))
     out: list[tuple[str, int]] = []
-    for m in _CONSEQUENCE.finditer(_norm(text)):
-        term = m.group(1).lower()
-        if not re.search(r"\b" + re.escape(term) + r"\b", src):
+    for m in _CONSEQUENCE.finditer(masked):
+        if not re.search(_CONSEQUENCE_IN_SOURCE[_consequence_key(m.group(1))], src):
             out.append((f"Legal consequence not stated in the retrieved text: \"{m.group(1)}\"", m.end()))
+    seen: set[tuple[int, str]] = set(reported or ())
+    spans: list[tuple[int, int]] = []
+    for m in _CONSEQUENCE_CONTEXT.finditer(masked):
+        span = _sentence_span(masked, m.start(), m.end())
+        if span in spans:
             continue
-        if term in ("punishable", "imprisonment", "penalty"):
-            left, right = _sentence_span(text, m.start(), m.end())
-            extra = [f"{n} {u}{'' if n == 1 else 's'}" for n, u in sorted(_figures(text[left:right].lower()))
-                     if (n, u) not in src_figures]
-            if extra:
-                out.append((f"Penalty figure not in the retrieved text: {', '.join(extra)}", m.end()))
+        spans.append(span)
+        for fig in sorted(_figures(masked[span[0]:span[1]].lower())):
+            if fig in src_figures or fig in seen:
+                continue
+            seen.add(fig)
+            out.append((f"Figure not in the retrieved text: {_show_figure(fig)}", span[1]))
     return out
 
 
 # Number words, matched on text with the spaces removed so that OCR splits
-# ("one thous and rupees") and joined words read the same (kb-v2 C8).
+# ("one thous and rupees") and joined words read the same (kb-v2 C8). C13:
+# compound numbers ("one hundred and twenty"), ranges ("ten to twenty-five
+# years" = 10 and 25 years), scale words (thousand, lakh, crore, million,
+# billion) and "Rs."/"rupees" before or after an amount.
 _UNITS = {w: i for i, w in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
     "seventeen eighteen nineteen".split())}
 _TENS = {w: 10 * (i + 2) for i, w in enumerate("twenty thirty forty fifty sixty seventy eighty ninety".split())}
-_SCALES = {"hundred": 100, "thousand": 1000, "lakh": 100000, "lac": 100000, "crore": 10000000, "million": 1000000}
-_NUMBER_WORD = "|".join(sorted([*_UNITS, *_TENS, *_SCALES], key=len, reverse=True))
-_FIGURE = re.compile(r"((?:\d[\d,]*(?:\.\d+)?|(?:" + _NUMBER_WORD + r"|and)+)+?)(years?|months?|weeks?|days?|rupees)")
-_RS = re.compile(r"(?:rs\.?|rupees)(\d[\d,]*)")
+_SCALES = {"hundred": 100, "thousand": 1000, "lakh": 100000, "lac": 100000, "crore": 10000000,
+           "million": 1000000, "billion": 1000000000}
+_WORDS_LONGEST = sorted([*_UNITS, *_TENS, *_SCALES], key=len, reverse=True)
+_NUMBER_WORD = "|".join(_WORDS_LONGEST)
+_AMOUNT = r"(?:\d[\d,]*(?:\.\d+)?|" + _NUMBER_WORD + r"|and)+"
+_UNIT = r"(years?|months?|weeks?|days?|rupees?)"
+_RANGE = re.compile(r"(" + _AMOUNT + r"?)(?:to|or)(" + _AMOUNT + r"?)" + _UNIT)
+_FIGURE = re.compile(r"(" + _AMOUNT + r"?)" + _UNIT)
+_RS = re.compile(r"(?:rs\.?|pkr|rupees?)(?!and)(" + _AMOUNT + r")")
 
 
 def _words_to_number(s: str) -> int | None:
-    """"fivethousand" -> 5000, "onethousandtwohundred" -> 1200, "twentyfive" -> 25, "5,000" -> 5000."""
+    """"fivethousand" -> 5000, "onehundredandtwenty" -> 120, "twentyfivemillion" -> 25000000,
+    "5,000" -> 5000, "2.5million" -> 2500000."""
+    if not s or s == "and":
+        return None
     if re.fullmatch(r"\d[\d,]*(?:\.\d+)?", s):
         return int(float(s.replace(",", "")))
-    m = re.match(r"(\d[\d,]*)(" + "|".join(_SCALES) + r")$", s)
+    m = re.fullmatch(r"(\d[\d,]*(?:\.\d+)?)(" + "|".join(_SCALES) + r")", s)
     if m:
-        return int(m.group(1).replace(",", "")) * _SCALES[m.group(2)]
+        return int(round(float(m.group(1).replace(",", "")) * _SCALES[m.group(2)]))
     total = current = 0
     pos = 0
     while pos < len(s):
-        w = next((w for w in sorted([*_UNITS, *_TENS, *_SCALES], key=len, reverse=True) if s.startswith(w, pos)),
-                 None)
+        w = next((w for w in _WORDS_LONGEST if s.startswith(w, pos)), None)
         if w is None:
             if s.startswith("and", pos):          # "one hundred and twenty"
                 pos += 3
@@ -656,18 +710,39 @@ def _words_to_number(s: str) -> int | None:
     return total + current if (total or current) else None
 
 
+def _unit(u: str) -> str:
+    u = u.rstrip("s")
+    return u
+
+
 def _figures(text: str) -> set[tuple[int, str]]:
     """(amount, unit) pairs, whatever the spacing or form: "three months" and
-    "3 months" -> (3, "month"); "one thous and rupees", "Rs.1,000" -> (1000, "rupee")."""
-    compact = re.sub(r"[\s\-]+", "", (text or "").lower())
+    "3 months" -> (3, "month"); "one thous and rupees", "Rs.1,000" -> (1000, "rupee");
+    "ten to twenty-five years" -> (10, "year") and (25, "year")."""
+    low = re.sub(r"(\d)\s*[-–—]\s*(\d)", r"\1 to \2", (text or "").lower())        # "10-25 years"
+    low = re.sub(r"\bbetween\s+(\S+(?:\s+\S+){0,4}?)\s+and\s+", r"\1 to ", low)  # "between 3 and 7 years"
+    low = re.sub(r"(\d),(?=\d{2}(?:\D|$))", r"\1", low)                           # "2,50,00,000"
+    compact = re.sub(r"[\s\-]+", "", low)
     out = set()
+    for a, b, unit in _RANGE.findall(compact):
+        for num in (a, b):
+            n = _words_to_number(num)
+            if n is not None:
+                out.add((n, _unit(unit)))
     for num, unit in _FIGURE.findall(compact):
         n = _words_to_number(num)
         if n is not None:
-            out.add((n, unit.rstrip("s")))
+            out.add((n, _unit(unit)))
     for num in _RS.findall(compact):
-        out.add((int(num.replace(",", "")), "rupee"))
+        n = _words_to_number(num)
+        if n is not None:
+            out.add((n, "rupee"))
     return out
+
+
+def _show_figure(fig: tuple[int, str]) -> str:
+    n, unit = fig
+    return f"Rs {n:,}" if unit == "rupee" else f"{n} {unit}{'' if n == 1 else 's'}"
 
 
 def _mask_headings(text: str) -> str:
@@ -688,9 +763,13 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
     must be the paragraph retrieved, else it is flagged and listed in the
     note. None: exactly the statute-only check.
 
-    `consequences` (kb-v2 C5, on with KB_V2): a legal consequence the answer
-    states ("void", "illegal", "punishable", a penalty figure) that no
-    retrieved passage states is flagged and listed in the note."""
+    `consequences` (kb-v2 C5, on with KB_V2): a specific legal consequence
+    the answer states (void, invalid, forfeiture, death, imprisonment for
+    life, a period or an amount) that no retrieved passage states is listed
+    in the note.
+
+    kb-v2 C13: the answer body is never marked; unverified items appear only
+    in the closing note. Statute titles are never read as claims."""
     words = _MARKERS["ur" if lang == "ur" else "en"]
     passages_norm = re.sub(r"\s+", " ", _norm(" ".join(p.get("text") or "" for p in passages)))
     answer = normalize_markers(answer)
@@ -716,7 +795,6 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
 
     # 3) Section / Article references
     index = _passage_index(passages)
-    inserts: list[tuple[int, str]] = []
     seen_unverified: dict[str, None] = {}
     for ref in _find_refs(text):
         missing = [n for n in ref.numbers if not _grounded(n, ref.statute, index)]
@@ -724,35 +802,21 @@ def check_citations(answer: str, passages: list[dict], lang: str = "en",
         if not missing:
             result.verified.append(tag)
             continue
-        flag = words["flag"] if len(missing) == len(ref.numbers) else \
-            f"{words['flag'][:-1]}: {', '.join(missing)})"
-        inserts.append((ref.end, f" {flag}"))
-        seen_unverified[tag] = None
-    for pos, s in sorted(inserts, reverse=True):
-        text = text[:pos] + s + text[pos:]
+        seen_unverified[tag if len(missing) == len(ref.numbers) else f"{tag}: {', '.join(missing)}"] = None
 
     # 4) Acts named in the answer (kb-v2 B7): (a) each must be a retrieved
     #    source or appear in the retrieved text; (b) a [n] marker must point
     #    to a source matching an Act named in its own sentence.
-    inserts = []
-    for item, pos in _act_problems(_mask_headings(text) if consequences else text, passages, passages_norm):
-        if item not in seen_unverified:
-            seen_unverified[item] = None
-            inserts.append((pos, f" {words['flag']}"))
+    for item, _pos in _act_problems(_mask_headings(text) if consequences else text, passages, passages_norm):
+        seen_unverified[item] = None
     # 5) Paragraph numbers given for retrieved cases (kb-v2 C2)
     if cases:
-        for item, pos in _case_paragraph_problems(text, cases):
-            if item not in seen_unverified:
-                seen_unverified[item] = None
-                inserts.append((pos, f" {words['flag']}"))
-    # 6) Legal consequences the retrieved text doesn't state (kb-v2 C5)
+        for item, _pos in _case_paragraph_problems(text, cases):
+            seen_unverified[item] = None
+    # 6) Legal consequences the retrieved text doesn't state (kb-v2 C5, C13)
     if consequences:
-        for item, pos in _consequence_problems(_mask_headings(text), passages):
-            if item not in seen_unverified:
-                seen_unverified[item] = None
-                inserts.append((pos, f" {words['flag']}"))
-    for pos, s in sorted(set(inserts), reverse=True):
-        text = text[:pos] + s + text[pos:]
+        for item, _pos in _consequence_problems(_mask_headings(text), passages):
+            seen_unverified[item] = None
     result.unverified = list(seen_unverified)
     if result.unverified:
         note = words["note"] if cases is None else words["note_cases"]

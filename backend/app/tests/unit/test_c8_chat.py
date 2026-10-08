@@ -82,7 +82,7 @@ def test_same_figures_in_other_words_are_not_flagged():
 def test_real_mismatches_are_still_caught():
     answer = "Failing to report is punishable with imprisonment for two years and a fine of five thousand rupees [1]."
     r = check_citations(answer, PASSAGE, consequences=True)
-    assert r.unverified == ["Penalty figure not in the retrieved text: 2 years, 5000 rupees"]
+    assert r.unverified == ["Figure not in the retrieved text: 2 years", "Figure not in the retrieved text: Rs 5,000"]
 
 
 def test_the_models_own_headings_are_ignored_but_the_body_is_checked():

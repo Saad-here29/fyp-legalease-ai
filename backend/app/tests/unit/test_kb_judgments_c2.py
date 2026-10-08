@@ -340,7 +340,7 @@ def test_a_case_not_retrieved_is_removed():
 def test_a_wrong_paragraph_number_is_flagged():
     answer = f"In Ibrahim Khan v. Saima Khan ({SC}, 2024), para 9, the Court said so."
     r = check_citations(answer, PASSAGES, judgments=[J1])
-    assert "para 9 (unverified)" in r.text
+    assert "(unverified)" not in r.text and r.text.startswith(answer)
     assert r.unverified == ["Ibrahim Khan v. Mst. Saima Khan, para 9: not the paragraph retrieved (para 2)"]
     assert "case paragraphs retrieved" in r.text
 

@@ -131,9 +131,9 @@ def test_registration_overclaim_is_flagged(monkeypatch):
     checked = chat.compose_answer(ai, [dict(MFLO_5, relevance=0.8)],
                                   [{"role": "user", "content": "Is it compulsory to register a nikah?"}], "en")
     assert "LEGAL CONSEQUENCES" in ai.system and "don't add what happens if it isn't done" in ai.system
-    assert "void (unverified)" in checked.text
+    assert "(unverified)" not in checked.text and "is void and" in checked.text
     assert 'Legal consequence not stated in the retrieved text: "void"' in checked.unverified
-    assert "Penalty figure not in the retrieved text: 2 years" in checked.unverified
+    assert "Figure not in the retrieved text: 2 years" in checked.unverified
 
 
 def test_registration_answer_that_says_only_what_the_text_says_passes(monkeypatch):

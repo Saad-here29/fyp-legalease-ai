@@ -26,8 +26,8 @@ const SUGGESTIONS = [
   "What is murder under Section 302 of the Pakistan Penal Code?",
 ];
 
-// The backend's citation check (backend/app/ai/citation_check.py) marks any
-// section reference it can't find in the retrieved text with this flag.
+// The backend's citation check (backend/app/ai/citation_check.py) lists any
+// section reference it can't find in the retrieved text in a closing note.
 // Every source number the answer cites, short answer included: "[3]", and
 // grouped forms "[1, 2]" and "[1-3]" (older answers; new ones are normalised
 // to "[1][2]" by the backend).
@@ -43,7 +43,9 @@ function citedNumbers(content) {
   return out;
 }
 
-const UNVERIFIED_FLAG = /\((?:unverified|غیر مصدقہ)\)/;
+// kb-v2 C13: the answer body is no longer marked; unverified items are listed
+// in a closing note. Older stored answers still carry the inline flag.
+const UNVERIFIED_FLAG = /\((?:unverified|غیر مصدقہ)\)|Note: the following references were not found|نوٹ: درج ذیل حوالہ جات/;
 
 // Substantive answers open with one "Short answer:" sentence (system prompt
 // in backend/app/services/legal_chat_service.py), shown as a highlighted box.

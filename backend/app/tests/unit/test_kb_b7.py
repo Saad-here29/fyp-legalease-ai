@@ -172,7 +172,7 @@ def test_wrong_source_for_the_act_named_is_flagged():
     assert "Act named but not found in the retrieved text: Muslim Family Laws Ordinance" in r.unverified
     assert ("[1] cites Christian Marriage Act, 1872, but the sentence names Muslim Family Laws Ordinance"
             in r.unverified)
-    assert "(unverified)" in r.text and "Note:" in r.text
+    assert "(unverified)" not in r.text and "Note:" in r.text
 
 
 def test_act_named_without_any_source_is_flagged():
